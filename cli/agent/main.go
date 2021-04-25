@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
+	"cleye/integrations/aws"
 	"cleye/integrations/clouds"
-	"cleye/integrations/clouds/aws"
 	"encoding/json"
 	"fmt"
 	"net/http"
