@@ -1,0 +1,21 @@
+bloopi:
+  api_key: ${BLOOPI_API_KEY}
+data_sources:
+  aws:
+    info:
+      name: aws1
+      desc: desc1
+    config:
+      crawl_interval: 30s
+      policy_config: "true"
+      access_key_id: ${ACCESS_KEY_ID}
+      secret_access_key: ${SECRET_ACCSS_KEY}
+  postgres:
+    info:
+      name: post1
+      desc: desc1
+    config:
+      db_name: dbname1
+      db_user: user1
+      db_pass: pass1
+      db_host: host1

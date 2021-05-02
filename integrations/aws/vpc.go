@@ -2,12 +2,9 @@ package aws
 
 import (
 	"encoding/json"
-	"fmt"
-	"sync"
 	"time"
 
-	"cleye/integrations/clouds"
-
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -16,153 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-// Crawl retrieves all the VPCs found in the specified region
-// It returns a list of VPC IDs.
-// 1. Create intial session and retrieve all the regions.
-// 2. Loop through all the regions and store slices of each element, i.e. allVPCs
-// 3. Assign all the elements to the CloudData object
-// 4. return the CloudData object
-func Crawl() (*clouds.CloudCrawlData, error) {
-	var crawledData clouds.CrawledData
-
-	initSession, _ := session.NewSession(
-		&aws.Config{
-			Region: aws.String("us-east-1"),
-		},
-	)
-
-	awsRegions, errRegions := describeAllRegions(initSession)
-	if errRegions != nil {
-		return nil, fmt.Errorf("Could not retrieve AWS regions")
-	}
-
-	crawledData.Data = append(crawledData.Data, awsRegions...)
-	cloudInfo, _ := getCloudAccount(initSession)
-	owner := []*string{&cloudInfo.AccountID}
-	results := make(chan []*clouds.Element, 5000)
-	var wg sync.WaitGroup
-
-	for _, region := range awsRegions {
-		// var err error = nil
-		regionSession, _ := session.NewSession(
-			&aws.Config{
-				Region: aws.String(region.Name),
-			},
-		)
-
-		wg.Add(1)
-		go worker("vpcs", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("route_tables", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("dhcp_options", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("subnets", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("natgws", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("net_acls", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("azs", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("amis", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("instances", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("sec_groups", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("vols", owner, regionSession, results, &wg)
-
-		wg.Add(1)
-		go worker("lbs", owner, regionSession, results, &wg)
-
-		// crawledVpcs, err := describeAllVPCs(regionSession, owner)
-		// crawledRouteTables, err := describeAllRouteTables(regionSession, owner)
-		// dhcpOptions, err := describeAllDHCPOptions(regionSession, owner)
-		// subnets, err := describeAllSubnets(regionSession, owner)
-		// natgws, err := describeNATGateways(regionSession)
-		// networkACLs, err := describeNetworkACLs(regionSession, owner)
-		// azs, err := describeAllAvailabilityZones(regionSession)
-		// amis, err := describeAllAMIs(regionSession, owner)
-		// instances, err := describeAllInstances(regionSession, owner)
-		// secGroups, err := describeAllSecurityGroups(regionSession, owner)
-		// vols, err := describeAllVolumes(regionSession)
-		// lbs, err := describeAllLoadBalancers(regionSession)
-
-		// if err != nil {
-		// 	if aerr, ok := err.(awserr.Error); ok {
-		// 		switch aerr.Code() {
-		// 		default:
-		// 			fmt.Println(aerr.Error())
-		// 		}
-		// 	} else {
-		// 		// Print the error, cast err to awserr.Error to get the Code and
-		// 		// Message from an error.
-		// 		fmt.Println(err.Error())
-		// 	}
-		// }
-
-		// crawledData.Data = append(crawledData.Data, crawledVpcs...)
-		// crawledData.Data = append(crawledData.Data, crawledRouteTables...)
-		// crawledData.Data = append(crawledData.Data, dhcpOptions...)
-		// crawledData.Data = append(crawledData.Data, subnets...)
-		// crawledData.Data = append(crawledData.Data, natgws...)
-		// crawledData.Data = append(crawledData.Data, networkACLs...)
-		// crawledData.Data = append(crawledData.Data, azs...)
-		// crawledData.Data = append(crawledData.Data, amis...)
-		// crawledData.Data = append(crawledData.Data, instances...)
-		// crawledData.Data = append(crawledData.Data, secGroups...)
-		// crawledData.Data = append(crawledData.Data, vols...)
-		// crawledData.Data = append(crawledData.Data, lbs...)
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	for res := range results {
-		if len(res) != 0 {
-			crawledData.Data = append(crawledData.Data, res...)
-			fmt.Printf("Got: %s\n", res[0].Name)
-		}
-	}
-
-	marshaled, errMarshal := json.Marshal(crawledData.Data)
-	if errMarshal != nil {
-		return nil, errMarshal
-	}
-
-	hash, errHash := hash(marshaled)
-	if errHash != nil {
-		return nil, errHash
-	}
-
-	cloudData := clouds.CloudData{
-		Timestamp: time.Now().UTC(),
-		Data:      marshaled,
-		Hash:      hash,
-	}
-
-	// return &crawledData, nil
-	return &clouds.CloudCrawlData{
-		CloudInfo: *cloudInfo,
-		Timestamp: time.Now().UTC(),
-		Data:      cloudData,
-	}, nil
-}
-
-func getCloudAccount(session *session.Session) (*clouds.CloudInformation, error) {
+func getAwsAccountID(session *session.Session) (*string, error) {
 	svc := sts.New(session)
 	input := &sts.GetCallerIdentityInput{}
 
@@ -171,16 +22,11 @@ func getCloudAccount(session *session.Session) (*clouds.CloudInformation, error)
 		return nil, err
 	}
 
-	return &clouds.CloudInformation{
-		Version:   version,
-		AccountID: *result.Account,
-		Name:      "aws",
-		Type:      "cloud",
-	}, nil
+	return result.Account, nil
 }
 
-func describeAllVPCs(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllVPCs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeVpcsInput{
@@ -208,7 +54,7 @@ func describeAllVPCs(session *session.Session, owner []*string) ([]*clouds.Eleme
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.VpcId,
@@ -221,8 +67,8 @@ func describeAllVPCs(session *session.Session, owner []*string) ([]*clouds.Eleme
 	return returnedElems, nil
 }
 
-func describeAllRegions(session *session.Session) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeRegionsInput{}
@@ -243,7 +89,7 @@ func describeAllRegions(session *session.Session) ([]*clouds.Element, error) {
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.RegionName,
@@ -256,8 +102,8 @@ func describeAllRegions(session *session.Session) ([]*clouds.Element, error) {
 	return returnedElems, nil
 }
 
-func describeAllRouteTables(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllRouteTables(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeRouteTablesInput{
@@ -285,7 +131,7 @@ func describeAllRouteTables(session *session.Session, owner []*string) ([]*cloud
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.RouteTableId,
@@ -298,8 +144,8 @@ func describeAllRouteTables(session *session.Session, owner []*string) ([]*cloud
 	return returnedElems, nil
 }
 
-func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeDhcpOptionsInput{
@@ -328,7 +174,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*cloud
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.DhcpOptionsId,
@@ -341,8 +187,8 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*cloud
 	return returnedElems, nil
 }
 
-func describeAllSubnets(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllSubnets(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeSubnetsInput{
@@ -370,7 +216,7 @@ func describeAllSubnets(session *session.Session, owner []*string) ([]*clouds.El
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.SubnetArn,
@@ -383,8 +229,8 @@ func describeAllSubnets(session *session.Session, owner []*string) ([]*clouds.El
 	return returnedElems, nil
 }
 
-func describeNATGateways(session *session.Session) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeNATGateways(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeNatGatewaysInput{}
@@ -405,7 +251,7 @@ func describeNATGateways(session *session.Session) ([]*clouds.Element, error) {
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.NatGatewayId,
@@ -418,8 +264,8 @@ func describeNATGateways(session *session.Session) ([]*clouds.Element, error) {
 	return returnedElems, nil
 }
 
-func describeNetworkACLs(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeNetworkACLs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeNetworkAclsInput{
@@ -447,7 +293,7 @@ func describeNetworkACLs(session *session.Session, owner []*string) ([]*clouds.E
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.NetworkAclId,
@@ -460,8 +306,8 @@ func describeNetworkACLs(session *session.Session, owner []*string) ([]*clouds.E
 	return returnedElems, nil
 }
 
-func describeAllAvailabilityZones(session *session.Session) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllAvailabilityZones(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeAvailabilityZonesInput{}
@@ -482,7 +328,7 @@ func describeAllAvailabilityZones(session *session.Session) ([]*clouds.Element, 
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.ZoneName,
@@ -495,8 +341,8 @@ func describeAllAvailabilityZones(session *session.Session) ([]*clouds.Element, 
 	return returnedElems, nil
 }
 
-func describeAllAMIs(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllAMIs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeImagesInput{
@@ -524,7 +370,7 @@ func describeAllAMIs(session *session.Session, owner []*string) ([]*clouds.Eleme
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.Name,
@@ -537,8 +383,8 @@ func describeAllAMIs(session *session.Session, owner []*string) ([]*clouds.Eleme
 	return returnedElems, nil
 }
 
-func describeAllInstances(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeInstancesInput{
@@ -567,7 +413,7 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*clouds.
 				continue
 			}
 
-			returnedElems = append(returnedElems, &clouds.Element{
+			returnedElems = append(returnedElems, &bloopi_agent.Element{
 				RetrievedAt: time.Now().UTC(),
 				Hash:        hash,
 				Name:        *elem.KeyName,
@@ -581,8 +427,8 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*clouds.
 	return returnedElems, nil
 }
 
-func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeSecurityGroupsInput{
@@ -610,7 +456,7 @@ func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*cl
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.GroupName,
@@ -623,8 +469,8 @@ func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*cl
 	return returnedElems, nil
 }
 
-func describeAllVolumes(session *session.Session) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllVolumes(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
 	input := &ec2.DescribeVolumesInput{}
@@ -645,7 +491,7 @@ func describeAllVolumes(session *session.Session) ([]*clouds.Element, error) {
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.VolumeId,
@@ -658,8 +504,8 @@ func describeAllVolumes(session *session.Session) ([]*clouds.Element, error) {
 	return returnedElems, nil
 }
 
-func describeAllLoadBalancers(session *session.Session) ([]*clouds.Element, error) {
-	var returnedElems []*clouds.Element
+func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
 
 	svc := elbv2.New(session)
 	input := &elbv2.DescribeLoadBalancersInput{}
@@ -680,7 +526,7 @@ func describeAllLoadBalancers(session *session.Session) ([]*clouds.Element, erro
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.Type,
@@ -710,7 +556,7 @@ func describeAllLoadBalancers(session *session.Session) ([]*clouds.Element, erro
 			continue
 		}
 
-		returnedElems = append(returnedElems, &clouds.Element{
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.LoadBalancerName,

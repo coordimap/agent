@@ -1,6 +1,8 @@
 package integrations
 
-import "time"
+import (
+	"time"
+)
 
 type BaseConfig struct {
 	CrawlInterval time.Duration

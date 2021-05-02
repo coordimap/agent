@@ -1,18 +1,18 @@
 package aws
 
 import (
-	"cleye/integrations/clouds"
 	"fmt"
 	"sync"
 
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*clouds.Element, wg *sync.WaitGroup) {
+func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var res []*clouds.Element
+	var res []*bloopi_agent.Element
 	var err error
 
 	switch whatToCrawl {
