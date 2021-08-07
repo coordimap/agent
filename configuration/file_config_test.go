@@ -93,7 +93,7 @@ data_sources:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := configuration.NewStringConfig(tt.stringConfig)
+			config := configuration.OldStringConfig(tt.stringConfig)
 			configDSs := config.GetAllDataSources()
 
 			for dsName, ds := range configDSs {
