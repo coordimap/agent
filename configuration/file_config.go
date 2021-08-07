@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewFileConfig(filePath string) *BloopiConfig {
+func OldFileConfig(filePath string) *OldBloopiConfig {
 	v := viper.GetViper()
 	v.SetConfigFile(filePath)
 	v.SetConfigType("yaml")
@@ -24,22 +24,22 @@ func NewFileConfig(filePath string) *BloopiConfig {
 
 	fmt.Println(v.GetString("bloopi.api_key"))
 
-	return &BloopiConfig{
+	return &OldBloopiConfig{
 		viper: v,
 	}
 }
 
-func NewStringConfig(yamlConfig []byte) *BloopiConfig {
+func OldStringConfig(yamlConfig []byte) *OldBloopiConfig {
 	v := viper.GetViper()
 	v.SetConfigType("yaml")
 	v.ReadConfig(bytes.NewBuffer(yamlConfig))
 
-	return &BloopiConfig{
+	return &OldBloopiConfig{
 		viper: v,
 	}
 }
 
-func (config *BloopiConfig) evaluateValue(value string) string {
+func (config *OldBloopiConfig) evaluateValue(value string) string {
 	if strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}") {
 		// Evaluate Env Variable
 		if envVal, ok := os.LookupEnv(value[2 : len(value)-1]); ok {
@@ -52,7 +52,7 @@ func (config *BloopiConfig) evaluateValue(value string) string {
 	return value
 }
 
-func (config *BloopiConfig) getAllFirstLevelKeys(v *viper.Viper) []string {
+func (config *OldBloopiConfig) getAllFirstLevelKeys(v *viper.Viper) []string {
 	firstLevelKeys := []string{}
 	foundKeys := map[string]string{}
 	allKeys := v.AllKeys()
@@ -68,7 +68,7 @@ func (config *BloopiConfig) getAllFirstLevelKeys(v *viper.Viper) []string {
 	return firstLevelKeys
 }
 
-func (config *BloopiConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
+func (config *OldBloopiConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
 	allDSs := map[string]*bloopi_agent.DataSource{}
 
 	configuredDataSources := config.viper.Sub("data_sources")
@@ -103,7 +103,7 @@ func (config *BloopiConfig) GetAllDataSources() map[string]*bloopi_agent.DataSou
 	return allDSs
 }
 
-func (config *BloopiConfig) GetBloopiKey() (string, error) {
+func (config *OldBloopiConfig) GetBloopiKey() (string, error) {
 	if !config.viper.IsSet("bloopi.api_key") {
 		return "", errors.New("the key bloopi.api_key must be set")
 	}

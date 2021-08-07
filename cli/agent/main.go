@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/collector"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -25,7 +26,7 @@ func main() {
 	kingpin.Version("0.1.0")
 	kingpin.Parse()
 
-	configuration := configuration.NewFileConfig(*configFile)
+	configuration, _ := configuration.NewYamlFileConfig(*configFile)
 	log.Info().Msgf("Loading configuration file %s", *configFile)
 
 	sender := make(chan *bloopi_agent.CloudCrawlData, 5000)
@@ -54,8 +55,12 @@ func main() {
 			Timeout: 15 * time.Second,
 		}
 
+		requestStruct := collector.AddCrawledInfraFromAgentRequest{
+			CloudCrawlData: *crawledData,
+		}
+
 		b := new(bytes.Buffer)
-		json.NewEncoder(b).Encode(crawledData)
+		json.NewEncoder(b).Encode(requestStruct)
 
 		req, err := http.NewRequest("POST", *endpoint, b)
 		if err != nil {
