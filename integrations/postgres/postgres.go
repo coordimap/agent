@@ -87,11 +87,12 @@ func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
 
 // Crawl Crawls the specified Postgresql database and retrieves all the Tables/MaterializedViews
 // Things that are crawled
-// 1. Tables
-// 2. MaterializedViews
-// 3. Indexes
-// 4. Relationships (foreign keys)
-// 5. Sizes of Tables/Indexes/MaterializedViews
+// 1. Schemas
+// 2. Tables
+// 3. MaterializedViews
+// 4. Indexes
+// 5. Relationships (foreign keys)
+// 6. Sizes of Tables/Indexes/MaterializedViews
 func (postCrawler *postgresCrawler) Crawl() {
 
 }
