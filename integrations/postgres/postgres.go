@@ -1,25 +1,53 @@
 package postgres
 
-import "cleye/integrations"
+import (
+	"strconv"
+	"time"
 
-type PostgresConfig struct {
-	integrations.BaseConfig
-	Host   string
-	User   string
-	Pass   string
-	DBName string
-}
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+)
 
-type postgresCrawler struct {
-	integrations.BaseConfig
-	Host   string
-	User   string
-	Pass   string
-	DBName string
-}
+// NewPostgresCrawler creates a new Postgresql crawler based on the input DataSource provided.
+func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+	// 1. initialize postgresCrawler with default values
+	crawler := postgresCrawler{
+		dbConn:        nil,
+		outputChannel: outChannel,
+		crawlInterval: 30 * time.Second,
+		Host:          "localhost",
+		User:          "postgres",
+		Pass:          "",
+		DBName:        "postgres",
+		dataSource:    dataSource,
+	}
 
-func NewPostgresCrawler(postConfig *PostgresConfig) integrations.Crawler {
-	return &postgresCrawler{}
+	// 2. populate postgresCrawler with the provided configuration
+	for _, dsConfig := range dataSource.Config.ValuePairs {
+		switch dsConfig.Key {
+		case "db_name":
+			crawler.DBName = dsConfig.Value
+
+		case "db_user":
+			crawler.User = dsConfig.Value
+
+		case "db_pass":
+			crawler.Pass = dsConfig.Value
+
+		case "db_host":
+			crawler.Host = dsConfig.Value
+
+		case "crawl_interval":
+			numSecs, err := strconv.Atoi(dsConfig.Value)
+			if err != nil {
+				return &crawler, err
+			}
+			crawler.crawlInterval = time.Duration(numSecs) * time.Second
+		}
+	}
+
+	// TODO: 3. connect to the DB
+
+	return &crawler, nil
 }
 
 // Crawl Crawls the specified Postgresql database and retrieves all the Tables/MaterializedViews
