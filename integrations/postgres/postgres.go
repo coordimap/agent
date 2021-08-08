@@ -59,6 +59,7 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName)
 	if errDBConn != nil {
+		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
@@ -72,6 +73,10 @@ func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", psqlConnString)
 	if err != nil {
 		return nil, err
+	}
+
+	if errPing := db.Ping(); errPing != nil {
+		return nil, errPing
 	}
 
 	db.SetMaxIdleConns(10)
