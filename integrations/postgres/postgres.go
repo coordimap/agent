@@ -2,8 +2,12 @@ package postgres
 
 import (
 	"cleye/utils"
+	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
+
+	_ "github.com/lib/pq"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/rs/zerolog/log"
@@ -52,9 +56,28 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		}
 	}
 
-	// TODO: 3. connect to the DB
+	// 3. connect to the DB
+	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName)
+	if errDBConn != nil {
+		return &crawler, errDBConn
+	}
+	crawler.dbConn = db
 
 	return &crawler, nil
+}
+
+func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
+	psqlConnString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPass, dbName)
+
+	db, err := sql.Open("postgres", psqlConnString)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxIdleTime(time.Hour)
+
+	return db, nil
 }
 
 // Crawl Crawls the specified Postgresql database and retrieves all the Tables/MaterializedViews
