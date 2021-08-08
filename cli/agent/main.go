@@ -42,7 +42,7 @@ func main() {
 		log.Info().Msgf("Loading crawler for %s", integrationName)
 		dsCrawler, errCrawler := integrations.IntegrationsFactory(integrationName, ds, sender)
 		if errCrawler != nil {
-			log.Info().Msgf("Could not Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
+			log.Info().Msgf("Could not create Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
 			continue
 		}
 

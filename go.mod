@@ -10,6 +10,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-redis/redis/v8 v8.8.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/lib/pq v1.10.2
 	github.com/rs/zerolog v1.21.0 // indirect
 	github.com/spf13/viper v1.7.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
