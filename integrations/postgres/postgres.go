@@ -1,10 +1,12 @@
 package postgres
 
 import (
+	"cleye/utils"
 	"strconv"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"github.com/rs/zerolog/log"
 )
 
 // NewPostgresCrawler creates a new Postgresql crawler based on the input DataSource provided.
@@ -31,7 +33,12 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 			crawler.User = dsConfig.Value
 
 		case "db_pass":
-			crawler.Pass = dsConfig.Value
+			var err error
+			crawler.Pass, err = utils.LoadValueFromEnvConfig(dsConfig.Value)
+			if err != nil {
+				log.Info().Msgf("Error loading value of db_pass for value: %s. The error returned was: %s", dsConfig.Value, err.Error())
+				return &crawler, err
+			}
 
 		case "db_host":
 			crawler.Host = dsConfig.Value
