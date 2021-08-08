@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"cleye/utils"
 	"fmt"
 	"io/ioutil"
 
@@ -19,7 +20,12 @@ func (bloopiConfig *yamlConfig) GetBloopiKey() (string, error) {
 		return "", fmt.Errorf("could not parse successfully the file at: %s", bloopiConfig.yamlConfigPath)
 	}
 
-	return bloopiConfig.parsedConfig.API_KEY, nil
+	value, err := utils.LoadValueFromEnvConfig(bloopiConfig.parsedConfig.API_KEY)
+	if err != nil {
+		return "", err
+	}
+
+	return value, nil
 }
 
 func (bloopiConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
