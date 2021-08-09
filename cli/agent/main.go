@@ -26,7 +26,11 @@ func main() {
 	kingpin.Version("0.1.0")
 	kingpin.Parse()
 
-	configuration, _ := configuration.NewYamlFileConfig(*configFile)
+	configuration, errConfig := configuration.NewYamlFileConfig(*configFile)
+	if errConfig != nil {
+		log.Error().Msg(errConfig.Error())
+		return
+	}
 	log.Info().Msgf("Loading configuration file %s", *configFile)
 
 	sender := make(chan *bloopi_agent.CloudCrawlData, 5000)
