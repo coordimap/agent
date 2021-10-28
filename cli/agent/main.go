@@ -64,10 +64,16 @@ func main() {
 			bloopiKey = "dummy_bloopi_key"
 		}
 
+		var respData collector.AddCrawledInfraFromAgentResponse
 		req := gorequest.New().Timeout(15 * time.Second)
-		resp, _, errs := req.Post(*endpoint).AppendHeader("BLOOPI_KEY", bloopiKey).Send(requestStruct).End()
+		resp, _, errs := req.Post(*endpoint).Set("Api-Key", bloopiKey).SendStruct(requestStruct).EndStruct(&respData)
 		if len(errs) > 0 {
 			log.Info().Msgf("Error from collector %s. Error: %s", *endpoint, errs[0].Error())
+			continue
+		}
+
+		if respData.Status.HTTPCode != 200 {
+			log.Info().Msgf("Error from collector %s. ErrorCode: %s Error: %s", *endpoint, respData.Status.ErrorCode, respData.Status.Message)
 			continue
 		}
 
