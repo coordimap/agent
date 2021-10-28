@@ -58,8 +58,14 @@ func main() {
 			CloudCrawlData: *crawledData,
 		}
 
+		bloopiKey, errBloopiKey := configuration.GetBloopiKey()
+		if errBloopiKey != nil {
+			log.Warn().Msg("Could not find a configurable BLOOPI_KEY in the config file. Defaulting to 'dummy_bloopi_key'")
+			bloopiKey = "dummy_bloopi_key"
+		}
+
 		req := gorequest.New().Timeout(15 * time.Second)
-		resp, _, errs := req.Post(*endpoint).AppendHeader("BLOOPIE_KEY", *serverKey).Send(requestStruct).End()
+		resp, _, errs := req.Post(*endpoint).AppendHeader("BLOOPI_KEY", bloopiKey).Send(requestStruct).End()
 		if len(errs) > 0 {
 			log.Info().Msgf("Error from collector %s. Error: %s", *endpoint, errs[0].Error())
 			continue
