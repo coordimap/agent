@@ -29,6 +29,7 @@ func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.Cl
 
 func (awsCrawl *AwsCrawl) Crawl() {
 	durationInterval, errInterval := awsCrawl.GetCrawlInterval()
+	log.Info().Msgf("Ticker duration is %d seconds", durationInterval/time.Second)
 	if errInterval != nil {
 		// stop crawling
 		log.Info().Msgf("Error in getting the interval from the configuration. %s", errInterval.Error())
@@ -37,6 +38,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 
 	crawlTicker := time.NewTicker(durationInterval)
 
+	log.Info().Msgf("Starting ticker for AWS: %s", awsCrawl.ds.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := awsCrawl.crawl()
 		if errCrawl != nil {
@@ -45,7 +47,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 			continue
 		}
 		// ship the crawledData to the backend
-
+		log.Info().Msgf("Crawled %d AWS cloud elements for connection %s", len(crawledData.CrawledData.Data), awsCrawl.ds.Info.Name)
 		awsCrawl.outChannel <- crawledData
 	}
 }

@@ -48,7 +48,7 @@ func describeAllVPCs(session *session.Session, owner []*string) ([]*bloopi_agent
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -83,7 +83,7 @@ func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, erro
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -125,7 +125,7 @@ func describeAllRouteTables(session *session.Session, owner []*string) ([]*bloop
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -168,7 +168,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloop
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -210,7 +210,7 @@ func describeAllSubnets(session *session.Session, owner []*string) ([]*bloopi_ag
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -245,7 +245,7 @@ func describeNATGateways(session *session.Session) ([]*bloopi_agent.Element, err
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -287,7 +287,7 @@ func describeNetworkACLs(session *session.Session, owner []*string) ([]*bloopi_a
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -322,7 +322,7 @@ func describeAllAvailabilityZones(session *session.Session) ([]*bloopi_agent.Ele
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -364,7 +364,7 @@ func describeAllAMIs(session *session.Session, owner []*string) ([]*bloopi_agent
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -407,7 +407,7 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_
 				continue
 			}
 
-			hash, errHash := hash(marshaled)
+			hash, errHash := hashGob(marshaled)
 			if errHash != nil {
 				continue
 			}
@@ -450,7 +450,7 @@ func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*bl
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -485,7 +485,7 @@ func describeAllVolumes(session *session.Session) ([]*bloopi_agent.Element, erro
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -520,7 +520,7 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -550,7 +550,7 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}

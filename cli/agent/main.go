@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"cleye/configuration"
 	"cleye/integrations"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/parnurzeal/gorequest"
 	"github.com/rs/zerolog/log"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -55,31 +53,27 @@ func main() {
 
 	for crawledData := range sender {
 		// call the endpoint
-		httpClient := http.Client{
-			Timeout: 15 * time.Second,
-		}
 
 		requestStruct := collector.AddCrawledInfraFromAgentRequest{
 			CloudCrawlData: *crawledData,
 		}
 
-		b := new(bytes.Buffer)
-		json.NewEncoder(b).Encode(requestStruct)
-
-		req, err := http.NewRequest("POST", *endpoint, b)
-		if err != nil {
-			fmt.Println(err.Error())
+		req := gorequest.New().Timeout(15 * time.Second)
+		resp, _, errs := req.Post(*endpoint).AppendHeader("BLOOPIE_KEY", *serverKey).Send(requestStruct).End()
+		if len(errs) > 0 {
+			log.Info().Msgf("Error from collector %s. Error: %s", *endpoint, errs[0].Error())
 			continue
 		}
 
-		req.Header.Add("BLOOPIE_KEY", *serverKey)
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			fmt.Println(err.Error())
+		log.Info().Msgf("Sending %d Elements to the collector %s for %s", len(crawledData.CrawledData.Data), *endpoint, crawledData.DataSource.Info.Name)
+
+		if resp.StatusCode != 200 {
+			log.Error().Msgf("Could not ship any elements to the collector. Response was %d", resp.StatusCode)
 			continue
 		}
 
 		resp.Body.Close()
+		log.Info().Msgf("Successfully shipped all element for %s", crawledData.DataSource.Info.Name)
 	}
 
 	fmt.Println("Goodbye!!!")
