@@ -177,7 +177,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloop
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.DhcpOptionsId,
-			Type:        "dhcp_option",
+			Type:        "dhcp_options",
 			ID:          *elem.DhcpOptionsId,
 			Data:        marshaled,
 		})

@@ -40,7 +40,7 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "amis":
 		res, _ = describeAllAMIs(regionSession, owner)
 
-	case "instances":
+	case "ec2":
 		res, _ = describeAllInstances(regionSession, owner)
 
 	case "sec_groups":

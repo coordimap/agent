@@ -138,7 +138,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		go worker("amis", owner, regionSession, results, &wg)
 
 		wg.Add(1)
-		go worker("instances", owner, regionSession, results, &wg)
+		go worker("ec2", owner, regionSession, results, &wg)
 
 		wg.Add(1)
 		go worker("sec_groups", owner, regionSession, results, &wg)
@@ -159,6 +159,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		if len(res) != 0 {
 			crawledData.Data = append(crawledData.Data, res...)
 			log.Info().Msgf("Got: %s", res[0].Name)
+			// log.Info().Msgf("%s  ---   %v", res[0].ID, res[0].Data)
 		}
 	}
 
