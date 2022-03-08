@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -561,6 +562,39 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 			Name:        *elem.LoadBalancerName,
 			Type:        "classical-lb",
 			ID:          *elem.DNSName,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllS3Buckets(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := s3.New(session)
+
+	result, err := svc.ListBuckets(&s3.ListBucketsInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, elem := range result.Buckets {
+		marshaled, errMarshal := encodeStruct(elem)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Hash:        hash,
+			Name:        *elem.Name,
+			Type:        "s3-bucket",
+			ID:          *elem.Name,
 			Data:        marshaled,
 		})
 	}
