@@ -53,7 +53,7 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 		res, _ = describeAllLoadBalancers(regionSession)
 
 	case "s3-buckets":
-		res, _ = getAllS3Buckets(regionSession)
+		res, _ = getAllS3Buckets(regionSession, owner)
 
 	default:
 		fmt.Println("notnig")

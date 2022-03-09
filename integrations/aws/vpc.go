@@ -569,7 +569,7 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 	return returnedElems, nil
 }
 
-func getAllS3Buckets(session *session.Session) ([]*bloopi_agent.Element, error) {
+func getAllS3Buckets(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := s3.New(session)
 
@@ -578,8 +578,15 @@ func getAllS3Buckets(session *session.Session) ([]*bloopi_agent.Element, error) 
 		return nil, err
 	}
 
+	result.Owner.SetID(*owner[0])
+	result.Owner.SetDisplayName(*owner[0])
+
 	for _, elem := range result.Buckets {
-		marshaled, errMarshal := encodeStruct(elem)
+		bucketList := &s3.ListBucketsOutput{
+			Buckets: []*s3.Bucket{elem},
+			Owner:   result.Owner,
+		}
+		marshaled, errMarshal := encodeStruct(bucketList)
 		if errMarshal != nil {
 			continue
 		}
