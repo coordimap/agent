@@ -55,6 +55,9 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "s3-buckets":
 		res, _ = getAllS3Buckets(regionSession, owner)
 
+	case "lambdas":
+		res, _ = getAllLambdaFunctions(regionSession)
+
 	default:
 		fmt.Println("notnig")
 
