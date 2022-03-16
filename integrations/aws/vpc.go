@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"fmt"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -530,11 +531,55 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
-			Name:        *elem.Type,
-			Type:        "load-balancer",
-			ID:          *elem.DNSName,
+			Name:        *elem.LoadBalancerName,
+			Type:        fmt.Sprintf("%s-load-balancer", *elem.Type),
+			ID:          *elem.LoadBalancerArn,
 			Data:        marshaled,
 		})
+
+		input := &elbv2.DescribeTargetGroupsInput{
+			LoadBalancerArn: elem.LoadBalancerArn,
+		}
+		result, err := svc.DescribeTargetGroups(input)
+		if err != nil {
+			continue
+		}
+
+		for _, elbTargetGroup := range result.TargetGroups {
+			input := &elbv2.DescribeTargetHealthInput{
+				TargetGroupArn: elbTargetGroup.TargetGroupArn,
+			}
+			result, err := svc.DescribeTargetHealth(input)
+			if err != nil {
+				continue
+			}
+
+			if *elbTargetGroup.TargetType != elbv2.TargetTypeEnumInstance {
+				continue
+			}
+
+			for _, targetHealthDescription := range result.TargetHealthDescriptions {
+				marshaled, errMarshal := encodeStruct(targetHealthDescription)
+				if errMarshal != nil {
+					continue
+				}
+
+				hash, errHash := hashGob(marshaled)
+				if errHash != nil {
+					continue
+				}
+
+				// add ID-> loadbalancerarn and NAME->TargetGroupArn
+				returnedElems = append(returnedElems, &bloopi_agent.Element{
+					RetrievedAt: time.Now().UTC(),
+					Hash:        hash,
+					Name:        *elem.LoadBalancerArn,
+					Type:        "skipinsert-load-balancer-targets",
+					ID:          *targetHealthDescription.Target.Id,
+					Data:        marshaled,
+				})
+			}
+		}
 	}
 
 	// describe classic LB
