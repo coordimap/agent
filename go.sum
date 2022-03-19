@@ -20,6 +20,14 @@ dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20210504182504-141253b
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20210504182504-141253b26866/go.mod h1:rFkWjJ0k38iMUBDfsYv/QCGJxsFPBp1LEip57PymTsI=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20211028133410-ad3740c0c00d h1:AygcxS8juSW0N3ZA2VqwCFaTzQn7a+PPpf+ANm7bL+k=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20211028133410-ad3740c0c00d/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318092031-556c27a3afbe h1:x2IF3qhZXf1ksHpaA9aqqKUY1LV64Nktaj2txp+CzWE=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318092031-556c27a3afbe/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318182722-d260e8b5b6e2 h1:wXYPOZ8ExaJ/00n3Cd2fZk/vGehoWBh6I5bUDQETal8=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318182722-d260e8b5b6e2/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318183214-dbba20190506 h1:rIHfBwIOtH7/q0GKG8uo1k2i3hNLkJ3UbRmcdsZct4M=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220318183214-dbba20190506/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220319064432-9609557fdca5 h1:9JYqlVOITncrpKYJhGrRGTfSWAdqxKy5ubtaLUmdYYU=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220319064432-9609557fdca5/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=

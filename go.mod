@@ -3,7 +3,7 @@ module cleye
 go 1.15
 
 require (
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20211028133410-ad3740c0c00d // indirect
+	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220319064432-9609557fdca5 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/aws/aws-sdk-go v1.34.10
