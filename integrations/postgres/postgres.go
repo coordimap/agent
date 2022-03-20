@@ -2,11 +2,7 @@ package postgres
 
 import (
 	"cleye/utils"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -53,11 +49,25 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 			crawler.Host = dsConfig.Value
 
 		case "crawl_interval":
-			numSecs, err := strconv.Atoi(dsConfig.Value)
-			if err != nil {
-				return &crawler, err
+			const DEFAULT_CRAWL_TIME = 30 * time.Second
+			amountStr := string(dsConfig.Value[:len(dsConfig.Value)-1])
+			durationStr := string(dsConfig.Value[len(dsConfig.Value)-1])
+
+			amount, errConv := strconv.ParseInt(amountStr, 10, 32)
+			if errConv != nil {
+				return &crawler, errConv
 			}
-			crawler.crawlInterval = time.Duration(numSecs) * time.Second
+
+			switch durationStr {
+			case "s":
+				crawler.crawlInterval = time.Duration(amount) * time.Second
+
+			case "m":
+				crawler.crawlInterval = time.Duration(amount) * time.Minute
+
+			default:
+				crawler.crawlInterval = DEFAULT_CRAWL_TIME
+			}
 		}
 	}
 
@@ -90,33 +100,6 @@ func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
 	return db, nil
 }
 
-func (postCrawler *postgresCrawler) GetCrawlInterval() (time.Duration, error) {
-	for _, config := range postCrawler.dataSource.Config.ValuePairs {
-		if config.Key == "crawl_interval" {
-			amountStr := string(config.Value[:len(config.Value)-1])
-			durationStr := string(config.Value[len(config.Value)-1])
-
-			amount, errConv := strconv.ParseInt(amountStr, 10, 32)
-			if errConv != nil {
-				return 0, errConv
-			}
-
-			switch durationStr {
-			case "s":
-				return time.Duration(amount) * time.Second, nil
-
-			case "m":
-				return time.Duration(amount) * time.Minute, nil
-
-			default:
-				return 0, fmt.Errorf("the provided duration time of %s is not one of (s, m)", durationStr)
-			}
-		}
-	}
-
-	return 30 * time.Second, errors.New("could not find crawl_interval configuration value, using the default 30s")
-}
-
 // Crawl Crawls the specified Postgresql database and retrieves all the Tables/MaterializedViews
 // Things that are crawled
 // 1. Schemas
@@ -126,15 +109,7 @@ func (postCrawler *postgresCrawler) GetCrawlInterval() (time.Duration, error) {
 // 5. Relationships (foreign keys)
 // 6. Sizes of Tables/Indexes/MaterializedViews
 func (postCrawler *postgresCrawler) Crawl() {
-	durationInterval, errInterval := postCrawler.GetCrawlInterval()
-	log.Info().Msgf("Ticker duration is %d seconds", durationInterval/time.Second)
-	if errInterval != nil {
-		// stop crawling
-		log.Info().Msgf("Error in getting the interval from the configuration. %w", errInterval)
-		return
-	}
-
-	crawlTicker := time.NewTicker(durationInterval)
+	crawlTicker := time.NewTicker(postCrawler.crawlInterval)
 
 	log.Info().Msgf("Starting ticker for AWS: %s", postCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
@@ -145,16 +120,18 @@ func (postCrawler *postgresCrawler) Crawl() {
 			continue
 		}
 		// ship the crawledData to the backend
-		log.Info().Msgf("Crawled %d AWS cloud elements for connection %s", len(crawledData.CrawledData.Data), postCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s", len(crawledData.CrawledData.Data), postCrawler.dataSource.Info.Name)
 		postCrawler.outputChannel <- crawledData
 	}
 }
 
 func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	allCrawledElements := []*bloopi_agent.Element{}
+
 	postDB := post_model.Database{
 		Name:    postCrawler.DBName,
 		Host:    postCrawler.Host,
-		Schemas: []post_model.Schema{},
+		Schemas: []string{},
 	}
 
 	schemaNames, errGetSchemaNames := postCrawler.getSchemaNames()
@@ -162,48 +139,70 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		log.Error().Msgf("Could not retrieve the schema names because: %w", errGetSchemaNames)
 	}
 
-	for _, schemaName := range schemaNames {
-		schema := post_model.Schema{
-			Name:   schemaName,
-			Tables: []post_model.Table{},
-			Views:  []post_model.View{},
-		}
+	postDB.Schemas = schemaNames
+	dbElem, errDBElem := createElement(postDB, postDB.Name, postDB.Name, post_model.POSTGRES_TYPE_DB)
+	if errDBElem != nil {
+		// TODO: Log and stop the crawling
+		return nil, errDBElem
+	}
 
+	allCrawledElements = append(allCrawledElements, dbElem)
+
+	for _, schemaName := range schemaNames {
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
 			log.Error().Msgf("Could not get the table names for the schema %s because %w", schemaName, errGetTableNames)
 			continue
 		}
 
+		schema := post_model.Schema{
+			Name:   schemaName,
+			Tables: tableNames,
+			Views:  []string{},
+		}
+		schemaElem, errSchemaElem := createElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA)
+		if errSchemaElem != nil {
+			// We cannot process anymore if there is no schema
+			continue
+		}
+		allCrawledElements = append(allCrawledElements, schemaElem)
+
 		for _, tableName := range tableNames {
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
 				log.Error().Msgf("Error while getting table data for table: %s due to: %w", tableName, errTable)
-			} else {
-				schema.Tables = append(schema.Tables, table)
 			}
+
+			tableIndexes, errTableIndexes := postCrawler.getTableIndexes(schemaName, tableName)
+			if errTableIndexes != nil {
+				continue
+			}
+
+			for _, tableIndex := range tableIndexes {
+				indexElem, errIndexElem := createElement(tableIndex, tableIndex.Name, tableIndex.Name, post_model.POSTGRES_TYPE_INDEX)
+				if errIndexElem != nil {
+					//TODO: log
+					continue
+				}
+				allCrawledElements = append(allCrawledElements, indexElem)
+				table.Indexes = append(table.Indexes, tableIndex.Name)
+			}
+
+			tableElem, errTableElem := createElement(table, tableName, tableName, post_model.POSTGRES_TYPE_TABLE)
+			if errTableElem != nil {
+				// TODO: log
+				continue
+			}
+			allCrawledElements = append(allCrawledElements, tableElem)
 		}
 
 		// TODO: Get views
-
-		postDB.Schemas = append(postDB.Schemas, schema)
 	}
 
-	marshaled, errMarshaled := json.Marshal(postDB)
-	if errMarshaled != nil {
-		return nil, errMarshaled
+	// TODO: append all elements in the crawledData
+	crawledData := bloopi_agent.CrawledData{
+		Data: allCrawledElements,
 	}
-
-	hashed := sha256.Sum256(marshaled)
-
-	postElem := bloopi_agent.Element{
-		RetrievedAt: time.Now().UTC(),
-		Hash:        hex.EncodeToString(hashed[:]),
-	}
-
-	var crawledData bloopi_agent.CrawledData
-
-	crawledData.Data = append(crawledData.Data, &postElem)
 
 	return &bloopi_agent.CloudCrawlData{
 		Timestamp:   time.Now().UTC(),
