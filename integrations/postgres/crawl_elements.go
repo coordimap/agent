@@ -129,7 +129,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			constraint.Sources = append(constraint.Sources, sourceConstraintCol)
 		}
 
-		if constraintType != "FOREIGN KEY" {
+		if constraintType != post_model.POSTGRES_CONSTRAINT_FK {
 			constraints = append(constraints, constraint)
 			continue
 		}
