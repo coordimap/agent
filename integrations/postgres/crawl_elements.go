@@ -262,3 +262,70 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 
 	return indexes, nil
 }
+
+func (postCrawler *postgresCrawler) getSchemaViewNames(schemaName string) ([]string, error) {
+	viewNames := []string{}
+	sqlStatement := `
+		select matviewname as view_name
+		from pg_matviews
+		where schemaname = $1
+		order by schemaname,
+				view_name`
+	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName)
+	if err != nil {
+		return viewNames, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return viewNames, err
+		}
+
+		viewNames = append(viewNames, name)
+	}
+
+	return viewNames, nil
+}
+
+func (postCrawler *postgresCrawler) getView(schemaName, viewName string) (post_model.View, error) {
+	view := post_model.View{
+		Name:   viewName,
+		Schema: schemaName,
+	}
+	sqlStatement := `
+		select
+			attr.attnum,
+			attr.attname as column_name,
+			tp.typname as datatype
+		from pg_catalog.pg_attribute as attr
+		join pg_catalog.pg_class as cls on cls.oid = attr.attrelid
+		join pg_catalog.pg_namespace as ns on ns.oid = cls.relnamespace
+		join pg_catalog.pg_type as tp on tp.oid = attr.atttypid
+		where
+			ns.nspname = $1
+			and cls.relname = $2
+			and attr.attnum >= 1
+		order by
+			attr.attnum
+	`
+	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, viewName)
+	if err != nil {
+		return view, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var column post_model.Column
+		if err := rows.Scan(&column.Position, &column.Name, &column.Type); err != nil {
+			return view, nil
+		}
+
+		view.Columns = append(view.Columns, column)
+	}
+
+	return view, nil
+}

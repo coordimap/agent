@@ -155,18 +155,6 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			continue
 		}
 
-		schema := post_model.Schema{
-			Name:   schemaName,
-			Tables: tableNames,
-			Views:  []string{},
-		}
-		schemaElem, errSchemaElem := createElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA)
-		if errSchemaElem != nil {
-			// We cannot process anymore if there is no schema
-			continue
-		}
-		allCrawledElements = append(allCrawledElements, schemaElem)
-
 		for _, tableName := range tableNames {
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
@@ -196,7 +184,38 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			allCrawledElements = append(allCrawledElements, tableElem)
 		}
 
-		// TODO: Get views
+		viewNames, errViewNames := postCrawler.getSchemaViewNames(schemaName)
+		if errViewNames != nil {
+			log.Info().Msgf("Cannot get view names for schema: %s because %w", schemaName, errViewNames)
+			continue
+		}
+
+		for _, viewName := range viewNames {
+			view, errView := postCrawler.getView(schemaName, viewName)
+			if errView != nil {
+				log.Info().Msgf("Cannot get view data for view: %s because %w", viewName, errView)
+				continue
+			}
+
+			viewElem, errViewElem := createElement(view, view.Name, view.Name, post_model.POSTGRES_TYPE_VIEW)
+			if errViewElem != nil {
+				log.Info().Msgf("Cannot create view element for view: %s because %w", viewName, errViewElem)
+				continue
+			}
+			allCrawledElements = append(allCrawledElements, viewElem)
+		}
+
+		schema := post_model.Schema{
+			Name:   schemaName,
+			Tables: tableNames,
+			Views:  viewNames,
+		}
+		schemaElem, errSchemaElem := createElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA)
+		if errSchemaElem != nil {
+			// We cannot process anymore if there is no schema
+			continue
+		}
+		allCrawledElements = append(allCrawledElements, schemaElem)
 	}
 
 	// TODO: append all elements in the crawledData
