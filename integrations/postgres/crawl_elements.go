@@ -52,7 +52,8 @@ func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (
 		Name:        tableName,
 		Columns:     []post_model.Column{},
 		Constraints: []post_model.Constraint{},
-		Indexes:     []post_model.Index{},
+		Schema:      schemaName,
+		Indexes:     []string{},
 	}
 
 	columns, errColumns := postCrawler.getTableColumns(schemaName, tableName)
@@ -66,12 +67,6 @@ func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (
 		log.Warn().Msgf("Something happened while trying to get the constraints of %s.%s due to %w", schemaName, tableName, errConstraints)
 	}
 	table.Constraints = constraints
-
-	indexes, errIndexes := postCrawler.getTableIndexes(schemaName, tableName)
-	if errConstraints != nil {
-		log.Warn().Msgf("Something happened while trying to get the indexes of %s.%s due to %w", schemaName, tableName, errIndexes)
-	}
-	table.Indexes = indexes
 
 	return table, nil
 }
@@ -218,7 +213,10 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 	defer rows.Close()
 
 	for rows.Next() {
-		index := post_model.Index{}
+		index := post_model.Index{
+			Table:  tableName,
+			Schema: schemaName,
+		}
 		var indexName string
 		if err := rows.Scan(&indexName); err != nil {
 			return indexes, err
