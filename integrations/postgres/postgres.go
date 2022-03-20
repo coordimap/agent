@@ -142,7 +142,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	postDB.Schemas = schemaNames
 	dbElem, errDBElem := createElement(postDB, postDB.Name, postDB.Name, post_model.POSTGRES_TYPE_DB)
 	if errDBElem != nil {
-		// TODO: Log and stop the crawling
+		log.Error().Msgf("Cannot create schema db element for db name: %s because %w", postCrawler.DBName, errDBElem)
 		return nil, errDBElem
 	}
 
@@ -163,13 +163,14 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 			tableIndexes, errTableIndexes := postCrawler.getTableIndexes(schemaName, tableName)
 			if errTableIndexes != nil {
+				log.Info().Msgf("Cannot get the table index names for table: %s because %w", tableName, errTableIndexes)
 				continue
 			}
 
 			for _, tableIndex := range tableIndexes {
 				indexElem, errIndexElem := createElement(tableIndex, tableIndex.Name, tableIndex.Name, post_model.POSTGRES_TYPE_INDEX)
 				if errIndexElem != nil {
-					//TODO: log
+					log.Info().Msgf("Cannot create table index element for index: %s because %w", tableIndex.Name, errIndexElem)
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
@@ -178,7 +179,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 			tableElem, errTableElem := createElement(table, tableName, tableName, post_model.POSTGRES_TYPE_TABLE)
 			if errTableElem != nil {
-				// TODO: log
+				log.Info().Msgf("Cannot create table element for table: %s because %w", tableName, errTableElem)
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, tableElem)
@@ -218,7 +219,6 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		allCrawledElements = append(allCrawledElements, schemaElem)
 	}
 
-	// TODO: append all elements in the crawledData
 	crawledData := bloopi_agent.CrawledData{
 		Data: allCrawledElements,
 	}
