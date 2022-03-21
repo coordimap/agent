@@ -711,8 +711,8 @@ func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, erro
 
 		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
-			Name:        fmt.Sprintf("%s:%d", *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Port),
-			ID:          fmt.Sprintf("%s:%d", *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Port),
+			Name:        *dbInstance.Endpoint.Address,
+			ID:          *dbInstance.Endpoint.Address,
 			Type:        "rds",
 			Hash:        hash,
 			Data:        marshaled,
