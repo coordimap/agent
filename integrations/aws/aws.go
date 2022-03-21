@@ -154,6 +154,9 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 
 		wg.Add(1)
 		go worker("lambdas", owner, regionSession, results, &wg)
+
+		wg.Add(1)
+		go worker("rds", owner, regionSession, results, &wg)
 	}
 
 	go func() {

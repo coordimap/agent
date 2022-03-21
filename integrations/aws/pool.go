@@ -58,6 +58,9 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "lambdas":
 		res, _ = getAllLambdaFunctions(regionSession)
 
+	case "rds":
+		res, _ = getAllRDSInstances(regionSession)
+
 	default:
 		fmt.Println("notnig")
 

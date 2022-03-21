@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
@@ -681,6 +682,39 @@ func getAllLambdaFunctions(session *session.Session) ([]*bloopi_agent.Element, e
 			Name:        *lambdaFunction.FunctionName,
 			Type:        "lambda",
 			ID:          *lambdaFunction.FunctionArn,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := rds.New(session)
+
+	result, err := svc.DescribeDBInstances(nil)
+	if err != nil {
+		return returnedElems, err
+	}
+
+	for _, dbInstance := range result.DBInstances {
+		marshaled, errMarshal := encodeStruct(dbInstance)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Name:        fmt.Sprintf("%s:%d", *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Port),
+			ID:          fmt.Sprintf("%s:%d", *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Port),
+			Type:        "rds",
+			Hash:        hash,
 			Data:        marshaled,
 		})
 	}
