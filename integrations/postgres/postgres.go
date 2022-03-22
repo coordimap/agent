@@ -207,9 +207,10 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		}
 
 		schema := post_model.Schema{
-			Name:   schemaName,
-			Tables: tableNames,
-			Views:  viewNames,
+			Name:     schemaName,
+			Tables:   tableNames,
+			Views:    viewNames,
+			Database: postDB.Name,
 		}
 		schemaElem, errSchemaElem := createElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA)
 		if errSchemaElem != nil {
