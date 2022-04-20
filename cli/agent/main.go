@@ -1,17 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"cleye/configuration"
 	"cleye/integrations"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/parnurzeal/gorequest"
 	"github.com/rs/zerolog/log"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/collector"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -25,7 +24,11 @@ func main() {
 	kingpin.Version("0.1.0")
 	kingpin.Parse()
 
-	configuration := configuration.NewFileConfig(*configFile)
+	configuration, errConfig := configuration.NewYamlFileConfig(*configFile)
+	if errConfig != nil {
+		log.Error().Msg(errConfig.Error())
+		return
+	}
 	log.Info().Msgf("Loading configuration file %s", *configFile)
 
 	sender := make(chan *bloopi_agent.CloudCrawlData, 5000)
@@ -41,7 +44,7 @@ func main() {
 		log.Info().Msgf("Loading crawler for %s", integrationName)
 		dsCrawler, errCrawler := integrations.IntegrationsFactory(integrationName, ds, sender)
 		if errCrawler != nil {
-			log.Info().Msgf("Could not Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
+			log.Info().Msgf("Could not create Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
 			continue
 		}
 
@@ -50,27 +53,39 @@ func main() {
 
 	for crawledData := range sender {
 		// call the endpoint
-		httpClient := http.Client{
-			Timeout: 15 * time.Second,
+
+		requestStruct := collector.AddCrawledInfraFromAgentRequest{
+			CloudCrawlData: *crawledData,
 		}
 
-		b := new(bytes.Buffer)
-		json.NewEncoder(b).Encode(crawledData)
+		bloopiKey, errBloopiKey := configuration.GetBloopiKey()
+		if errBloopiKey != nil {
+			log.Warn().Msg("Could not find a configurable BLOOPI_KEY in the config file. Defaulting to 'dummy_bloopi_key'")
+			bloopiKey = "dummy_bloopi_key"
+		}
 
-		req, err := http.NewRequest("POST", *endpoint, b)
-		if err != nil {
-			fmt.Println(err.Error())
+		var respData collector.AddCrawledInfraFromAgentResponse
+		req := gorequest.New().Timeout(15 * time.Second)
+		resp, _, errs := req.Post(*endpoint).Set("Api-Key", bloopiKey).SendStruct(requestStruct).EndStruct(&respData)
+		if len(errs) > 0 {
+			log.Info().Msgf("Error from collector %s. Error: %s", *endpoint, errs[0].Error())
 			continue
 		}
 
-		req.Header.Add("BLOOPIE_KEY", *serverKey)
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			fmt.Println(err.Error())
+		if respData.Status.HTTPCode != 200 {
+			log.Info().Msgf("Error from collector %s. ErrorCode: %s Error: %s", *endpoint, respData.Status.ErrorCode, respData.Status.Message)
+			continue
+		}
+
+		log.Info().Msgf("Sending %d Elements to the collector %s for %s", len(crawledData.CrawledData.Data), *endpoint, crawledData.DataSource.Info.Name)
+
+		if resp.StatusCode != 200 {
+			log.Error().Msgf("Could not ship any elements to the collector. Response was %d", resp.StatusCode)
 			continue
 		}
 
 		resp.Body.Close()
+		log.Info().Msgf("Successfully shipped all element for %s", crawledData.DataSource.Info.Name)
 	}
 
 	fmt.Println("Goodbye!!!")

@@ -40,7 +40,7 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "amis":
 		res, _ = describeAllAMIs(regionSession, owner)
 
-	case "instances":
+	case "ec2":
 		res, _ = describeAllInstances(regionSession, owner)
 
 	case "sec_groups":
@@ -51,6 +51,15 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 
 	case "lbs":
 		res, _ = describeAllLoadBalancers(regionSession)
+
+	case "s3-buckets":
+		res, _ = getAllS3Buckets(regionSession, owner)
+
+	case "lambdas":
+		res, _ = getAllLambdaFunctions(regionSession)
+
+	case "rds":
+		res, _ = getAllRDSInstances(regionSession)
 
 	default:
 		fmt.Println("notnig")

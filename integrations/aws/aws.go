@@ -29,6 +29,7 @@ func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.Cl
 
 func (awsCrawl *AwsCrawl) Crawl() {
 	durationInterval, errInterval := awsCrawl.GetCrawlInterval()
+	log.Info().Msgf("Ticker duration is %d seconds", durationInterval/time.Second)
 	if errInterval != nil {
 		// stop crawling
 		log.Info().Msgf("Error in getting the interval from the configuration. %s", errInterval.Error())
@@ -37,6 +38,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 
 	crawlTicker := time.NewTicker(durationInterval)
 
+	log.Info().Msgf("Starting ticker for AWS: %s", awsCrawl.ds.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := awsCrawl.crawl()
 		if errCrawl != nil {
@@ -45,7 +47,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 			continue
 		}
 		// ship the crawledData to the backend
-
+		log.Info().Msgf("Crawled %d AWS cloud elements for connection %s", len(crawledData.CrawledData.Data), awsCrawl.ds.Info.Name)
 		awsCrawl.outChannel <- crawledData
 	}
 }
@@ -136,7 +138,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		go worker("amis", owner, regionSession, results, &wg)
 
 		wg.Add(1)
-		go worker("instances", owner, regionSession, results, &wg)
+		go worker("ec2", owner, regionSession, results, &wg)
 
 		wg.Add(1)
 		go worker("sec_groups", owner, regionSession, results, &wg)
@@ -146,6 +148,15 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 
 		wg.Add(1)
 		go worker("lbs", owner, regionSession, results, &wg)
+
+		wg.Add(1)
+		go worker("s3-buckets", owner, regionSession, results, &wg)
+
+		wg.Add(1)
+		go worker("lambdas", owner, regionSession, results, &wg)
+
+		wg.Add(1)
+		go worker("rds", owner, regionSession, results, &wg)
 	}
 
 	go func() {
@@ -157,6 +168,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		if len(res) != 0 {
 			crawledData.Data = append(crawledData.Data, res...)
 			log.Info().Msgf("Got: %s", res[0].Name)
+			// log.Info().Msgf("%s  ---   %v", res[0].ID, res[0].Data)
 		}
 	}
 

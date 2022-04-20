@@ -19,3 +19,9 @@ func hash(data []byte) (string, error) {
 
 	return hex.EncodeToString(sum[0:]), nil
 }
+
+func hashGob(data []byte) (string, error) {
+	sum := sha256.Sum256(data)
+
+	return hex.EncodeToString(sum[0:]), nil
+}

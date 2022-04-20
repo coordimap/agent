@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"encoding/json"
+	"fmt"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -10,6 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/aws/aws-sdk-go/service/rds"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -44,12 +47,12 @@ func describeAllVPCs(session *session.Session, owner []*string) ([]*bloopi_agent
 	}
 
 	for _, elem := range result.Vpcs {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -79,12 +82,12 @@ func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, erro
 	}
 
 	for _, elem := range result.Regions {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -93,7 +96,7 @@ func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, erro
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.RegionName,
-			Type:        "regions",
+			Type:        "region",
 			ID:          *elem.Endpoint,
 			Data:        marshaled,
 		})
@@ -121,12 +124,12 @@ func describeAllRouteTables(session *session.Session, owner []*string) ([]*bloop
 	}
 
 	for _, elem := range result.RouteTables {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -164,12 +167,12 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloop
 	}
 
 	for _, elem := range result.DhcpOptions {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -178,7 +181,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloop
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.DhcpOptionsId,
-			Type:        "dhcp_option",
+			Type:        "dhcp_options",
 			ID:          *elem.DhcpOptionsId,
 			Data:        marshaled,
 		})
@@ -206,12 +209,12 @@ func describeAllSubnets(session *session.Session, owner []*string) ([]*bloopi_ag
 	}
 
 	for _, elem := range result.Subnets {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -241,12 +244,12 @@ func describeNATGateways(session *session.Session) ([]*bloopi_agent.Element, err
 	}
 
 	for _, elem := range result.NatGateways {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -283,12 +286,12 @@ func describeNetworkACLs(session *session.Session, owner []*string) ([]*bloopi_a
 	}
 
 	for _, elem := range result.NetworkAcls {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -318,12 +321,12 @@ func describeAllAvailabilityZones(session *session.Session) ([]*bloopi_agent.Ele
 	}
 
 	for _, elem := range result.AvailabilityZones {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -360,12 +363,12 @@ func describeAllAMIs(session *session.Session, owner []*string) ([]*bloopi_agent
 	}
 
 	for _, elem := range result.Images {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -403,12 +406,12 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_
 
 	for _, reservation := range result.Reservations {
 		for _, elem := range reservation.Instances {
-			marshaled, errMarshal := json.Marshal(elem)
+			marshaled, errMarshal := encodeStruct(elem)
 			if errMarshal != nil {
 				continue
 			}
 
-			hash, errHash := hash(marshaled)
+			hash, errHash := hashGob(marshaled)
 			if errHash != nil {
 				continue
 			}
@@ -446,12 +449,12 @@ func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*bl
 	}
 
 	for _, elem := range result.SecurityGroups {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -481,12 +484,12 @@ func describeAllVolumes(session *session.Session) ([]*bloopi_agent.Element, erro
 	}
 
 	for _, elem := range result.Volumes {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -516,12 +519,12 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 	}
 
 	for _, elem := range result.LoadBalancers {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -529,11 +532,55 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 		returnedElems = append(returnedElems, &bloopi_agent.Element{
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
-			Name:        *elem.Type,
-			Type:        "classical-lb",
+			Name:        *elem.LoadBalancerName,
+			Type:        fmt.Sprintf("%s-load-balancer", *elem.Type),
 			ID:          *elem.LoadBalancerArn,
 			Data:        marshaled,
 		})
+
+		input := &elbv2.DescribeTargetGroupsInput{
+			LoadBalancerArn: elem.LoadBalancerArn,
+		}
+		result, err := svc.DescribeTargetGroups(input)
+		if err != nil {
+			continue
+		}
+
+		for _, elbTargetGroup := range result.TargetGroups {
+			input := &elbv2.DescribeTargetHealthInput{
+				TargetGroupArn: elbTargetGroup.TargetGroupArn,
+			}
+			result, err := svc.DescribeTargetHealth(input)
+			if err != nil {
+				continue
+			}
+
+			if *elbTargetGroup.TargetType != elbv2.TargetTypeEnumInstance {
+				continue
+			}
+
+			for _, targetHealthDescription := range result.TargetHealthDescriptions {
+				marshaled, errMarshal := encodeStruct(targetHealthDescription)
+				if errMarshal != nil {
+					continue
+				}
+
+				hash, errHash := hashGob(marshaled)
+				if errHash != nil {
+					continue
+				}
+
+				// add ID-> loadbalancerarn and NAME->TargetGroupArn
+				returnedElems = append(returnedElems, &bloopi_agent.Element{
+					RetrievedAt: time.Now().UTC(),
+					Hash:        hash,
+					Name:        *elem.LoadBalancerArn,
+					Type:        "skipinsert-load-balancer-targets",
+					ID:          *targetHealthDescription.Target.Id,
+					Data:        marshaled,
+				})
+			}
+		}
 	}
 
 	// describe classic LB
@@ -546,12 +593,12 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 	}
 
 	for _, elem := range resultElb.LoadBalancerDescriptions {
-		marshaled, errMarshal := json.Marshal(elem)
+		marshaled, errMarshal := encodeStruct(elem)
 		if errMarshal != nil {
 			continue
 		}
 
-		hash, errHash := hash(marshaled)
+		hash, errHash := hashGob(marshaled)
 		if errHash != nil {
 			continue
 		}
@@ -560,8 +607,114 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 			RetrievedAt: time.Now().UTC(),
 			Hash:        hash,
 			Name:        *elem.LoadBalancerName,
-			Type:        "lb",
+			Type:        "classical-lb",
 			ID:          *elem.DNSName,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllS3Buckets(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := s3.New(session)
+
+	result, err := svc.ListBuckets(&s3.ListBucketsInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	result.Owner.SetID(*owner[0])
+	result.Owner.SetDisplayName(*owner[0])
+
+	for _, elem := range result.Buckets {
+		bucketList := &s3.ListBucketsOutput{
+			Buckets: []*s3.Bucket{elem},
+			Owner:   result.Owner,
+		}
+		marshaled, errMarshal := encodeStruct(bucketList)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Hash:        hash,
+			Name:        *elem.Name,
+			Type:        "s3-bucket",
+			ID:          *elem.Name,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllLambdaFunctions(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := lambda.New(session)
+
+	result, err := svc.ListFunctions(nil)
+	if err != nil {
+		return returnedElems, err
+	}
+
+	for _, lambdaFunction := range result.Functions {
+		marshaled, errMarshal := encodeStruct(lambdaFunction)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Hash:        hash,
+			Name:        *lambdaFunction.FunctionName,
+			Type:        "lambda",
+			ID:          *lambdaFunction.FunctionArn,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := rds.New(session)
+
+	result, err := svc.DescribeDBInstances(nil)
+	if err != nil {
+		return returnedElems, err
+	}
+
+	for _, dbInstance := range result.DBInstances {
+		marshaled, errMarshal := encodeStruct(dbInstance)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Name:        *dbInstance.Endpoint.Address,
+			ID:          *dbInstance.Endpoint.Address,
+			Type:        "rds",
+			Hash:        hash,
 			Data:        marshaled,
 		})
 	}
