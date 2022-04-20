@@ -2,6 +2,7 @@ package integrations
 
 import (
 	"cleye/integrations/aws"
+	"cleye/integrations/kubernetes"
 	"cleye/integrations/postgres"
 	"fmt"
 
@@ -10,11 +11,14 @@ import (
 
 func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	switch name {
-	case "aws":
+	case INTEGRATION_AWS:
 		return aws.MakeAWS(dataSource, outChannel), nil
 
-	case "postgres":
+	case INTEGRATION_POSTGRES:
 		return postgres.NewPostgresCrawler(dataSource, outChannel)
+
+	case INTEGRATION_KUBERNETES:
+		return kubernetes.MakeKubernetesCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)
