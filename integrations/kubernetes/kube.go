@@ -123,6 +123,34 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		allCrawledElements = append(allCrawledElements, nodeElement)
 	}
 
+	pvs, errPvs := kubeCrawler.listPersistentVolumes()
+	if errPvs != nil {
+		log.Warn().Msgf("Could not get the kubernetes persistenvolumes of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPvs)
+	} else {
+		for _, pv := range pvs {
+			nodeElement, errNodeElement := utils.CreateElement(pv, pv.Name, pv.Name, kube_model.KUBERNETES_TYPE_PV)
+			if errNodeElement != nil {
+				continue
+			}
+
+			allCrawledElements = append(allCrawledElements, nodeElement)
+		}
+	}
+
+	storageClasses, errStorageClasses := kubeCrawler.listStorageClasses()
+	if errStorageClasses != nil {
+		log.Warn().Msgf("Could not get the kubernetes storageclasses of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errStorageClasses)
+	} else {
+		for _, storageClass := range storageClasses {
+			nodeElement, errNodeElement := utils.CreateElement(storageClass, storageClass.Name, storageClass.Name, kube_model.KUBERNETES_TYPE_STORAGE_CLASS)
+			if errNodeElement != nil {
+				continue
+			}
+
+			allCrawledElements = append(allCrawledElements, nodeElement)
+		}
+	}
+
 	kubeNamespaces, errNamespaces := kubeCrawler.listNamespaces()
 	if errNamespaces != nil {
 		log.Warn().Msgf("Could not get the kubernetes namespaces of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errNamespaces)
@@ -285,6 +313,37 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
+
+		// list pvcs
+		pvcs, errPVCs := kubeCrawler.listPersistentVolumeClaims(namespace.Name)
+		if errPVCs != nil {
+			log.Warn().Msgf("Could not get the kubernetes persistenvolumeclaims of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPVCs)
+		} else {
+			for _, pvc := range pvcs {
+				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, pvc.Name, kube_model.KUBERNETES_TYPE_PVC)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list ingresses
+		ingresses, errIngresses := kubeCrawler.listIngresses(namespace.Name)
+		if errIngresses != nil {
+			log.Warn().Msgf("Could not get the kubernetes ingresses of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngresses)
+		} else {
+			for _, ingress := range ingresses {
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
 	}
 
 	return &bloopi_agent.CloudCrawlData{
