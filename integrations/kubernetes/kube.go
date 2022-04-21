@@ -123,6 +123,65 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		allCrawledElements = append(allCrawledElements, nodeElement)
 	}
 
+	kubeNamespaces, errNamespaces := kubeCrawler.listNamespaces()
+	if errNamespaces != nil {
+		log.Warn().Msgf("Could not get the kubernetes namespaces of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errNamespaces)
+	}
+
+	for _, namespace := range kubeNamespaces {
+		nodeElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespace.Name, kube_model.KUBERNETES_TYPE_NAMESPACE)
+		if errNodeElement != nil {
+			continue
+		}
+
+		allCrawledElements = append(allCrawledElements, nodeElement)
+
+		// get the deployments
+		deployments, errDeployments := kubeCrawler.listDeplyments(namespace.Name)
+		if errDeployments != nil {
+			log.Warn().Msgf("Could not get the kubernetes deployments of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errDeployments)
+		} else {
+			for _, deployment := range deployments {
+				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, deployment.Name, kube_model.KUBERNETES_TYPE_DEPLOYMENT)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// get the services
+		services, errServices := kubeCrawler.listDeplyments(namespace.Name)
+		if errServices != nil {
+			log.Warn().Msgf("Could not get the kubernetes services of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errServices)
+		} else {
+			for _, service := range services {
+				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, service.Name, kube_model.KUBERNETES_TYPE_SERVICE)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// get pods
+		pods, errPods := kubeCrawler.listPods(namespace.Name)
+		if errServices != nil {
+			log.Warn().Msgf("Could not get the kubernetes pods of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPods)
+		} else {
+			for _, pod := range pods {
+				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, pod.Name, kube_model.KUBERNETES_TYPE_POD)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+	}
+
 	return &bloopi_agent.CloudCrawlData{
 		Timestamp:   time.Now().UTC(),
 		DataSource:  kubeCrawler.dataSource,
