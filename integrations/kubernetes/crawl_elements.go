@@ -7,6 +7,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	extensionsBeta1 "k8s.io/api/extensions/v1beta1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -113,6 +115,42 @@ func (kubeCrawler *kubernetesCrawler) listDaemonSets(namespace string) ([]appsv1
 	list, errList := kubeCrawler.kubeClient.AppsV1().DaemonSets(namespace).List(context.Background(), metav1.ListOptions{})
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the configmaps for namespace: %s. %w", namespace, errList)
+	}
+
+	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) listStorageClasses() ([]storagev1.StorageClass, error) {
+	list, errList := kubeCrawler.kubeClient.StorageV1().StorageClasses().List(context.Background(), metav1.ListOptions{})
+	if errList != nil {
+		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
+	}
+
+	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) listPersistentVolumeClaims(namespace string) ([]v1.PersistentVolumeClaim, error) {
+	list, errList := kubeCrawler.kubeClient.CoreV1().PersistentVolumeClaims(namespace).List(context.Background(), metav1.ListOptions{})
+	if errList != nil {
+		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
+	}
+
+	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) listPersistentVolumes() ([]v1.PersistentVolume, error) {
+	list, errList := kubeCrawler.kubeClient.CoreV1().PersistentVolumes().List(context.Background(), metav1.ListOptions{})
+	if errList != nil {
+		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
+	}
+
+	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) listIngresses(namespace string) ([]extensionsBeta1.Ingress, error) {
+	list, errList := kubeCrawler.kubeClient.ExtensionsV1beta1().Ingresses(namespace).List(context.Background(), metav1.ListOptions{})
+	if errList != nil {
+		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
 	}
 
 	return list.Items, nil
