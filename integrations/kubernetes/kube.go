@@ -180,6 +180,111 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
+
+		// list secrets
+		secrets, errSecrets := kubeCrawler.listPods(namespace.Name)
+		if errSecrets != nil {
+			log.Warn().Msgf("Could not get the kubernetes secrets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errSecrets)
+		} else {
+			for _, secret := range secrets {
+				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, secret.Name, kube_model.KUBERNETES_TYPE_SECRET)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list endpoints
+		endpoints, errEndpoints := kubeCrawler.listEndpoints(namespace.Name)
+		if errEndpoints != nil {
+			log.Warn().Msgf("Could not get the kubernetes endpoints of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errEndpoints)
+		} else {
+			for _, endpoint := range endpoints {
+				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, endpoint.Name, kube_model.KUBERNETES_TYPE_ENDPOINT)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list jobs
+		jobs, errJobs := kubeCrawler.listJobs(namespace.Name)
+		if errJobs != nil {
+			log.Warn().Msgf("Could not get the kubernetes jobs of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errJobs)
+		} else {
+			for _, job := range jobs {
+				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, job.Name, kube_model.KUBERNETES_TYPE_JOB)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list cronjobs
+		cronJobs, errCronJobs := kubeCrawler.listCronJobs(namespace.Name)
+		if errEndpoints != nil {
+			log.Warn().Msgf("Could not get the kubernetes cronjobs of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errCronJobs)
+		} else {
+			for _, cronJob := range cronJobs {
+				nodeElement, errNodeElement := utils.CreateElement(cronJob, cronJob.Name, cronJob.Name, kube_model.KUBERNETES_TYPE_CRONJOB)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list configmaps
+		configMaps, errConfigMaps := kubeCrawler.listConfigMaps(namespace.Name)
+		if errConfigMaps != nil {
+			log.Warn().Msgf("Could not get the kubernetes configmaps of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errConfigMaps)
+		} else {
+			for _, configMap := range configMaps {
+				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, configMap.Name, kube_model.KUBERNETES_TYPE_CRONJOB)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list statefulsets
+		statefulSets, errStatefulSets := kubeCrawler.listStatefulSets(namespace.Name)
+		if errStatefulSets != nil {
+			log.Warn().Msgf("Could not get the kubernetes statefulsets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errStatefulSets)
+		} else {
+			for _, statefulSet := range statefulSets {
+				nodeElement, errNodeElement := utils.CreateElement(statefulSet, statefulSet.Name, statefulSet.Name, kube_model.KUBERNETES_TYPE_CRONJOB)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		// list daemonsets
+		daemonSets, errDaemonSets := kubeCrawler.listDaemonSets(namespace.Name)
+		if errDaemonSets != nil {
+			log.Warn().Msgf("Could not get the kubernetes daemonsets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errDaemonSets)
+		} else {
+			for _, daemonSet := range daemonSets {
+				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, daemonSet.Name, kube_model.KUBERNETES_TYPE_CRONJOB)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
 	}
 
 	return &bloopi_agent.CloudCrawlData{
