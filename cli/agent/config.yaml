@@ -25,4 +25,16 @@ bloopi:
           value: user1
         - name: db_pass
           value: pass1
+        - name: crawl_interval
+          value: 30s
+    - type: kubernetes
+      name: kube1
+      desc: desc1
+      config:
+      - name: in_cluster
+        value: "false"
+      - name: config_file
+        value: .kube/config
+      - name: crawl_interval
+        value: 30s
     
