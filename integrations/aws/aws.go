@@ -9,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -159,7 +160,10 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		go worker("rds", owner, regionSession, results, &wg)
 
 		wg.Add(1)
-		go worker("eks", owner, regionSession, results, &wg)
+		go worker(aws_shared_model.AWS_TYPE_EKS, owner, regionSession, results, &wg)
+
+		wg.Add(1)
+		go worker(aws_shared_model.AWS_TYPE_ECR_REPOSITORY, owner, regionSession, results, &wg)
 	}
 
 	go func() {

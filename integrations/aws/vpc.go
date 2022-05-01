@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -762,6 +763,73 @@ func getAllEKSClusters(session *session.Session) ([]*bloopi_agent.Element, error
 			Hash:        hash,
 			Data:        marshaled,
 		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllECRReposAndImages(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+
+	svc := ecr.New(session)
+	input := &ecr.DescribeRepositoriesInput{}
+
+	ecrRepos, errDescribeRepositories := svc.DescribeRepositories(input)
+	if errDescribeRepositories != nil {
+		return returnedElems, errDescribeRepositories
+	}
+
+	for _, ecrRepo := range ecrRepos.Repositories {
+		marshaledEcrRepo, errMarshal := encodeStruct(ecrRepo)
+		if errMarshal != nil {
+			continue
+		}
+
+		hashEcrRepo, errHash := hashGob(marshaledEcrRepo)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Name:        *ecrRepo.RepositoryName,
+			ID:          *ecrRepo.RepositoryUri,
+			Type:        aws_shared_model.AWS_TYPE_ECR_REPOSITORY,
+			Hash:        hashEcrRepo,
+			Data:        marshaledEcrRepo,
+		})
+
+		svc := ecr.New(session)
+		input := &ecr.ListImagesInput{
+			RepositoryName: aws.String(*ecrRepo.RepositoryName),
+		}
+
+		repoImages, errListImages := svc.ListImages(input)
+		if errListImages != nil {
+			continue
+		}
+
+		for _, repoImage := range repoImages.ImageIds {
+			marshaledEcrRepoImage, errMarshal := encodeStruct(ecrRepo)
+			if errMarshal != nil {
+				continue
+			}
+
+			hashEcrRepoImage, errHash := hashGob(marshaledEcrRepoImage)
+			if errHash != nil {
+				continue
+			}
+
+			returnedElems = append(returnedElems, &bloopi_agent.Element{
+				RetrievedAt: time.Now().UTC(),
+				Name:        *repoImage.ImageTag,
+				ID:          *repoImage.ImageTag,
+				Type:        aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE,
+				Hash:        hashEcrRepoImage,
+				Data:        marshaledEcrRepoImage,
+			})
+		}
+
 	}
 
 	return returnedElems, nil

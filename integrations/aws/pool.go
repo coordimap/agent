@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -61,8 +62,11 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "rds":
 		res, _ = getAllRDSInstances(regionSession)
 
-	case "eks":
+	case aws_shared_model.AWS_TYPE_EKS:
 		res, _ = getAllEKSClusters(regionSession)
+
+	case aws_shared_model.AWS_TYPE_ECR_REPOSITORY:
+		res, _ = getAllECRReposAndImages(regionSession)
 
 	default:
 		fmt.Println("notnig")
