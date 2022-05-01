@@ -61,6 +61,9 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "rds":
 		res, _ = getAllRDSInstances(regionSession)
 
+	case "eks":
+		res, _ = getAllEKSClusters(regionSession)
+
 	default:
 		fmt.Println("notnig")
 

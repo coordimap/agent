@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -419,9 +421,9 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_
 			returnedElems = append(returnedElems, &bloopi_agent.Element{
 				RetrievedAt: time.Now().UTC(),
 				Hash:        hash,
-				Name:        *elem.KeyName,
+				Name:        *elem.InstanceId,
 				Type:        "instance",
-				ID:          *elem.InstanceId,
+				ID:          *elem.PrivateDnsName,
 				Data:        marshaled,
 			})
 		}
@@ -714,6 +716,49 @@ func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, erro
 			Name:        *dbInstance.Endpoint.Address,
 			ID:          *dbInstance.Endpoint.Address,
 			Type:        "rds",
+			Hash:        hash,
+			Data:        marshaled,
+		})
+	}
+
+	return returnedElems, nil
+}
+
+func getAllEKSClusters(session *session.Session) ([]*bloopi_agent.Element, error) {
+	var returnedElems []*bloopi_agent.Element
+	svc := eks.New(session)
+	input := &eks.ListClustersInput{}
+
+	result, err := svc.ListClusters(input)
+	if err != nil {
+		return returnedElems, err
+	}
+
+	for _, eksClusterName := range result.Clusters {
+		input := &eks.DescribeClusterInput{
+			Name: aws.String(*eksClusterName),
+		}
+
+		result, errDescribeCluster := svc.DescribeCluster(input)
+		if errDescribeCluster != nil {
+			return returnedElems, errDescribeCluster
+		}
+
+		marshaled, errMarshal := encodeStruct(result)
+		if errMarshal != nil {
+			continue
+		}
+
+		hash, errHash := hashGob(marshaled)
+		if errHash != nil {
+			continue
+		}
+
+		returnedElems = append(returnedElems, &bloopi_agent.Element{
+			RetrievedAt: time.Now().UTC(),
+			Name:        *result.Cluster.Arn,
+			ID:          *result.Cluster.Endpoint,
+			Type:        aws_shared_model.AWS_TYPE_EKS,
 			Hash:        hash,
 			Data:        marshaled,
 		})
