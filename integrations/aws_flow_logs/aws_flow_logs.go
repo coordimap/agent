@@ -38,6 +38,9 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 		case "bucket_name":
 			crawler.bucketName = dsConfig.Value
 
+		case "account_id":
+			crawler.accountID = dsConfig.Value
+
 		case "crawl_interval":
 			const DEFAULT_CRAWL_TIME = 30 * time.Second
 			amountStr := string(dsConfig.Value[:len(dsConfig.Value)-1])
@@ -72,5 +75,9 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 }
 
 func (crawler *awsFlowLogsCrawler) Crawl() {
+
+}
+
+func (crawler *awsFlowLogsCrawler) computeStartingTimeForLogfileReading() {
 
 }

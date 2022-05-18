@@ -21,6 +21,7 @@ type awsFlowLogsCrawler struct {
 	logFormat     string
 	bucketName    string
 	region        string
+	accountID     string
 	outputChannel chan *bloopi_agent.CloudCrawlData
 	crawlInterval time.Duration
 	dataSource    *bloopi_agent.DataSource
