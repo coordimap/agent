@@ -17,6 +17,8 @@ const (
 	AWS_FLOW_LOG_FORMAT_ALL     = "${account-id} ${action} ${az-id} ${bytes} ${dstaddr} ${dstport} ${end} ${flow-direction} ${instance-id} ${interface-id} ${log-status} ${packets} ${pkt-dst-aws-service} ${pkt-dstaddr} ${pkt-src-aws-service} ${pkt-srcaddr} ${protocol} ${region} ${srcaddr} ${srcport} ${start} ${sublocation-id} ${sublocation-type} ${subnet-id} ${tcp-flags} ${traffic-path} ${type} ${version} ${vpc-id}"
 )
 
+const DEFAULT_CRAWL_TIME = 15 * time.Minute
+
 type awsFlowLogsCrawler struct {
 	logFormat     string
 	bucketName    string

@@ -56,5 +56,5 @@ bloopi:
       - name: secret_access_key
         value: ${SECRET_ACCSS_KEY}
       - name: crawl_interval
-        value: 30s
+        value: 15m
     
