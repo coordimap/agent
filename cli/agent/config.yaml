@@ -34,7 +34,25 @@ bloopi:
       - name: in_cluster
         value: "false"
       - name: config_file
-        value: .kube/config
+        value: /home/ermalguni/.kube/config
+      - name: crawl_interval
+        value: 30s
+    - type: aws_flow_logs
+      name: flowlog1
+      desc: desc1
+      config:
+      - name: log_format
+        value: all
+      - name: log_type
+        value: S3
+      - name: bucket_name
+        value: flowlogs
+      - name: region
+        value: eu-central-1
+      - name: access_key_id 
+        value: ${ACCESS_KEY_ID}
+      - name: secret_access_key
+        value: ${SECRET_ACCSS_KEY}
       - name: crawl_interval
         value: 30s
     
