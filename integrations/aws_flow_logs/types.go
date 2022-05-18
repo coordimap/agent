@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 const (
@@ -23,6 +24,7 @@ type awsFlowLogsCrawler struct {
 	outputChannel chan *bloopi_agent.CloudCrawlData
 	crawlInterval time.Duration
 	dataSource    *bloopi_agent.DataSource
+	awsSession    *session.Session
 }
 
 type Crawler interface {

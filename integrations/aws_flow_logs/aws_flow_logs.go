@@ -61,6 +61,13 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 		}
 	}
 
+	awsSession, errAwsSession := connectToAWS(crawler.region)
+	if errAwsSession != nil {
+		return crawler, errAwsSession
+	}
+
+	crawler.awsSession = awsSession
+
 	return crawler, nil
 }
 
