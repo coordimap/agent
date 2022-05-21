@@ -3,7 +3,7 @@ module cleye
 go 1.18
 
 require (
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220501151221-28cd6db51aa0
+	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20220521071059-6aae97148d04
 	github.com/aws/aws-sdk-go v1.34.10
 	github.com/go-redis/redis/v8 v8.8.2
 	github.com/gorilla/mux v1.8.0
@@ -18,6 +18,8 @@ require (
 	k8s.io/client-go v0.23.5
 )
 
+require gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
@@ -28,12 +30,12 @@ require (
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
-	github.com/jmespath/go-jmespath v0.3.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
