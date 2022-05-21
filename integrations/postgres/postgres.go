@@ -111,7 +111,7 @@ func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
 func (postCrawler *postgresCrawler) Crawl() {
 	crawlTicker := time.NewTicker(postCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for AWS: %s", postCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := postCrawler.crawl()
 		if errCrawl != nil {

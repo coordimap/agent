@@ -88,7 +88,7 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 func (kubeCrawler *kubernetesCrawler) Crawl() {
 	crawlTicker := time.NewTicker(kubeCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for AWS: %s", kubeCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := kubeCrawler.crawl()
 		if errCrawl != nil {
