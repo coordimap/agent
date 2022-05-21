@@ -45,6 +45,8 @@ bloopi:
         value: all
       - name: log_type
         value: S3
+      - name: account_id
+        value: 123456789
       - name: bucket_name
         value: flowlogs
       - name: region
@@ -54,5 +56,5 @@ bloopi:
       - name: secret_access_key
         value: ${SECRET_ACCSS_KEY}
       - name: crawl_interval
-        value: 30s
+        value: 15m
     
