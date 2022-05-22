@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
@@ -25,6 +26,7 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 		crawlInterval:  DEFAULT_CRAWL_TIME,
 		dataSource:     dataSource,
 		lastHandledKey: "",
+		mutex:          sync.Mutex{},
 	}
 
 	for _, dsConfig := range dataSource.Config.ValuePairs {
@@ -88,19 +90,24 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 
 	log.Info().Msgf("Starting ticker for: %s", crawler.dataSource.Info.Name)
 	for range crawlTicker.C {
-		crawledData, errCrawl := crawler.crawl()
-		if errCrawl != nil {
-			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
-			continue
-		}
-		// ship the crawledData to the backend
-		log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.dataSource.Info.Name)
-		crawler.outputChannel <- crawledData
+		go func() {
+			crawledData, errCrawl := crawler.crawl()
+			if errCrawl != nil {
+				// do not ship any data
+				log.Info().Msgf(errCrawl.Error())
+				return
+			}
+			// ship the crawledData to the backend
+			log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.dataSource.Info.Name)
+			crawler.outputChannel <- crawledData
+		}()
 	}
 }
 
 func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	crawler.mutex.Lock()
+	defer crawler.mutex.Unlock()
+
 	allCrawledElements := []*bloopi_agent.Element{}
 	allFlows := map[string]awsflowlogs.FlowRelation{}
 	input := &s3.ListObjectsV2Input{
@@ -173,7 +180,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 			}
 
 			// check if element exists
-			relation := fmt.Sprintf("%s:%s-%s:%s", flowLog.SrcAddr, flowLog.SrcPort, flowLog.DstAddr, flowLog.DstPort)
+			relation := fmt.Sprintf("%s-%s", flowLog.SrcAddr, flowLog.DstAddr)
 
 			// update either src or dst based on FlowDirection
 			foundRelation, relationExists := allFlows[relation]
@@ -203,7 +210,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 			continue
 		}
 
-		unixTime, errUnixTime := strconv.ParseInt(foundFlow.Src.End, 10, 640)
+		unixTime, errUnixTime := strconv.ParseInt(foundFlow.Src.End, 10, 64)
 		if errUnixTime != nil {
 			// TODO: log this
 			continue
@@ -214,7 +221,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 
 		// FIXME: add a custom date time
 		elementName := fmt.Sprintf("%s-%s", foundFlow.Src.InterfaceID, foundFlow.Dst.InterfaceID)
-		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2)
+		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2_SKIPINSERT)
 		if errFlowElement != nil {
 			continue
 		}
