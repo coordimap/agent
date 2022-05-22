@@ -54,15 +54,34 @@ func connectToAWS(region string) (*session.Session, error) {
 	return sess, nil
 }
 
+var logFormatFieldIndexes = map[string]map[string]int8{}
+
 func getColumnIndexFromLogFormat(logFormat, columnName string) (int, error) {
-	logFormatStripped := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(logFormat, "}", ""), "{", ""), "$", "")
+	columnName = "${" + columnName + "}"
 
-	logFormatSlice := strings.Split(logFormatStripped, " ")
+	logFormatFields, logFormatExists := logFormatFieldIndexes[logFormat]
+	if !logFormatExists {
+		logFormatSlice := strings.Split(logFormat, " ")
+		logFormatFieldIndexes[logFormat] = map[string]int8{}
 
-	for index, logFormatFieldName := range logFormatSlice {
-		if logFormatFieldName == columnName {
-			return index, nil
+		foundIndex := -1
+
+		for index, logFormatFieldName := range logFormatSlice {
+			logFormatFieldIndexes[logFormat][logFormatFieldName] = int8(index)
+
+			if logFormatFieldName == columnName {
+				foundIndex = index
+			}
 		}
+
+		if foundIndex != -1 {
+			return foundIndex, nil
+		}
+	}
+
+	logFormatFieldIndex, logFormatFieldExists := logFormatFields[columnName]
+	if logFormatFieldExists {
+		return int(logFormatFieldIndex), nil
 	}
 
 	return -1, fmt.Errorf("could not find %s in the log format %s", columnName, logFormat)

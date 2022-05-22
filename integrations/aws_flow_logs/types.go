@@ -1,6 +1,7 @@
 package awsflowlogs
 
 import (
+	"sync"
 	"time"
 
 	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
@@ -63,6 +64,7 @@ type awsFlowLogsCrawler struct {
 	awsSession         *s3.S3
 	foundRelationships map[string]awsflowlogs.AWSFlowLog
 	lastHandledKey     string
+	mutex              sync.Mutex
 }
 
 type Crawler interface {
