@@ -1,7 +1,9 @@
 package awsflowlogs
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"strings"
 
@@ -98,4 +100,34 @@ func getRowValue(row []string, logFormat, columnName string) string {
 
 func isInternalFlow(flow awsflowlogs.AWSFlowLog) bool {
 	return isPrivateIP(flow.SrcAddr) && isPrivateIP(flow.DstAddr)
+}
+
+func loadState(fileName string) (floLogsState, error) {
+	state := floLogsState{LastFileProcessed: ""}
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return state, fmt.Errorf("could not open the state file %s because %w", fileName, err)
+	}
+
+	err = json.Unmarshal(content, &state)
+	if err != nil {
+		return state, fmt.Errorf("could not unmarshal the state because %w", err)
+	}
+
+	return state, nil
+}
+
+func writeState(fileName, lastFileProcessed string) error {
+	state := floLogsState{LastFileProcessed: lastFileProcessed}
+	content, err := json.Marshal(state)
+	if err != nil {
+		return fmt.Errorf("could not marshal state for %s because %w", lastFileProcessed, err)
+	}
+
+	err = ioutil.WriteFile(fileName, content, 0644)
+	if err != nil {
+		return fmt.Errorf("could not write flowLog state file because %w", err)
+	}
+
+	return nil
 }

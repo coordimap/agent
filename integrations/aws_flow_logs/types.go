@@ -65,8 +65,13 @@ type awsFlowLogsCrawler struct {
 	foundRelationships map[string]awsflowlogs.AWSFlowLog
 	lastHandledKey     string
 	mutex              sync.Mutex
+	stateFilename      string
 }
 
 type Crawler interface {
 	Crawl()
+}
+
+type floLogsState struct {
+	LastFileProcessed string `json:"last_file_processed"`
 }
