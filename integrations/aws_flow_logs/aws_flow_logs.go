@@ -27,6 +27,12 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 		dataSource:     dataSource,
 		lastHandledKey: "",
 		mutex:          sync.Mutex{},
+		stateFilename:  "./flowLogsState.json",
+	}
+
+	flowLogsState, errFlowLogState := loadState(crawler.stateFilename)
+	if errFlowLogState == nil {
+		crawler.lastHandledKey = flowLogsState.LastFileProcessed
 	}
 
 	for _, dsConfig := range dataSource.Config.ValuePairs {
@@ -107,6 +113,11 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	crawler.mutex.Lock()
 	defer crawler.mutex.Unlock()
+
+	flowLogsState, errFlowLogState := loadState(crawler.stateFilename)
+	if errFlowLogState == nil {
+		crawler.lastHandledKey = flowLogsState.LastFileProcessed
+	}
 
 	allCrawledElements := []*bloopi_agent.Element{}
 	allFlows := map[string]awsflowlogs.FlowRelation{}
@@ -232,6 +243,15 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 	// Create an element here and append to crawledElements
 	crawledData := bloopi_agent.CrawledData{
 		Data: allCrawledElements,
+	}
+
+	errFlowLogStateWrite := writeState(crawler.stateFilename, crawler.lastHandledKey)
+	if errFlowLogStateWrite != nil {
+		return &bloopi_agent.CloudCrawlData{
+			Timestamp:   time.Now().UTC(),
+			DataSource:  *crawler.dataSource,
+			CrawledData: bloopi_agent.CrawledData{},
+		}, fmt.Errorf("could not store flow logs state in file %s because %w", crawler.stateFilename, errFlowLogStateWrite)
 	}
 
 	return &bloopi_agent.CloudCrawlData{
