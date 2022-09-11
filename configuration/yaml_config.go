@@ -3,24 +3,24 @@ package configuration
 import (
 	"cleye/utils"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"gopkg.in/yaml.v3"
 )
 
 type yamlConfig struct {
-	parsedConfig    *Bloopi
+	parsedConfig    *Coordimap
 	parsedCorrectly bool
 	yamlConfigPath  string
 }
 
-func (bloopiConfig *yamlConfig) GetBloopiKey() (string, error) {
-	if !bloopiConfig.parsedCorrectly {
-		return "", fmt.Errorf("could not parse successfully the file at: %s", bloopiConfig.yamlConfigPath)
+func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
+	if !coordimapConfig.parsedCorrectly {
+		return "", fmt.Errorf("could not parse successfully the file at: %s", coordimapConfig.yamlConfigPath)
 	}
 
-	value, err := utils.LoadValueFromEnvConfig(bloopiConfig.parsedConfig.API_KEY)
+	value, err := utils.LoadValueFromEnvConfig(coordimapConfig.parsedConfig.API_KEY)
 	if err != nil {
 		return "", err
 	}
@@ -28,13 +28,13 @@ func (bloopiConfig *yamlConfig) GetBloopiKey() (string, error) {
 	return value, nil
 }
 
-func (bloopiConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
-	if !bloopiConfig.parsedCorrectly {
+func (coordimapConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
+	if !coordimapConfig.parsedCorrectly {
 		return map[string]*bloopi_agent.DataSource{}
 	}
 
 	allDataSources := map[string]*bloopi_agent.DataSource{}
-	for _, dataSource := range bloopiConfig.parsedConfig.DataSources {
+	for _, dataSource := range coordimapConfig.parsedConfig.DataSources {
 		info := bloopi_agent.DataSourceInfo{
 			Name: dataSource.Name,
 			Desc: dataSource.Desc,
@@ -64,7 +64,7 @@ func (bloopiConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.Dat
 
 // NewYamlFileConfig reads in the yaml file provided in the path and generates the correct config structure
 func NewYamlFileConfig(filePath string) (Config, error) {
-	yamlFile, err := ioutil.ReadFile(filePath)
+	yamlFile, err := os.ReadFile(filePath)
 
 	if err != nil {
 		return nil, err
@@ -80,14 +80,14 @@ func NewYamlFileConfig(filePath string) (Config, error) {
 	}
 
 	return &yamlConfig{
-		parsedConfig:    &parsedYaml.Bloopi,
+		parsedConfig:    &parsedYaml.Coordimap,
 		parsedCorrectly: true,
 		yamlConfigPath:  filePath,
 	}, nil
 }
 
-func NewYamlStringConfig(yamlContent string) (*BloopiConfig, error) {
-	config := BloopiConfig{}
+func NewYamlStringConfig(yamlContent string) (*CoordimapConfig, error) {
+	config := CoordimapConfig{}
 
 	if errorUnmarshal := yaml.Unmarshal([]byte(yamlContent), &config); errorUnmarshal != nil {
 		return nil, errorUnmarshal

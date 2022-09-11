@@ -7,7 +7,7 @@ import (
 
 type Config interface {
 	GetAllDataSources() map[string]*bloopi_agent.DataSource
-	GetBloopiKey() (string, error)
+	GetCoordimapKey() (string, error)
 }
 
 type OldBloopiConfig struct {
@@ -27,11 +27,11 @@ type BloopiConfigDataSource struct {
 	Config []BloopiConfigNameValueConfig
 }
 
-type Bloopi struct {
+type Coordimap struct {
 	API_KEY     string                   `yaml:"api_key"`
 	DataSources []BloopiConfigDataSource `yaml:"data_sources"`
 }
 
-type BloopiConfig struct {
-	Bloopi Bloopi `yaml:"bloopi"`
+type CoordimapConfig struct {
+	Coordimap Coordimap `yaml:"coordimap"`
 }

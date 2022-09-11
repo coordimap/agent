@@ -58,7 +58,7 @@ func main() {
 			CloudCrawlData: *crawledData,
 		}
 
-		bloopiKey, errBloopiKey := configuration.GetBloopiKey()
+		bloopiKey, errBloopiKey := configuration.GetCoordimapKey()
 		if errBloopiKey != nil {
 			log.Warn().Msg("Could not find a configurable BLOOPI_KEY in the config file. Defaulting to 'dummy_bloopi_key'")
 			bloopiKey = "dummy_bloopi_key"

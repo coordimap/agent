@@ -104,9 +104,9 @@ func (config *OldBloopiConfig) GetAllDataSources() map[string]*bloopi_agent.Data
 }
 
 func (config *OldBloopiConfig) GetBloopiKey() (string, error) {
-	if !config.viper.IsSet("bloopi.api_key") {
-		return "", errors.New("the key bloopi.api_key must be set")
+	if !config.viper.IsSet("coordimap.api_key") {
+		return "", errors.New("the key coordimap.api_key must be set")
 	}
 
-	return config.viper.GetString("bloopi.api_key"), nil
+	return config.viper.GetString("coordimap.api_key"), nil
 }
