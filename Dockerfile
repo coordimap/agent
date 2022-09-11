@@ -7,6 +7,6 @@ RUN cd /src && CGO_ENABLED=0 go build -a -o cli/agent/agent cli/agent/main.go
 
 FROM alpine:latest
 
-COPY --from=build-env /src/cli/agent /app/agent
+COPY --from=build-env /src/cli/agent /agent
 
-CMD [ "/app/agent" ]
+CMD [ "/agent" ]
