@@ -13,7 +13,7 @@ func TestNewYamlFileConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *configuration.BloopiConfig
+		want    *configuration.CoordimapConfig
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -39,13 +39,13 @@ func TestNewYamlStringConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *configuration.BloopiConfig
+		want    *configuration.CoordimapConfig
 		wantErr bool
 	}{
 		{
 			name: "string 1",
-			want: &configuration.BloopiConfig{
-				Bloopi: configuration.Bloopi{
+			want: &configuration.CoordimapConfig{
+				Coordimap: configuration.Coordimap{
 					API_KEY: "123",
 					DataSources: []configuration.BloopiConfigDataSource{
 						{
