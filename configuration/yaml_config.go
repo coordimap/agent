@@ -28,12 +28,12 @@ func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
 	return value, nil
 }
 
-func (coordimapConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.DataSource {
+func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agent.DataSource {
 	if !coordimapConfig.parsedCorrectly {
-		return map[string]*bloopi_agent.DataSource{}
+		return map[string][]*bloopi_agent.DataSource{}
 	}
 
-	allDataSources := map[string]*bloopi_agent.DataSource{}
+	allDataSources := map[string][]*bloopi_agent.DataSource{}
 	for _, dataSource := range coordimapConfig.parsedConfig.DataSources {
 		info := bloopi_agent.DataSourceInfo{
 			Name: dataSource.Name,
@@ -56,7 +56,7 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string]*bloopi_agent.
 			},
 		}
 
-		allDataSources[info.Type] = currentDS
+		allDataSources[info.Type] = append(allDataSources[info.Type], currentDS)
 	}
 
 	return allDataSources
