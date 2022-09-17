@@ -7,7 +7,7 @@ import (
 
 func (postCrawler *postgresCrawler) getSchemaNames() ([]string, error) {
 	schemaNames := []string{}
-	sqlStatement := `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
+	sqlStatement := `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast', '_timescaledb_cache', '_timescaledb_catalog', '_timescaledb_internal', '_timescaledb_config', 'timescaledb_experimental', 'timescaledb_information')`
 	rows, err := postCrawler.dbConn.Query(sqlStatement)
 	if err != nil {
 		return schemaNames, err
