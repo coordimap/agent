@@ -158,12 +158,12 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		for _, tableName := range tableNames {
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
-				log.Error().Msgf("Error while getting table data for table: %s due to: %w", tableName, errTable)
+				log.Error().Msgf("Error while getting table data for table: %s.%s due to: %w", schemaName, tableName, errTable)
 			}
 
 			tableIndexes, errTableIndexes := postCrawler.getTableIndexes(schemaName, tableName)
 			if errTableIndexes != nil {
-				log.Info().Msgf("Cannot get the table index names for table: %s because %w", tableName, errTableIndexes)
+				log.Info().Msgf("Cannot get the table index names for table: %s.%s because %w", schemaName, tableName, errTableIndexes)
 				continue
 			}
 
