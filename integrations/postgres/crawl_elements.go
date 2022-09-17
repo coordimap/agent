@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"fmt"
+
 	post_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
 	"github.com/rs/zerolog/log"
 )
@@ -78,6 +80,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 	sqlTableConstraints := `select constraint_name from information_schema.key_column_usage where table_schema = $1 and table_name = $2`
 	resTableConstraints, errTableConstraints := postCrawler.dbConn.Query(sqlTableConstraints, schemaName, tableName)
 	if errTableConstraints != nil {
+		log.Error().Msgf("Could not get all the constraint names for %s.%s", schemaName, tableName)
 		return constraints, errTableConstraints
 	}
 
@@ -86,6 +89,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 	for resTableConstraints.Next() {
 		var constraintName, constraintType string
 		if err := resTableConstraints.Scan(&constraintName); err != nil {
+			log.Error().Msg("Could not bind the constraint to the variable.")
 			return constraints, err
 		}
 
@@ -114,6 +118,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 		`
 		rowsConstraintsColumns, errConstraitsColumns := postCrawler.dbConn.Query(sqlConstraintsColumns, schemaName, tableName, constraintName)
 		if errConstraitsColumns != nil {
+			log.Error().Msgf("Could not get columns of constraint %s.%s.%s", schemaName, tableName, constraintName)
 			return constraints, errConstraitsColumns
 		}
 
@@ -172,6 +177,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			}
 
 			constraint.Destinations = append(constraint.Destinations, fkColumn)
+			break
 
 		}
 
@@ -240,8 +246,8 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 			CROSS JOIN LATERAL unnest(idx.indkey) WITH ORDINALITY AS k(attnum, i)         
 			LEFT JOIN pg_attribute AS att                                                 
 				ON idx.indrelid = att.attrelid AND k.attnum = att.attnum
-			WHERE idx.indexrelid::regclass = $1::regclass`
-		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(indexColsSqlStatement, indexName)
+			WHERE idx.indexrelid::regclass = '"%s"'::regclass`
+		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(fmt.Sprintf(indexColsSqlStatement, indexName))
 		if errIndexCols != nil {
 			return indexes, errIndexCols
 		}
