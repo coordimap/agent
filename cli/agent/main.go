@@ -40,15 +40,17 @@ func main() {
 	// 		b. Provide a channel to send the crawled data
 	// 		c. if there is a DataSource that is not recognized, print an error and discard it
 	// 3. Call Crawl() from each object to initiate crawling of the respective DataSource
-	for integrationName, ds := range configuration.GetAllDataSources() {
-		log.Info().Msgf("Loading crawler for %s", integrationName)
-		dsCrawler, errCrawler := integrations.IntegrationsFactory(integrationName, ds, sender)
-		if errCrawler != nil {
-			log.Info().Msgf("Could not create Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
-			continue
-		}
+	for integrationName, dss := range configuration.GetAllDataSources() {
+		for _, ds := range dss {
+			log.Info().Msgf("Loading crawler for %s:%s", integrationName, ds.Info.Name)
+			dsCrawler, errCrawler := integrations.IntegrationsFactory(integrationName, ds, sender)
+			if errCrawler != nil {
+				log.Info().Msgf("Could not create Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
+				continue
+			}
 
-		go dsCrawler.Crawl()
+			go dsCrawler.Crawl()
+		}
 	}
 
 	for crawledData := range sender {

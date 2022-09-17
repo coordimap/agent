@@ -6,7 +6,7 @@ import (
 )
 
 type Config interface {
-	GetAllDataSources() map[string]*bloopi_agent.DataSource
+	GetAllDataSources() map[string][]*bloopi_agent.DataSource
 	GetCoordimapKey() (string, error)
 }
 
