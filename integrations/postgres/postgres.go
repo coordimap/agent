@@ -95,7 +95,9 @@ func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
 	}
 
 	db.SetMaxIdleConns(10)
-	db.SetConnMaxIdleTime(time.Hour)
+	db.SetConnMaxIdleTime(1 * time.Hour)
+	db.SetMaxOpenConns(20)
+	db.SetConnMaxLifetime(20 * time.Minute)
 
 	return db, nil
 }
