@@ -69,7 +69,7 @@ func main() {
 
 		bloopiKey, errBloopiKey := configuration.GetCoordimapKey()
 		if errBloopiKey != nil {
-			log.Warn().Msg("Could not find a configurable BLOOPI_KEY in the config file. Defaulting to 'dummy_bloopi_key'")
+			log.Warn().Msg("Could not find a configurable COORDIMAP_KEY in the config file. Defaulting to 'dummy_coordimap_key'")
 			bloopiKey = "dummy_bloopi_key"
 		}
 

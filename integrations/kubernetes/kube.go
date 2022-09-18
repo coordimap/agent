@@ -18,6 +18,8 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 	crawler := &kubernetesCrawler{
 		kubeClient:    nil,
 		crawlInterval: DEFAULT_CRAWL_TIME,
+		dataSource:    *dataSource,
+		outputChannel: outChannel,
 	}
 
 	// Assign values from the config
@@ -91,23 +93,20 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := kubeCrawler.crawl()
+		log.Info().Msgf("Crawling Kubernetes cluster for %s-%s", kubeCrawler.dataSource.Info.Type, kubeCrawler.dataSource.Info.Name)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())
 			continue
 		}
 		// ship the crawledData to the backend
-		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s", len(crawledData.CrawledData.Data), kubeCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawled %d Kubernetes elements for connection %s", len(crawledData.CrawledData.Data), kubeCrawler.dataSource.Info.Name)
 		kubeCrawler.outputChannel <- crawledData
 	}
 }
 
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	allCrawledElements := []*bloopi_agent.Element{}
-
-	crawledData := bloopi_agent.CrawledData{
-		Data: allCrawledElements,
-	}
 
 	nodes, errNodes := kubeCrawler.getNodes()
 	if errNodes != nil {
@@ -180,7 +179,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		}
 
 		// get the services
-		services, errServices := kubeCrawler.listDeplyments(namespace.Name)
+		services, errServices := kubeCrawler.listServices(namespace.Name)
 		if errServices != nil {
 			log.Warn().Msgf("Could not get the kubernetes services of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errServices)
 		} else {
@@ -210,7 +209,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		}
 
 		// list secrets
-		secrets, errSecrets := kubeCrawler.listPods(namespace.Name)
+		secrets, errSecrets := kubeCrawler.listSecrets(namespace.Name)
 		if errSecrets != nil {
 			log.Warn().Msgf("Could not get the kubernetes secrets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errSecrets)
 		} else {
@@ -329,12 +328,12 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			}
 		}
 
-		// list ingresses
-		ingresses, errIngresses := kubeCrawler.listIngresses(namespace.Name)
-		if errIngresses != nil {
-			log.Warn().Msgf("Could not get the kubernetes ingresses of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngresses)
+		// list ingressesExtensionsBeta1
+		ingressesExtensionsBeta1, errIngressesExtensionsBeta1 := kubeCrawler.listIngressesExtensionsBeta1(namespace.Name)
+		if errIngressesExtensionsBeta1 != nil {
+			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
 		} else {
-			for _, ingress := range ingresses {
+			for _, ingress := range ingressesExtensionsBeta1 {
 				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
 				if errNodeElement != nil {
 					continue
@@ -344,6 +343,37 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			}
 		}
 
+		ingressesNetworkingV1, errIngressesNetworkingV1 := kubeCrawler.listIngressesNetworkingV1(namespace.Name)
+		if errIngressesNetworkingV1 != nil {
+			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
+		} else {
+			for _, ingress := range ingressesNetworkingV1 {
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		ingressesNetworkingV1Beta1, errIngressesNetworkingV1Beta1 := kubeCrawler.listIngressesNetworkingV1Beta1(namespace.Name)
+		if errIngressesNetworkingV1Beta1 != nil {
+			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
+		} else {
+			for _, ingress := range ingressesNetworkingV1Beta1 {
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				if errNodeElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+	}
+
+	crawledData := bloopi_agent.CrawledData{
+		Data: allCrawledElements,
 	}
 
 	return &bloopi_agent.CloudCrawlData{
