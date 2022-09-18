@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/parnurzeal/gorequest"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -18,11 +19,17 @@ var (
 	endpoint   = kingpin.Flag("endpoint", "The server URL where to send data.").Default("http://localhost:8000/crawlers/infra/aws").OverrideDefaultFromEnvar("CLEYE_ENDPOINT").String()
 	serverKey  = kingpin.Flag("key", "The authentication API key.").Default("bloopie-test-key").OverrideDefaultFromEnvar("BLOOPIE_KEY").String()
 	configFile = kingpin.Flag("config", "The config file path.").Default("config.yaml").OverrideDefaultFromEnvar("BLOOPIE_CONFIG_PATH").String()
+	debug      = kingpin.Flag("debug", "Displays debug statements giving the user more information as to what is happening inside the agent.").Bool()
 )
 
 func main() {
 	kingpin.Version("0.1.0")
 	kingpin.Parse()
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 
 	configuration, errConfig := configuration.NewYamlFileConfig(*configFile)
 	if errConfig != nil {

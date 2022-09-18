@@ -169,6 +169,8 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			continue
 		}
 
+		defer rowsFKConstraint.Close()
+
 		for rowsFKConstraint.Next() {
 			var fkColumn post_model.Column
 
