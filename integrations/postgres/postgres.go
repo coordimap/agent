@@ -116,6 +116,7 @@ func (postCrawler *postgresCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
 		crawledData, errCrawl := postCrawler.crawl()
+		log.Info().Msgf("Crawling Postgres DB for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())
@@ -136,6 +137,8 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		Schemas: []string{},
 	}
 
+	log.Debug().Msgf("Starting retrieval of Postgres DB schemas for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
+
 	schemaNames, errGetSchemaNames := postCrawler.getSchemaNames()
 	if errGetSchemaNames != nil {
 		log.Error().Msgf("Could not retrieve the schema names because: %w", errGetSchemaNames)
@@ -151,6 +154,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	allCrawledElements = append(allCrawledElements, dbElem)
 
 	for _, schemaName := range schemaNames {
+		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
 			log.Error().Msgf("Could not get the table names for the schema %s because %w", schemaName, errGetTableNames)
@@ -158,11 +162,13 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		}
 
 		for _, tableName := range tableNames {
+			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
 				log.Error().Msgf("Error while getting table data for table: %s.%s due to: %w", schemaName, tableName, errTable)
 			}
 
+			log.Debug().Msgf("Starting retrieval of Postgres DB table indexes for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
 			tableIndexes, errTableIndexes := postCrawler.getTableIndexes(schemaName, tableName)
 			if errTableIndexes != nil {
 				log.Info().Msgf("Cannot get the table index names for table: %s.%s because %w", schemaName, tableName, errTableIndexes)
