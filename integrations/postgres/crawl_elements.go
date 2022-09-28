@@ -271,7 +271,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 	return indexes, nil
 }
 
-func (postCrawler *postgresCrawler) getSchemaViewNames(schemaName string) ([]string, error) {
+func (postCrawler *postgresCrawler) getSchemaMaterializedViewNames(schemaName string) ([]string, error) {
 	viewNames := []string{}
 	sqlStatement := `
 		select matviewname as view_name
