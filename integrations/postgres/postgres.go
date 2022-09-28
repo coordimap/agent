@@ -154,6 +154,8 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	allCrawledElements = append(allCrawledElements, dbElem)
 
 	for _, schemaName := range schemaNames {
+		postgresKeyPrefix := fmt.Sprintf("%s.%s.%s.", postCrawler.Host, postCrawler.DBName, schemaName)
+
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
@@ -176,7 +178,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 
 			for _, tableIndex := range tableIndexes {
-				indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, tableIndex.Name, post_model.POSTGRES_TYPE_INDEX)
+				indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, postgresKeyPrefix+tableIndex.Name, post_model.POSTGRES_TYPE_INDEX)
 				if errIndexElem != nil {
 					log.Info().Msgf("Cannot create table index element for index: %s because %w", tableIndex.Name, errIndexElem)
 					continue
@@ -185,7 +187,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				table.Indexes = append(table.Indexes, tableIndex.Name)
 			}
 
-			tableElem, errTableElem := utils.CreateElement(table, tableName, tableName, post_model.POSTGRES_TYPE_TABLE)
+			tableElem, errTableElem := utils.CreateElement(table, tableName, postgresKeyPrefix+tableName, post_model.POSTGRES_TYPE_TABLE)
 			if errTableElem != nil {
 				log.Info().Msgf("Cannot create table element for table: %s because %w", tableName, errTableElem)
 				continue
@@ -193,22 +195,22 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			allCrawledElements = append(allCrawledElements, tableElem)
 		}
 
-		viewNames, errViewNames := postCrawler.getSchemaViewNames(schemaName)
-		if errViewNames != nil {
-			log.Info().Msgf("Cannot get view names for schema: %s because %w", schemaName, errViewNames)
+		materializedViewNames, errMaterializedViewNames := postCrawler.getSchemaMaterializedViewNames(schemaName)
+		if errMaterializedViewNames != nil {
+			log.Info().Msgf("Cannot get materialized view names for schema: %s because %w", schemaName, errMaterializedViewNames)
 			continue
 		}
 
-		for _, viewName := range viewNames {
-			view, errView := postCrawler.getView(schemaName, viewName)
+		for _, materializedViewName := range materializedViewNames {
+			view, errView := postCrawler.getView(schemaName, materializedViewName)
 			if errView != nil {
-				log.Info().Msgf("Cannot get view data for view: %s because %w", viewName, errView)
+				log.Info().Msgf("Cannot get view data for materialized view: %s because %w", materializedViewName, errView)
 				continue
 			}
 
-			viewElem, errViewElem := utils.CreateElement(view, view.Name, view.Name, post_model.POSTGRES_TYPE_VIEW)
+			viewElem, errViewElem := utils.CreateElement(view, view.Name, postgresKeyPrefix+view.Name, post_model.POSTGRES_TYPE_MATERIALIZED_VIEW)
 			if errViewElem != nil {
-				log.Info().Msgf("Cannot create view element for view: %s because %w", viewName, errViewElem)
+				log.Info().Msgf("Cannot create materialized view element for view: %s because %w", materializedViewName, errViewElem)
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, viewElem)
@@ -217,10 +219,10 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		schema := post_model.Schema{
 			Name:     schemaName,
 			Tables:   tableNames,
-			Views:    viewNames,
+			Views:    materializedViewNames,
 			Database: postDB.Name,
 		}
-		schemaElem, errSchemaElem := utils.CreateElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA)
+		schemaElem, errSchemaElem := utils.CreateElement(schema, schemaName, postgresKeyPrefix, post_model.POSTGRES_TYPE_SCHEMA)
 		if errSchemaElem != nil {
 			// We cannot process anymore if there is no schema
 			continue
