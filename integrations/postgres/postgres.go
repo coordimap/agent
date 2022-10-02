@@ -115,7 +115,7 @@ func (postCrawler *postgresCrawler) Crawl() {
 
 	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
-		crawledData, errCrawl := postCrawler.crawl()
+		_, errCrawl := postCrawler.crawl()
 		log.Info().Msgf("Crawling Postgres DB for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
 		if errCrawl != nil {
 			// do not ship any data
@@ -123,8 +123,6 @@ func (postCrawler *postgresCrawler) Crawl() {
 			continue
 		}
 		// ship the crawledData to the backend
-		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s", len(crawledData.CrawledData.Data), postCrawler.dataSource.Info.Name)
-		postCrawler.outputChannel <- crawledData
 	}
 }
 
@@ -151,9 +149,9 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		return nil, errDBElem
 	}
 
-	allCrawledElements = append(allCrawledElements, dbElem)
-
 	for _, schemaName := range schemaNames {
+		allCrawledElements = append(allCrawledElements, dbElem)
+
 		postgresKeyPrefix := fmt.Sprintf("%s.%s.%s.", postCrawler.Host, postCrawler.DBName, schemaName)
 
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
@@ -228,15 +226,19 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			continue
 		}
 		allCrawledElements = append(allCrawledElements, schemaElem)
+
+		crawledData := bloopi_agent.CrawledData{
+			Data: allCrawledElements,
+		}
+
+		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s and schema %s", len(allCrawledElements), postCrawler.dataSource.Info.Name, schemaName)
+
+		postCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+			Timestamp:   time.Now().UTC(),
+			DataSource:  *postCrawler.dataSource,
+			CrawledData: crawledData,
+		}
 	}
 
-	crawledData := bloopi_agent.CrawledData{
-		Data: allCrawledElements,
-	}
-
-	return &bloopi_agent.CloudCrawlData{
-		Timestamp:   time.Now().UTC(),
-		DataSource:  *postCrawler.dataSource,
-		CrawledData: crawledData,
-	}, nil
+	return nil, nil
 }
