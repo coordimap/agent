@@ -152,7 +152,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	for _, schemaName := range schemaNames {
 		allCrawledElements = append(allCrawledElements, dbElem)
 
-		postgresKeyPrefix := fmt.Sprintf("%s.%s.%s.", postCrawler.Host, postCrawler.DBName, schemaName)
+		postgresKeyPrefix := fmt.Sprintf("%s.", schemaName)
 
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
