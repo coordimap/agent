@@ -141,30 +141,23 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 		// Get all table relations for each constraints
 		sqlFKConstraints := `
-			select kcu.table_schema || '.' || kcu.table_name || '.' || kcu.column_name as foreign_table,
-				kcu.ordinal_position
-			from information_schema.table_constraints tco
-			join information_schema.key_column_usage kcu
-					on tco.constraint_schema = kcu.constraint_schema
-					and tco.constraint_name = kcu.constraint_name
-			join information_schema.referential_constraints rco
-					on tco.constraint_schema = rco.constraint_schema
-					and tco.constraint_name = rco.constraint_name
-			join information_schema.table_constraints rel_tco
-					on rco.unique_constraint_schema = rel_tco.constraint_schema
-					and rco.unique_constraint_name = rel_tco.constraint_name
-			where tco.constraint_type = 'FOREIGN KEY' and kcu.constraint_name = $1
-			group by kcu.table_schema,
-					kcu.table_name,
-					rel_tco.table_name,
-					rel_tco.table_schema,
-					kcu.constraint_name,
-					kcu.column_name,
-					kcu.ordinal_position
-			order by kcu.table_schema,
-					kcu.table_name
+			select
+				ctu.table_schema || '.' || ctu.table_name || '.' || c.column_name as foreign_table,
+				c.ordinal_position
+			from 
+				information_schema.columns c,
+					information_schema.constraint_table_usage ctu,
+					information_schema.constraint_column_usage ccu
+			where
+					ctu.constraint_name = $1 and
+					ctu.table_schema = $2 and 
+					ccu.constraint_name = ctu.constraint_name and
+					ccu.table_schema = ctu.table_schema and
+					c.table_schema = ctu.table_schema and 
+					c.table_name = ccu.table_name and
+					ccu.column_name = c.column_name
 		`
-		rowsFKConstraint, errFKConstrains := postCrawler.dbConn.Query(sqlFKConstraints, constraintName)
+		rowsFKConstraint, errFKConstrains := postCrawler.dbConn.Query(sqlFKConstraints, constraintName, schemaName)
 		if errFKConstrains != nil {
 			continue
 		}
