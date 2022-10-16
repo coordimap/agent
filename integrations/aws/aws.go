@@ -87,7 +87,7 @@ func (awsCrawl *AwsCrawl) GetCrawlInterval() (time.Duration, error) {
 // 3. Assign all the elements to the CloudData object
 // 4. return the CloudData object
 func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
-	crawlTime := time.Time{}.UTC()
+	crawlTime := time.Now().UTC()
 	var crawledData bloopi_agent.CrawledData
 
 	initSession, _ := session.NewSession(

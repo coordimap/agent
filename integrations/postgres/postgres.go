@@ -127,7 +127,7 @@ func (postCrawler *postgresCrawler) Crawl() {
 }
 
 func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
-	crawlTime := time.Time{}.UTC()
+	crawlTime := time.Now().UTC()
 	allCrawledElements := []*bloopi_agent.Element{}
 
 	postDB := post_model.Database{
