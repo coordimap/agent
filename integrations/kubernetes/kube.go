@@ -106,7 +106,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 }
 
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
-	crawlTime := time.Time{}.UTC()
+	crawlTime := time.Now().UTC()
 	allCrawledElements := []*bloopi_agent.Element{}
 
 	nodes, errNodes := kubeCrawler.getNodes()

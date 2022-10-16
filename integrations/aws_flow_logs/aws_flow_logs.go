@@ -111,7 +111,7 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 }
 
 func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
-	crawlTime := time.Time{}.UTC()
+	crawlTime := time.Now().UTC()
 	crawler.mutex.Lock()
 	defer crawler.mutex.Unlock()
 
