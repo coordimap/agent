@@ -87,6 +87,7 @@ func (awsCrawl *AwsCrawl) GetCrawlInterval() (time.Duration, error) {
 // 3. Assign all the elements to the CloudData object
 // 4. return the CloudData object
 func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	crawlTime := time.Time{}.UTC()
 	var crawledData bloopi_agent.CrawledData
 
 	initSession, _ := session.NewSession(
@@ -95,7 +96,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		},
 	)
 
-	awsRegions, errRegions := describeAllRegions(initSession)
+	awsRegions, errRegions := describeAllRegions(initSession, crawlTime)
 	if errRegions != nil {
 		return nil, fmt.Errorf("could not retrieve AWS regions")
 	}
@@ -115,55 +116,55 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		)
 
 		wg.Add(1)
-		go worker("vpcs", owner, regionSession, results, &wg)
+		go worker("vpcs", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("route_tables", owner, regionSession, results, &wg)
+		go worker("route_tables", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("dhcp_options", owner, regionSession, results, &wg)
+		go worker("dhcp_options", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("subnets", owner, regionSession, results, &wg)
+		go worker("subnets", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("natgws", owner, regionSession, results, &wg)
+		go worker("natgws", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("net_acls", owner, regionSession, results, &wg)
+		go worker("net_acls", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("azs", owner, regionSession, results, &wg)
+		go worker("azs", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("amis", owner, regionSession, results, &wg)
+		go worker("amis", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("ec2", owner, regionSession, results, &wg)
+		go worker("ec2", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("sec_groups", owner, regionSession, results, &wg)
+		go worker("sec_groups", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("vols", owner, regionSession, results, &wg)
+		go worker("vols", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("lbs", owner, regionSession, results, &wg)
+		go worker("lbs", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("s3-buckets", owner, regionSession, results, &wg)
+		go worker("s3-buckets", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("lambdas", owner, regionSession, results, &wg)
+		go worker("lambdas", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("rds", owner, regionSession, results, &wg)
+		go worker("rds", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AWS_TYPE_EKS, owner, regionSession, results, &wg)
+		go worker(aws_shared_model.AWS_TYPE_EKS, owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AWS_TYPE_ECR_REPOSITORY, owner, regionSession, results, &wg)
+		go worker(aws_shared_model.AWS_TYPE_ECR_REPOSITORY, owner, regionSession, results, &wg, crawlTime)
 	}
 
 	go func() {

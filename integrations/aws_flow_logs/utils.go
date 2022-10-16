@@ -3,8 +3,8 @@ package awsflowlogs
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 
 	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
@@ -104,7 +104,7 @@ func isInternalFlow(flow awsflowlogs.AWSFlowLog) bool {
 
 func loadState(fileName string) (floLogsState, error) {
 	state := floLogsState{LastFileProcessed: ""}
-	content, err := ioutil.ReadFile(fileName)
+	content, err := os.ReadFile(fileName)
 	if err != nil {
 		return state, fmt.Errorf("could not open the state file %s because %w", fileName, err)
 	}
@@ -124,7 +124,7 @@ func writeState(fileName, lastFileProcessed string) error {
 		return fmt.Errorf("could not marshal state for %s because %w", lastFileProcessed, err)
 	}
 
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		return fmt.Errorf("could not write flowLog state file because %w", err)
 	}

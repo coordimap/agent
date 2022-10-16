@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -10,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup) {
+func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup, crawlTime time.Time) {
 	defer wg.Done()
 
 	var res []*bloopi_agent.Element
@@ -18,55 +19,55 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 
 	switch whatToCrawl {
 	case "vpcs":
-		res, _ = describeAllVPCs(regionSession, owner)
+		res, _ = describeAllVPCs(regionSession, owner, crawlTime)
 
 	case "route_tables":
-		res, _ = describeAllRouteTables(regionSession, owner)
+		res, _ = describeAllRouteTables(regionSession, owner, crawlTime)
 
 	case "dhcp_options":
-		res, _ = describeAllDHCPOptions(regionSession, owner)
+		res, _ = describeAllDHCPOptions(regionSession, owner, crawlTime)
 
 	case "subnets":
-		res, _ = describeAllSubnets(regionSession, owner)
+		res, _ = describeAllSubnets(regionSession, owner, crawlTime)
 
 	case "natgws":
-		res, _ = describeNATGateways(regionSession)
+		res, _ = describeNATGateways(regionSession, crawlTime)
 
 	case "net_acls":
-		res, _ = describeNetworkACLs(regionSession, owner)
+		res, _ = describeNetworkACLs(regionSession, owner, crawlTime)
 
 	case "azs":
-		res, _ = describeAllAvailabilityZones(regionSession)
+		res, _ = describeAllAvailabilityZones(regionSession, crawlTime)
 
 	case "amis":
-		res, _ = describeAllAMIs(regionSession, owner)
+		res, _ = describeAllAMIs(regionSession, owner, crawlTime)
 
 	case "ec2":
-		res, _ = describeAllInstances(regionSession, owner)
+		res, _ = describeAllInstances(regionSession, owner, crawlTime)
 
 	case "sec_groups":
-		res, _ = describeAllSecurityGroups(regionSession, owner)
+		res, _ = describeAllSecurityGroups(regionSession, owner, crawlTime)
 
 	case "vols":
-		res, _ = describeAllVolumes(regionSession)
+		res, _ = describeAllVolumes(regionSession, crawlTime)
 
 	case "lbs":
-		res, _ = describeAllLoadBalancers(regionSession)
+		res, _ = describeAllLoadBalancers(regionSession, crawlTime)
 
 	case "s3-buckets":
-		res, _ = getAllS3Buckets(regionSession, owner)
+		res, _ = getAllS3Buckets(regionSession, owner, crawlTime)
 
 	case "lambdas":
-		res, _ = getAllLambdaFunctions(regionSession)
+		res, _ = getAllLambdaFunctions(regionSession, crawlTime)
 
 	case "rds":
-		res, _ = getAllRDSInstances(regionSession)
+		res, _ = getAllRDSInstances(regionSession, crawlTime)
 
 	case aws_shared_model.AWS_TYPE_EKS:
-		res, _ = getAllEKSClusters(regionSession)
+		res, _ = getAllEKSClusters(regionSession, crawlTime)
 
 	case aws_shared_model.AWS_TYPE_ECR_REPOSITORY:
-		res, _ = getAllECRReposAndImages(regionSession)
+		res, _ = getAllECRReposAndImages(regionSession, crawlTime)
 
 	default:
 		fmt.Println("notnig")

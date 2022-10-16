@@ -106,6 +106,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 }
 
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	crawlTime := time.Time{}.UTC()
 	allCrawledElements := []*bloopi_agent.Element{}
 
 	nodes, errNodes := kubeCrawler.getNodes()
@@ -114,7 +115,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	for _, node := range nodes {
-		nodeElement, errNodeElement := utils.CreateElement(node, node.Name, node.Name, kube_model.KUBERNETES_TYPE_NODE)
+		nodeElement, errNodeElement := utils.CreateElement(node, node.Name, node.Name, kube_model.KUBERNETES_TYPE_NODE, crawlTime)
 		if errNodeElement != nil {
 			continue
 		}
@@ -127,7 +128,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		log.Warn().Msgf("Could not get the kubernetes persistenvolumes of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPvs)
 	} else {
 		for _, pv := range pvs {
-			nodeElement, errNodeElement := utils.CreateElement(pv, pv.Name, pv.Name, kube_model.KUBERNETES_TYPE_PV)
+			nodeElement, errNodeElement := utils.CreateElement(pv, pv.Name, pv.Name, kube_model.KUBERNETES_TYPE_PV, crawlTime)
 			if errNodeElement != nil {
 				continue
 			}
@@ -141,7 +142,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		log.Warn().Msgf("Could not get the kubernetes storageclasses of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errStorageClasses)
 	} else {
 		for _, storageClass := range storageClasses {
-			nodeElement, errNodeElement := utils.CreateElement(storageClass, storageClass.Name, storageClass.Name, kube_model.KUBERNETES_TYPE_STORAGE_CLASS)
+			nodeElement, errNodeElement := utils.CreateElement(storageClass, storageClass.Name, storageClass.Name, kube_model.KUBERNETES_TYPE_STORAGE_CLASS, crawlTime)
 			if errNodeElement != nil {
 				continue
 			}
@@ -156,7 +157,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	for _, namespace := range kubeNamespaces {
-		nodeElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespace.Name, kube_model.KUBERNETES_TYPE_NAMESPACE)
+		nodeElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespace.Name, kube_model.KUBERNETES_TYPE_NAMESPACE, crawlTime)
 		if errNodeElement != nil {
 			continue
 		}
@@ -169,7 +170,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes deployments of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errDeployments)
 		} else {
 			for _, deployment := range deployments {
-				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_DEPLOYMENT+"."+deployment.Name, kube_model.KUBERNETES_TYPE_DEPLOYMENT)
+				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_DEPLOYMENT+"."+deployment.Name, kube_model.KUBERNETES_TYPE_DEPLOYMENT, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -184,7 +185,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes services of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errServices)
 		} else {
 			for _, service := range services {
-				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_SERVICE+"."+service.Name, kube_model.KUBERNETES_TYPE_SERVICE)
+				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_SERVICE+"."+service.Name, kube_model.KUBERNETES_TYPE_SERVICE, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -199,7 +200,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes pods of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPods)
 		} else {
 			for _, pod := range pods {
-				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_POD+"."+pod.Name, kube_model.KUBERNETES_TYPE_POD)
+				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_POD+"."+pod.Name, kube_model.KUBERNETES_TYPE_POD, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -214,7 +215,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes secrets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errSecrets)
 		} else {
 			for _, secret := range secrets {
-				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_SECRET+"."+secret.Name, kube_model.KUBERNETES_TYPE_SECRET)
+				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_SECRET+"."+secret.Name, kube_model.KUBERNETES_TYPE_SECRET, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -229,7 +230,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes endpoints of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errEndpoints)
 		} else {
 			for _, endpoint := range endpoints {
-				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_ENDPOINT+"."+endpoint.Name, kube_model.KUBERNETES_TYPE_ENDPOINT)
+				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_ENDPOINT+"."+endpoint.Name, kube_model.KUBERNETES_TYPE_ENDPOINT, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -244,7 +245,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes jobs of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errJobs)
 		} else {
 			for _, job := range jobs {
-				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_JOB+"."+job.Name, kube_model.KUBERNETES_TYPE_JOB)
+				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_JOB+"."+job.Name, kube_model.KUBERNETES_TYPE_JOB, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -259,7 +260,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes cronjobs of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errCronJobs)
 		} else {
 			for _, cronJob := range cronJobs {
-				nodeElement, errNodeElement := utils.CreateElement(cronJob, cronJob.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_CRONJOB+"."+cronJob.Name, kube_model.KUBERNETES_TYPE_CRONJOB)
+				nodeElement, errNodeElement := utils.CreateElement(cronJob, cronJob.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_CRONJOB+"."+cronJob.Name, kube_model.KUBERNETES_TYPE_CRONJOB, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -274,7 +275,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes configmaps of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errConfigMaps)
 		} else {
 			for _, configMap := range configMaps {
-				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_CONFIG_MAP+"."+configMap.Name, kube_model.KUBERNETES_TYPE_CONFIG_MAP)
+				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_CONFIG_MAP+"."+configMap.Name, kube_model.KUBERNETES_TYPE_CONFIG_MAP, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -289,7 +290,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes statefulsets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errStatefulSets)
 		} else {
 			for _, statefulSet := range statefulSets {
-				nodeElement, errNodeElement := utils.CreateElement(statefulSet, statefulSet.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_STATEFUL_SET+"."+statefulSet.Name, kube_model.KUBERNETES_TYPE_STATEFUL_SET)
+				nodeElement, errNodeElement := utils.CreateElement(statefulSet, statefulSet.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_STATEFUL_SET+"."+statefulSet.Name, kube_model.KUBERNETES_TYPE_STATEFUL_SET, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -304,7 +305,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes daemonsets of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errDaemonSets)
 		} else {
 			for _, daemonSet := range daemonSets {
-				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_DAEMON_SET+"."+daemonSet.Name, kube_model.KUBERNETES_TYPE_DAEMON_SET)
+				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_DAEMON_SET+"."+daemonSet.Name, kube_model.KUBERNETES_TYPE_DAEMON_SET, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -319,7 +320,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes persistenvolumeclaims of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errPVCs)
 		} else {
 			for _, pvc := range pvcs {
-				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_PVC+"."+pvc.Name, kube_model.KUBERNETES_TYPE_PVC)
+				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_PVC+"."+pvc.Name, kube_model.KUBERNETES_TYPE_PVC, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -334,7 +335,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
 		} else {
 			for _, ingress := range ingressesExtensionsBeta1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -348,7 +349,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
 		} else {
 			for _, ingress := range ingressesNetworkingV1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -362,7 +363,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %w", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1)
 		} else {
 			for _, ingress := range ingressesNetworkingV1Beta1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespace.Name+"."+kube_model.KUBERNETES_TYPE_INGRESS+"."+ingress.Name, kube_model.KUBERNETES_TYPE_INGRESS, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}

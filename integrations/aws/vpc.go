@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"fmt"
+	"cleye/utils"
 	"time"
 
 	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
@@ -31,7 +31,7 @@ func getAwsAccountID(session *session.Session) (*string, error) {
 	return result.Account, nil
 }
 
-func describeAllVPCs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllVPCs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -50,30 +50,15 @@ func describeAllVPCs(session *session.Session, owner []*string) ([]*bloopi_agent
 	}
 
 	for _, elem := range result.Vpcs {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElement, _ := utils.CreateElement(elem, *elem.VpcId, *elem.VpcId, aws_shared_model.AWS_TYPE_VPC, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.VpcId,
-			Type:        "vpc",
-			ID:          *elem.VpcId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElement)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, error) {
+func describeAllRegions(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -85,30 +70,15 @@ func describeAllRegions(session *session.Session) ([]*bloopi_agent.Element, erro
 	}
 
 	for _, elem := range result.Regions {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.RegionName, *elem.Endpoint, aws_shared_model.AWS_TYPE_REGION, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.RegionName,
-			Type:        "region",
-			ID:          *elem.Endpoint,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllRouteTables(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllRouteTables(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -127,30 +97,15 @@ func describeAllRouteTables(session *session.Session, owner []*string) ([]*bloop
 	}
 
 	for _, elem := range result.RouteTables {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.RouteTableId, *elem.RouteTableId, aws_shared_model.AWS_TYPE_ROUTE_TABLE, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.RouteTableId,
-			Type:        "route_table",
-			ID:          *elem.RouteTableId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllDHCPOptions(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -170,30 +125,15 @@ func describeAllDHCPOptions(session *session.Session, owner []*string) ([]*bloop
 	}
 
 	for _, elem := range result.DhcpOptions {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.DhcpOptionsId, *elem.DhcpOptionsId, aws_shared_model.AWS_TYPE_DHCP_OPTIONS, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.DhcpOptionsId,
-			Type:        "dhcp_options",
-			ID:          *elem.DhcpOptionsId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllSubnets(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllSubnets(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -212,30 +152,15 @@ func describeAllSubnets(session *session.Session, owner []*string) ([]*bloopi_ag
 	}
 
 	for _, elem := range result.Subnets {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AWS_TYPE_SUBNET, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.SubnetArn,
-			Type:        "subnet",
-			ID:          *elem.SubnetId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeNATGateways(session *session.Session) ([]*bloopi_agent.Element, error) {
+func describeNATGateways(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -247,30 +172,15 @@ func describeNATGateways(session *session.Session) ([]*bloopi_agent.Element, err
 	}
 
 	for _, elem := range result.NatGateways {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.NatGatewayId, *elem.NatGatewayId, aws_shared_model.AWS_TYPE_NAT_GW, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.NatGatewayId,
-			Type:        "natgw",
-			ID:          *elem.NatGatewayId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeNetworkACLs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeNetworkACLs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -289,30 +199,15 @@ func describeNetworkACLs(session *session.Session, owner []*string) ([]*bloopi_a
 	}
 
 	for _, elem := range result.NetworkAcls {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.NetworkAclId, *elem.NetworkAclId, aws_shared_model.AWS_TYPE_NETWORK_ACL, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.NetworkAclId,
-			Type:        "network_acl",
-			ID:          *elem.NetworkAclId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllAvailabilityZones(session *session.Session) ([]*bloopi_agent.Element, error) {
+func describeAllAvailabilityZones(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -324,30 +219,15 @@ func describeAllAvailabilityZones(session *session.Session) ([]*bloopi_agent.Ele
 	}
 
 	for _, elem := range result.AvailabilityZones {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.ZoneName, *elem.ZoneId, aws_shared_model.AWS_TYPE_AVAILABILITY_ZONE, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.ZoneName,
-			Type:        "availability_zone",
-			ID:          *elem.ZoneId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllAMIs(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllAMIs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -366,30 +246,15 @@ func describeAllAMIs(session *session.Session, owner []*string) ([]*bloopi_agent
 	}
 
 	for _, elem := range result.Images {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.Name, *elem.ImageId, aws_shared_model.AWS_TYPE_AMI, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.Name,
-			Type:        "ami",
-			ID:          *elem.ImageId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllInstances(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -409,31 +274,16 @@ func describeAllInstances(session *session.Session, owner []*string) ([]*bloopi_
 
 	for _, reservation := range result.Reservations {
 		for _, elem := range reservation.Instances {
-			marshaled, errMarshal := encodeStruct(elem)
-			if errMarshal != nil {
-				continue
-			}
+			agentElem, _ := utils.CreateElement(elem, *elem.InstanceId, *elem.PrivateDnsName, aws_shared_model.AWS_TYPE_INSTANCE, crawlTime)
 
-			hash, errHash := hashGob(marshaled)
-			if errHash != nil {
-				continue
-			}
-
-			returnedElems = append(returnedElems, &bloopi_agent.Element{
-				RetrievedAt: time.Now().UTC(),
-				Hash:        hash,
-				Name:        *elem.InstanceId,
-				Type:        "instance",
-				ID:          *elem.PrivateDnsName,
-				Data:        marshaled,
-			})
+			returnedElems = append(returnedElems, agentElem)
 		}
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func describeAllSecurityGroups(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -452,30 +302,15 @@ func describeAllSecurityGroups(session *session.Session, owner []*string) ([]*bl
 	}
 
 	for _, elem := range result.SecurityGroups {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.GroupName, *elem.GroupId, aws_shared_model.AWS_TYPE_SEC_GROUP, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.GroupName,
-			Type:        "security_group",
-			ID:          *elem.GroupId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllVolumes(session *session.Session) ([]*bloopi_agent.Element, error) {
+func describeAllVolumes(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -487,30 +322,15 @@ func describeAllVolumes(session *session.Session) ([]*bloopi_agent.Element, erro
 	}
 
 	for _, elem := range result.Volumes {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.VolumeId, *elem.VolumeId, aws_shared_model.AWS_TYPE_VOLUME, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.VolumeId,
-			Type:        "volume",
-			ID:          *elem.VolumeId,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element, error) {
+func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := elbv2.New(session)
@@ -522,24 +342,19 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 	}
 
 	for _, elem := range result.LoadBalancers {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
+		var lbType string
+
+		if *elem.Type == elbv2.LoadBalancerTypeEnumApplication {
+			lbType = aws_shared_model.AWS_TYPE_APPLICATION_LOAD_BALANCER
+		} else if *elem.Type == elbv2.LoadBalancerTypeEnumNetwork {
+			lbType = aws_shared_model.AWS_TYPE_NETWORK_LOAD_BALANCER
+		} else if *elem.Type == elbv2.LoadBalancerTypeEnumGateway {
+			lbType = aws_shared_model.AWS_TYPE_GATEWAY_LOAD_BALANCER
 		}
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, crawlTime)
 
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.LoadBalancerName,
-			Type:        fmt.Sprintf("%s-load-balancer", *elem.Type),
-			ID:          *elem.LoadBalancerArn,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 
 		input := &elbv2.DescribeTargetGroupsInput{
 			LoadBalancerArn: elem.LoadBalancerArn,
@@ -563,25 +378,10 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 			}
 
 			for _, targetHealthDescription := range result.TargetHealthDescriptions {
-				marshaled, errMarshal := encodeStruct(targetHealthDescription)
-				if errMarshal != nil {
-					continue
-				}
-
-				hash, errHash := hashGob(marshaled)
-				if errHash != nil {
-					continue
-				}
+				agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerArn, *targetHealthDescription.Target.Id, aws_shared_model.AWS_TYPE_LOAD_BALANCER_TARGETS_SKIPINSERT, crawlTime)
 
 				// add ID-> loadbalancerarn and NAME->TargetGroupArn
-				returnedElems = append(returnedElems, &bloopi_agent.Element{
-					RetrievedAt: time.Now().UTC(),
-					Hash:        hash,
-					Name:        *elem.LoadBalancerArn,
-					Type:        "skipinsert-load-balancer-targets",
-					ID:          *targetHealthDescription.Target.Id,
-					Data:        marshaled,
-				})
+				returnedElems = append(returnedElems, agentElem)
 			}
 		}
 	}
@@ -596,30 +396,15 @@ func describeAllLoadBalancers(session *session.Session) ([]*bloopi_agent.Element
 	}
 
 	for _, elem := range resultElb.LoadBalancerDescriptions {
-		marshaled, errMarshal := encodeStruct(elem)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AWS_TYPE_LOAD_BALANCER, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.LoadBalancerName,
-			Type:        "classical-lb",
-			ID:          *elem.DNSName,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func getAllS3Buckets(session *session.Session, owner []*string) ([]*bloopi_agent.Element, error) {
+func getAllS3Buckets(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := s3.New(session)
 
@@ -636,30 +421,15 @@ func getAllS3Buckets(session *session.Session, owner []*string) ([]*bloopi_agent
 			Buckets: []*s3.Bucket{elem},
 			Owner:   result.Owner,
 		}
-		marshaled, errMarshal := encodeStruct(bucketList)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(bucketList, *elem.Name, *elem.Name, aws_shared_model.AWS_TYPE_S3_BUCKET, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *elem.Name,
-			Type:        "s3-bucket",
-			ID:          *elem.Name,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func getAllLambdaFunctions(session *session.Session) ([]*bloopi_agent.Element, error) {
+func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := lambda.New(session)
 
@@ -669,30 +439,15 @@ func getAllLambdaFunctions(session *session.Session) ([]*bloopi_agent.Element, e
 	}
 
 	for _, lambdaFunction := range result.Functions {
-		marshaled, errMarshal := encodeStruct(lambdaFunction)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(lambdaFunction, *lambdaFunction.FunctionName, *lambdaFunction.FunctionArn, aws_shared_model.AWS_TYPE_LAMBDA, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Hash:        hash,
-			Name:        *lambdaFunction.FunctionName,
-			Type:        "lambda",
-			ID:          *lambdaFunction.FunctionArn,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, error) {
+func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := rds.New(session)
 
@@ -702,30 +457,15 @@ func getAllRDSInstances(session *session.Session) ([]*bloopi_agent.Element, erro
 	}
 
 	for _, dbInstance := range result.DBInstances {
-		marshaled, errMarshal := encodeStruct(dbInstance)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(dbInstance, *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Address, aws_shared_model.AWS_TYPE_RDS, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Name:        *dbInstance.Endpoint.Address,
-			ID:          *dbInstance.Endpoint.Address,
-			Type:        "rds",
-			Hash:        hash,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func getAllEKSClusters(session *session.Session) ([]*bloopi_agent.Element, error) {
+func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := eks.New(session)
 	input := &eks.ListClustersInput{}
@@ -745,30 +485,15 @@ func getAllEKSClusters(session *session.Session) ([]*bloopi_agent.Element, error
 			return returnedElems, errDescribeCluster
 		}
 
-		marshaled, errMarshal := encodeStruct(result)
-		if errMarshal != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(result, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
 
-		hash, errHash := hashGob(marshaled)
-		if errHash != nil {
-			continue
-		}
-
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Name:        *result.Cluster.Arn,
-			ID:          *result.Cluster.Endpoint,
-			Type:        aws_shared_model.AWS_TYPE_EKS,
-			Hash:        hash,
-			Data:        marshaled,
-		})
+		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func getAllECRReposAndImages(session *session.Session) ([]*bloopi_agent.Element, error) {
+func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ecr.New(session)
@@ -780,24 +505,10 @@ func getAllECRReposAndImages(session *session.Session) ([]*bloopi_agent.Element,
 	}
 
 	for _, ecrRepo := range ecrRepos.Repositories {
-		marshaledEcrRepo, errMarshal := encodeStruct(ecrRepo)
-		if errMarshal != nil {
-			continue
-		}
 
-		hashEcrRepo, errHash := hashGob(marshaledEcrRepo)
-		if errHash != nil {
-			continue
-		}
+		agentElem, _ := utils.CreateElement(ecrRepo, *ecrRepo.RepositoryName, *ecrRepo.RepositoryUri, aws_shared_model.AWS_TYPE_ECR_REPOSITORY, crawlTime)
 
-		returnedElems = append(returnedElems, &bloopi_agent.Element{
-			RetrievedAt: time.Now().UTC(),
-			Name:        *ecrRepo.RepositoryName,
-			ID:          *ecrRepo.RepositoryUri,
-			Type:        aws_shared_model.AWS_TYPE_ECR_REPOSITORY,
-			Hash:        hashEcrRepo,
-			Data:        marshaledEcrRepo,
-		})
+		returnedElems = append(returnedElems, agentElem)
 
 		svc := ecr.New(session)
 		input := &ecr.ListImagesInput{
@@ -810,24 +521,9 @@ func getAllECRReposAndImages(session *session.Session) ([]*bloopi_agent.Element,
 		}
 
 		for _, repoImage := range repoImages.ImageIds {
-			marshaledEcrRepoImage, errMarshal := encodeStruct(ecrRepo)
-			if errMarshal != nil {
-				continue
-			}
+			agentElem, _ := utils.CreateElement(repoImage, *repoImage.ImageTag, *repoImage.ImageTag, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
 
-			hashEcrRepoImage, errHash := hashGob(marshaledEcrRepoImage)
-			if errHash != nil {
-				continue
-			}
-
-			returnedElems = append(returnedElems, &bloopi_agent.Element{
-				RetrievedAt: time.Now().UTC(),
-				Name:        *repoImage.ImageTag,
-				ID:          *repoImage.ImageTag,
-				Type:        aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE,
-				Hash:        hashEcrRepoImage,
-				Data:        marshaledEcrRepoImage,
-			})
+			returnedElems = append(returnedElems, agentElem)
 		}
 
 	}
