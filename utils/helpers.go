@@ -38,14 +38,14 @@ func encodeAndHashElement(postgresElem interface{}) ([]byte, string, error) {
 	return marshaled, hashStr, nil
 }
 
-func CreateElement(element interface{}, name, id, elemType string) (*bloopi_agent.Element, error) {
+func CreateElement(element interface{}, name, id, elemType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashElement(element)
 	if err != nil {
 		return nil, err
 	}
 
 	return &bloopi_agent.Element{
-		RetrievedAt: time.Now().UTC(),
+		RetrievedAt: crawlTime,
 		Name:        name,
 		ID:          id,
 		Type:        elemType,
