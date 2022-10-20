@@ -30,7 +30,7 @@ func (postCrawler *postgresCrawler) getSchemaNames() ([]string, error) {
 
 func (postCrawler *postgresCrawler) getSchemaTables(schemaName string) ([]string, error) {
 	tableNames := []string{}
-	sqlStatement := `select table_name from information_schema.tables where table_schema not in ('pg_catalog', 'information_schema') and table_schema = $1`
+	sqlStatement := `select table_schema || '.' || table_name from information_schema.tables where table_schema not in ('pg_catalog', 'information_schema') and table_schema = $1`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName)
 	if err != nil {
 		return tableNames, err
@@ -205,7 +205,7 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 
 func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string) ([]post_model.Index, error) {
 	indexes := []post_model.Index{}
-	sqlStatement := `select indexname from pg_indexes where schemaname = $1 AND tablename = $2`
+	sqlStatement := `select schemaname || '.' || indexname from pg_indexes where schemaname = $1 AND tablename = $2`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableName)
 	if err != nil {
 		return indexes, err
@@ -267,7 +267,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 func (postCrawler *postgresCrawler) getSchemaMaterializedViewNames(schemaName string) ([]string, error) {
 	viewNames := []string{}
 	sqlStatement := `
-		select matviewname as view_name
+		select schemaname || '.' || matviewname as view_name
 		from pg_matviews
 		where schemaname = $1
 		order by schemaname,
