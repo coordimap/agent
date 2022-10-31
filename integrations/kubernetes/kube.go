@@ -92,7 +92,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 
 	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.Info.Name)
 	for range crawlTicker.C {
-		crawledData, errCrawl := kubeCrawler.crawl()
+		_, errCrawl := kubeCrawler.crawl()
 		log.Info().Msgf("Crawling Kubernetes cluster for %s-%s", kubeCrawler.dataSource.Info.Type, kubeCrawler.dataSource.Info.Name)
 		if errCrawl != nil {
 			// do not ship any data
@@ -100,14 +100,12 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 			continue
 		}
 		// ship the crawledData to the backend
-		log.Info().Msgf("Crawled %d Kubernetes elements for connection %s", len(crawledData.CrawledData.Data), kubeCrawler.dataSource.Info.Name)
-		kubeCrawler.outputChannel <- crawledData
 	}
 }
 
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
-	allCrawledElements := []*bloopi_agent.Element{}
+	globalCrawledElements := []*bloopi_agent.Element{}
 
 	nodes, errNodes := kubeCrawler.getNodes()
 	if errNodes != nil {
@@ -120,7 +118,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			continue
 		}
 
-		allCrawledElements = append(allCrawledElements, nodeElement)
+		globalCrawledElements = append(globalCrawledElements, nodeElement)
 	}
 
 	pvs, errPvs := kubeCrawler.listPersistentVolumes()
@@ -133,7 +131,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				continue
 			}
 
-			allCrawledElements = append(allCrawledElements, nodeElement)
+			globalCrawledElements = append(globalCrawledElements, nodeElement)
 		}
 	}
 
@@ -147,7 +145,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				continue
 			}
 
-			allCrawledElements = append(allCrawledElements, nodeElement)
+			globalCrawledElements = append(globalCrawledElements, nodeElement)
 		}
 	}
 
@@ -157,6 +155,9 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	for _, namespace := range kubeNamespaces {
+		allCrawledElements := []*bloopi_agent.Element{}
+		allCrawledElements = append(allCrawledElements, globalCrawledElements...)
+
 		nodeElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespace.Name, kube_model.KUBERNETES_TYPE_NAMESPACE, crawlTime)
 		if errNodeElement != nil {
 			continue
@@ -371,15 +372,20 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
+
+		crawledData := bloopi_agent.CrawledData{
+			Data: allCrawledElements,
+		}
+
+		log.Info().Msgf("Crawled %d Kubernetes elements for connection %s and namespace %s", len(allCrawledElements), kubeCrawler.dataSource.Info.Name, &namespace.Name)
+
+		kubeCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+			Timestamp:   time.Now().UTC(),
+			DataSource:  kubeCrawler.dataSource,
+			CrawledData: crawledData,
+		}
+
 	}
 
-	crawledData := bloopi_agent.CrawledData{
-		Data: allCrawledElements,
-	}
-
-	return &bloopi_agent.CloudCrawlData{
-		Timestamp:   time.Now().UTC(),
-		DataSource:  kubeCrawler.dataSource,
-		CrawledData: crawledData,
-	}, nil
+	return nil, nil
 }
