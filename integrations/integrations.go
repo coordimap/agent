@@ -26,7 +26,7 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 		return awsflowlogs.NewAWSFlowLogs(dataSource, outChannel)
 
 	case INTEGRATION_MONGODB:
-		return mongodb.NewPostgresCrawler(dataSource, outChannel)
+		return mongodb.NewMongoDBCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)
