@@ -15,7 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	// 1. initialize postgresCrawler with default values
 	crawler := mongoCrawler{
 		outputChannel: outChannel,
@@ -112,4 +112,77 @@ func connectToDB(host, user, pass string) (*mongo.Client, error) {
 	return client, nil
 }
 
-func (postCrawler *mongoCrawler) Crawl() {}
+func (mongoCrawler *mongoCrawler) Crawl() {
+	crawlTicker := time.NewTicker(mongoCrawler.crawlInterval)
+
+	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.dataSource.Info.Name)
+	for range crawlTicker.C {
+		_, errCrawl := mongoCrawler.crawl()
+		log.Info().Msgf("Crawling Postgres DB for %s-%s", mongoCrawler.dataSource.Info.Type, mongoCrawler.dataSource.Info.Name)
+		if errCrawl != nil {
+			// do not ship any data
+			log.Info().Msgf(errCrawl.Error())
+			continue
+		}
+	}
+}
+
+func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	crawlTime := time.Now().UTC()
+	for _, dbName := range mongoCrawler.DBName {
+
+		allCrawledElements := []*bloopi_agent.Element{}
+		dbHandle := mongoCrawler.dbConn.Database(dbName)
+
+		// get the mongo database
+		mongoDB := mongoCrawler.getMongodbDatabase(dbName)
+		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, "", crawlTime)
+		if errDBElem != nil {
+			return nil, errDBElem
+		}
+		allCrawledElements = append(allCrawledElements, dbElem)
+
+		// TODO: get collections
+		// TODO: try to infer references to other tables
+		collections, errCollections := dbHandle.ListCollectionSpecifications(context.Background(), bson.D{})
+		if errCollections != nil {
+			return nil, errCollections
+		}
+
+		for _, collection := range collections {
+			collectionHandle := dbHandle.Collection(collection.Name)
+			_, errMongoCollection := mongoCrawler.getMongodbDatabaseCollection(dbHandle, collection.Name)
+			if errMongoCollection != nil {
+				// TODO: figure out here what to do
+				continue
+			}
+
+			// TODO: get indexes
+			collectionIndexes, errCollectionIndexes := mongoCrawler.listCollectionIndexes(collectionHandle)
+			if errCollectionIndexes != nil {
+				// TODO: log here
+			}
+
+			for _, foundIndex := range collectionIndexes {
+				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, "", crawlTime)
+				if errIndexElem != nil {
+					continue
+				}
+				allCrawledElements = append(allCrawledElements, indexElem)
+			}
+		}
+
+		crawledData := bloopi_agent.CrawledData{
+			Data: allCrawledElements,
+		}
+
+		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.dataSource.Info.Name, dbName)
+
+		mongoCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+			Timestamp:   time.Now().UTC(),
+			DataSource:  *mongoCrawler.dataSource,
+			CrawledData: crawledData,
+		}
+	}
+	return nil, nil
+}
