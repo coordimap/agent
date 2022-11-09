@@ -38,6 +38,8 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221016061305-304ff4110ab8 h1:moC0A9MjnWWmY5Xct8tLM6Y5/SyAT8gz27Wy6z8cXEQ=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221016061305-304ff4110ab8/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221109145659-91a0854ab46c h1:lEuslvfh/3vDCoW8Ekd2kYTtCKNVwJ+LBFZLLU9fzCg=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221109145659-91a0854ab46c/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/Azure/go-autorest/autorest v0.11.18/go.mod h1:dSiJPy22c3u0OtOKDNttNgqpNFY/GeWa7GH/Pz56QRA=

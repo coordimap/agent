@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mongodb"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -136,7 +137,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 
 		// get the mongo database
 		mongoDB := mongoCrawler.getMongodbDatabase(dbName)
-		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, "", crawlTime)
+		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, mongodb.MONGODB_TYPE_DATABASE, crawlTime)
 		if errDBElem != nil {
 			return nil, errDBElem
 		}
@@ -155,7 +156,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
 				continue
 			}
-			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, "", crawlTime)
+			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, mongodb.MONGODB_TYPE_COLLECTION, crawlTime)
 			if errCollectionElem != nil {
 				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
 				continue
@@ -169,7 +170,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			}
 
 			for _, foundIndex := range collectionIndexes {
-				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, "", crawlTime)
+				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, mongodb.MONGODB_TYPE_INDEX, crawlTime)
 				if errIndexElem != nil {
 					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.Info.Name)
 					continue
