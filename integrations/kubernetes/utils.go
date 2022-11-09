@@ -11,12 +11,12 @@ import (
 func connectToK8sFromConfigFile(configFilePath string) (*kubernetes.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", configFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create Kubernetes config from file. %w", err)
+		return nil, fmt.Errorf("could not create Kubernetes config from file. %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create Kubernetes clientset. %w", err)
+		return nil, fmt.Errorf("could not create Kubernetes clientset. %w", err)
 	}
 
 	return clientset, nil
@@ -25,12 +25,12 @@ func connectToK8sFromConfigFile(configFilePath string) (*kubernetes.Clientset, e
 func connectoToK8sInCluster() (*kubernetes.Clientset, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, fmt.Errorf("Could not create inClusterConfig.%w", err)
+		return nil, fmt.Errorf("could not create inClusterConfig.%w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create Kubernetes clientSet. %w", err)
+		return nil, fmt.Errorf("could not create Kubernetes clientSet. %w", err)
 	}
 
 	return clientset, nil
