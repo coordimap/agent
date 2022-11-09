@@ -9,6 +9,7 @@ const (
 	INTEGRATION_AWS           = "aws"
 	INTEGRATION_KUBERNETES    = "kubernetes"
 	INTEGRATION_AWS_FLOW_LOGS = "aws_flow_logs"
+	INTEGRATION_MONGODB       = "mongodb"
 )
 
 type BaseConfig struct {

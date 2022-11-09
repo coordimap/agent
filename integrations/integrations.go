@@ -4,6 +4,7 @@ import (
 	"cleye/integrations/aws"
 	awsflowlogs "cleye/integrations/aws_flow_logs"
 	"cleye/integrations/kubernetes"
+	"cleye/integrations/mongodb"
 	"cleye/integrations/postgres"
 	"fmt"
 
@@ -23,6 +24,9 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 
 	case INTEGRATION_AWS_FLOW_LOGS:
 		return awsflowlogs.NewAWSFlowLogs(dataSource, outChannel)
+
+	case INTEGRATION_MONGODB:
+		return mongodb.NewMongoDBCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)

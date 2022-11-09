@@ -1,0 +1,74 @@
+coordimap:
+  api_key: ${BLOOPI_API_KEY}
+  data_sources:
+    - type: aws
+      name: aws1
+      desc: desc1
+      config:
+      - name: policy_config
+        value: "true"
+      - name: access_key_id 
+        value: ${ACCESS_KEY_ID}
+      - name: secret_access_key
+        value: ${SECRET_ACCSS_KEY}
+      - name: crawl_interval
+        value: 30s
+    - type: postgres
+      name: post1
+      desc: desc1
+      config:
+        - name: db_name
+          value: dbname1
+        - name: db_host
+          value: host1
+        - name: db_user
+          value: user1
+        - name: db_pass
+          value: pass1
+        - name: crawl_interval
+          value: 30s
+    - type: kubernetes
+      name: kube1
+      desc: desc1
+      config:
+      - name: in_cluster
+        value: "false"
+      - name: config_file
+        value: /home/user/.kube/config
+      - name: crawl_interval
+        value: 30s
+    - type: aws_flow_logs
+      name: flowlog1
+      desc: desc1
+      config:
+      - name: log_format
+        value: all
+      - name: log_type
+        value: S3
+      - name: account_id
+        value: 123456789
+      - name: bucket_name
+        value: flowlogs-bucket
+      - name: region
+        value: eu-central-1
+      - name: access_key_id 
+        value: ${ACCESS_KEY_ID}
+      - name: secret_access_key
+        value: ${SECRET_ACCSS_KEY}
+      - name: crawl_interval
+        value: 30s
+    - type: mongodb
+      name: mongo-atlas
+      desc: desc1
+      config:
+      - name: db_name
+        value: "*"
+      - name: db_host
+        value: hostname
+      - name: db_user
+        value: user
+      - name: db_pass
+        value: password
+      - name: crawl_interval
+        value: 30s
+    
