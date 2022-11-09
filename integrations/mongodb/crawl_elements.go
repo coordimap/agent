@@ -3,10 +3,12 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"log"
+	"sort"
 
 	dbModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -24,12 +26,27 @@ func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.D
 	// get the collection indexes
 	collectionIndexesNames, errListCollectionIndexesNames := mongoCrawler.listCollectionIndexesNames(collectionHandle)
 	if errListCollectionIndexesNames != nil {
-		// TODO: log here and do nothing else
+		// log here and do nothing else
+		log.Error().Msgf("Could not retrieve index names for the collection %s. Error was: %s", collectionName, errListCollectionIndexesNames.Error())
 	}
 
-	// TODO: sort by column names
+	// get collection columns
+	collectionColumns, errCollectionColumns := mongoCrawler.getCollectionColumns(collectionHandle)
+	if errCollectionColumns != nil {
+		log.Error().Msgf("Could not retrieve columns for the collection %s. Error was: %s", collectionName, errCollectionColumns.Error())
+	}
+
+	// sort by column names
+	sort.Slice(collectionColumns, func(i, j int) bool {
+		return collectionColumns[i].Name < collectionColumns[j].Name
+	})
+
 	return dbModel.Table{
-		Indexes: collectionIndexesNames,
+		Name:        collectionName,
+		Columns:     collectionColumns,
+		Indexes:     collectionIndexesNames,
+		Constraints: []dbModel.Constraint{},
+		Schema:      "",
 	}, nil
 }
 
@@ -41,8 +58,8 @@ func (mongoCrawler) listCollectionIndexesNames(collectionHandle *mongo.Collectio
 	}
 
 	var result []bson.M
-	if err = indexesCursor.All(context.TODO(), &result); err != nil {
-		log.Fatal(err)
+	if err := indexesCursor.All(context.TODO(), &result); err != nil {
+		log.Error().Msgf("Could not load indexes in the result to get the index names for the collection %s. Error was: %s", collectionHandle.Name(), err.Error())
 	}
 
 	for _, value := range result {
@@ -65,7 +82,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 
 	var result []bson.M
 	if err = indexesCursor.All(context.TODO(), &result); err != nil {
-		log.Fatal(err)
+		log.Error().Msgf("Could not load indexes in the result to get the index details for the collection %s. Error was: %s", collectionHandle.Name(), err.Error())
 	}
 
 	for _, value := range result {
@@ -82,7 +99,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 				indexCollection = fmt.Sprintf("%v", v)
 
 			case "key":
-				for key, _ := range v.(map[string]int) {
+				for key, _ := range v.(bson.M) {
 					indexColumns = append(indexColumns, dbModel.Column{
 						Name:     key,
 						Type:     "",
@@ -101,4 +118,50 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 	}
 
 	return foundIndexes, nil
+}
+
+func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collection) ([]dbModel.Column, error) {
+	allFoundColumns := []dbModel.Column{}
+	pipeline := []bson.D{{{Key: "$sample", Value: bson.D{{Key: "size", Value: 64}}}}}
+	cursor, err := collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return allFoundColumns, err
+	}
+
+	for cursor.Next(context.Background()) {
+		var result bson.D
+		if err := cursor.Decode(&result); err != nil {
+			return allFoundColumns, err
+		}
+
+		for key, value := range result.Map() {
+			var valueType string
+
+			switch value.(type) {
+			case string:
+				valueType = "string"
+			case int64:
+				valueType = "int64"
+			case primitive.D:
+				valueType = "document"
+			case primitive.DateTime:
+				valueType = "datetime"
+			case primitive.A:
+				valueType = "array"
+			case primitive.ObjectID:
+				// TODO: try to infer references to other tables
+				valueType = "objectId"
+			default:
+				valueType = fmt.Sprintf("%T", value)
+			}
+
+			allFoundColumns = append(allFoundColumns, dbModel.Column{
+				Name:     key,
+				Type:     valueType,
+				Position: -1,
+			})
+		}
+	}
+
+	return allFoundColumns, nil
 }

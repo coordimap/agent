@@ -142,8 +142,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 		}
 		allCrawledElements = append(allCrawledElements, dbElem)
 
-		// TODO: get collections
-		// TODO: try to infer references to other tables
+		// get collections
 		collections, errCollections := dbHandle.ListCollectionSpecifications(context.Background(), bson.D{})
 		if errCollections != nil {
 			return nil, errCollections
@@ -151,21 +150,28 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 
 		for _, collection := range collections {
 			collectionHandle := dbHandle.Collection(collection.Name)
-			_, errMongoCollection := mongoCrawler.getMongodbDatabaseCollection(dbHandle, collection.Name)
+			mongoCollection, errMongoCollection := mongoCrawler.getMongodbDatabaseCollection(dbHandle, collection.Name)
 			if errMongoCollection != nil {
-				// TODO: figure out here what to do
+				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
 				continue
 			}
+			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, "", crawlTime)
+			if errCollectionElem != nil {
+				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
+				continue
+			}
+			allCrawledElements = append(allCrawledElements, collectionElem)
 
-			// TODO: get indexes
+			// get indexes
 			collectionIndexes, errCollectionIndexes := mongoCrawler.listCollectionIndexes(collectionHandle)
 			if errCollectionIndexes != nil {
-				// TODO: log here
+				log.Error().Msgf("could not get collection indexes for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
 			}
 
 			for _, foundIndex := range collectionIndexes {
 				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, "", crawlTime)
 				if errIndexElem != nil {
+					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.Info.Name)
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
