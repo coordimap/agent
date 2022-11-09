@@ -155,11 +155,22 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 				valueType = fmt.Sprintf("%T", value)
 			}
 
-			allFoundColumns = append(allFoundColumns, dbModel.Column{
-				Name:     key,
-				Type:     valueType,
-				Position: -1,
-			})
+			// check if column was already inserted
+			columnExists := false
+			for _, col := range allFoundColumns {
+				if col.Name == key {
+					columnExists = true
+					break
+				}
+			}
+
+			if !columnExists {
+				allFoundColumns = append(allFoundColumns, dbModel.Column{
+					Name:     key,
+					Type:     valueType,
+					Position: -1,
+				})
+			}
 		}
 	}
 
