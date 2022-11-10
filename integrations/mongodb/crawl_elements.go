@@ -42,11 +42,11 @@ func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.D
 	})
 
 	return dbModel.Table{
-		Name:        collectionName,
+		Name:        fmt.Sprintf("%s.%s", dbHandle.Name(), collectionName),
 		Columns:     collectionColumns,
 		Indexes:     collectionIndexesNames,
 		Constraints: []dbModel.Constraint{},
-		Schema:      "",
+		Schema:      dbHandle.Name(),
 	}, nil
 }
 
@@ -99,7 +99,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 				indexCollection = fmt.Sprintf("%v", v)
 
 			case "key":
-				for key, _ := range v.(bson.M) {
+				for key := range v.(bson.M) {
 					indexColumns = append(indexColumns, dbModel.Column{
 						Name:     key,
 						Type:     "",
