@@ -65,7 +65,7 @@ func (mongoCrawler) listCollectionIndexesNames(collectionHandle *mongo.Collectio
 	for _, value := range result {
 		for k, v := range value {
 			if k == "name" {
-				foundIndexes = append(foundIndexes, fmt.Sprintf("%v", v))
+				foundIndexes = append(foundIndexes, fmt.Sprintf("%s.%v", collectionHandle.Name(), v))
 			}
 		}
 	}
