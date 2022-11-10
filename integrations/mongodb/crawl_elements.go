@@ -112,7 +112,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 		foundIndexes = append(foundIndexes, dbModel.Index{
 			Name:    fmt.Sprintf("%s.%s", indexCollection, indexName),
 			Columns: indexColumns,
-			Table:   indexCollection,
+			Table:   fmt.Sprintf("%s.%s", collectionHandle.Database().Name(), indexCollection),
 			Schema:  "",
 		})
 	}
