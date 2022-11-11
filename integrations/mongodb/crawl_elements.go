@@ -4,23 +4,26 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
-	dbModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
+	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mongodb"
+	"github.com/gertd/go-pluralize"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (mongoCrawler *mongoCrawler) getMongodbDatabase(dbName string) dbModel.Database {
-	return dbModel.Database{
+func (mongoCrawler *mongoCrawler) getMongodbDatabase(dbName string) databasemodels.Database {
+	return databasemodels.Database{
 		Name:    dbName,
 		Host:    mongoCrawler.Host,
 		Schemas: []string{},
 	}
 }
 
-func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.Database, collectionName string) (dbModel.Table, error) {
+func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.Database, collectionName string) (databasemodels.Table, error) {
 	collectionHandle := dbHandle.Collection(collectionName)
 
 	// get the collection indexes
@@ -41,11 +44,17 @@ func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.D
 		return collectionColumns[i].Name < collectionColumns[j].Name
 	})
 
-	return dbModel.Table{
+	// get constraints
+	collectionConstraints, errCollectionConstraints := mongoCrawler.getCollectionConstraints(collectionHandle)
+	if errCollectionConstraints != nil {
+		log.Error().Msgf("Could not retrieve constraints for the collection %s. Error was: %s", collectionName, errCollectionConstraints.Error())
+	}
+
+	return databasemodels.Table{
 		Name:        fmt.Sprintf("%s.%s", dbHandle.Name(), collectionName),
 		Columns:     collectionColumns,
 		Indexes:     collectionIndexesNames,
-		Constraints: []dbModel.Constraint{},
+		Constraints: collectionConstraints,
 		Schema:      dbHandle.Name(),
 	}, nil
 }
@@ -73,8 +82,8 @@ func (mongoCrawler) listCollectionIndexesNames(collectionHandle *mongo.Collectio
 	return foundIndexes, nil
 }
 
-func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([]dbModel.Index, error) {
-	foundIndexes := []dbModel.Index{}
+func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([]databasemodels.Index, error) {
+	foundIndexes := []databasemodels.Index{}
 	indexesCursor, err := collectionHandle.Indexes().List(context.Background())
 	if err != nil {
 		return foundIndexes, err
@@ -88,7 +97,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 	for _, value := range result {
 		indexName := ""
 		indexCollection := ""
-		indexColumns := []dbModel.Column{}
+		indexColumns := []databasemodels.Column{}
 
 		for k, v := range value {
 			switch k {
@@ -100,7 +109,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 
 			case "key":
 				for key := range v.(bson.M) {
-					indexColumns = append(indexColumns, dbModel.Column{
+					indexColumns = append(indexColumns, databasemodels.Column{
 						Name:     key,
 						Type:     "",
 						Position: -1, // not making use of it for the time being
@@ -109,7 +118,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 			}
 		}
 
-		foundIndexes = append(foundIndexes, dbModel.Index{
+		foundIndexes = append(foundIndexes, databasemodels.Index{
 			Name:    fmt.Sprintf("%s.%s", indexCollection, indexName),
 			Columns: indexColumns,
 			Table:   fmt.Sprintf("%s.%s", collectionHandle.Database().Name(), indexCollection),
@@ -120,8 +129,8 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 	return foundIndexes, nil
 }
 
-func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collection) ([]dbModel.Column, error) {
-	allFoundColumns := []dbModel.Column{}
+func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collection) ([]databasemodels.Column, error) {
+	allFoundColumns := []databasemodels.Column{}
 	pipeline := []bson.D{{{Key: "$sample", Value: bson.D{{Key: "size", Value: 64}}}}}
 	cursor, err := collection.Aggregate(context.Background(), pipeline)
 	if err != nil {
@@ -149,7 +158,6 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 			case primitive.A:
 				valueType = "array"
 			case primitive.ObjectID:
-				// TODO: try to infer references to other tables
 				valueType = "objectId"
 			default:
 				valueType = fmt.Sprintf("%T", value)
@@ -165,7 +173,7 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 			}
 
 			if !columnExists {
-				allFoundColumns = append(allFoundColumns, dbModel.Column{
+				allFoundColumns = append(allFoundColumns, databasemodels.Column{
 					Name:     key,
 					Type:     valueType,
 					Position: -1,
@@ -175,4 +183,122 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 	}
 
 	return allFoundColumns, nil
+}
+
+func (mongoCrawler *mongoCrawler) getCollectionConstraints(collection *mongo.Collection) ([]databasemodels.Constraint, error) {
+	allConstraints := []databasemodels.Constraint{}
+
+	pipeline := []bson.D{{{Key: "$sample", Value: bson.D{{Key: "size", Value: 64}}}}}
+	cursor, err := collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return allConstraints, err
+	}
+
+	for cursor.Next(context.Background()) {
+		var result bson.D
+		if err := cursor.Decode(&result); err != nil {
+			return allConstraints, err
+		}
+
+		for key, value := range result.Map() {
+			var valueType string
+			var src []databasemodels.Column
+			var dst []databasemodels.Column
+
+			switch value.(type) {
+			case primitive.ObjectID:
+				if key == "_id" {
+					// create primary key constraint on the column _id
+					valueType = mongodb.MONGODB_CONSTRAINT_PK
+					src = []databasemodels.Column{
+						{
+							Name:     "_id",
+							Type:     "objectId",
+							Position: 1,
+						},
+					}
+					dst = []databasemodels.Column{}
+				} else {
+					// try to infer remote table
+					allCollectionNames, errAllCollections := collection.Database().ListCollectionNames(context.Background(), bson.D{})
+					if errAllCollections != nil {
+						// if we cannot retrieve the collection names then we move on
+						continue
+					}
+
+					potentialCollectionName := getCollectionNameFromColumnID(key)
+
+					// check if this collection exists
+					foundReferencedCollection := false
+					indexFoundReferencedCollection := -1
+					for index, existingCollection := range allCollectionNames {
+						if strings.ToLower(existingCollection) == potentialCollectionName {
+							foundReferencedCollection = true
+							indexFoundReferencedCollection = index
+							break
+						}
+					}
+
+					if !foundReferencedCollection {
+						continue
+					}
+
+					valueType = mongodb.MONGODB_CONSTRAINT_FK
+					src = []databasemodels.Column{
+						{
+							Name:     fmt.Sprintf("%s_fk", potentialCollectionName),
+							Type:     "objectId",
+							Position: -1,
+						},
+					}
+
+					dst = []databasemodels.Column{
+						{
+							Name:     fmt.Sprintf("%s._id", allCollectionNames[indexFoundReferencedCollection]),
+							Type:     "objectId",
+							Position: 1,
+						},
+					}
+				}
+
+			default:
+				continue
+			}
+
+			// check if column was already inserted
+			columnExists := false
+			for _, col := range allConstraints {
+				if col.Name == key {
+					columnExists = true
+					break
+				}
+			}
+
+			if !columnExists {
+				allConstraints = append(allConstraints, databasemodels.Constraint{
+					Name:         key,
+					Type:         valueType,
+					Sources:      src,
+					Destinations: dst,
+				})
+			}
+		}
+	}
+
+	return allConstraints, nil
+}
+
+// getCollectionNameFromColumnID tries to infer the collection name from a ID column. It tries to remove any _ and 'id' and the resulting string is
+// pluralized and returned. In the case that no _ or 'id' were found then we return the same string.
+func getCollectionNameFromColumnID(columnID string) string {
+	loweCaseColumnID := strings.Trim(strings.ToLower(columnID), " ")
+	columnIDWithoutUnderscore := strings.ReplaceAll(loweCaseColumnID, "_", "")
+	columnIDWithoutUnderscoreAndID := strings.ReplaceAll(columnIDWithoutUnderscore, "id", "")
+
+	if columnIDWithoutUnderscoreAndID == strings.ToLower(columnID) {
+
+		return columnID
+	}
+
+	return pluralize.NewClient().Plural(columnIDWithoutUnderscoreAndID)
 }

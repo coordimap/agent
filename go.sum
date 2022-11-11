@@ -36,10 +36,8 @@ cloud.google.com/go/storage v1.5.0/go.mod h1:tpKbwo567HUNpVclU5sGELwQWBDZ8gh0Zeo
 cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohlUTyfDhBk=
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
-dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221016061305-304ff4110ab8 h1:moC0A9MjnWWmY5Xct8tLM6Y5/SyAT8gz27Wy6z8cXEQ=
-dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221016061305-304ff4110ab8/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
-dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221109145659-91a0854ab46c h1:lEuslvfh/3vDCoW8Ekd2kYTtCKNVwJ+LBFZLLU9fzCg=
-dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221109145659-91a0854ab46c/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221111093006-8296e556669d h1:9c9nz6XUueEDwkZCiKtISRivq1mNmIbBie/pM4s3BWA=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221111093006-8296e556669d/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/Azure/go-autorest/autorest v0.11.18/go.mod h1:dSiJPy22c3u0OtOKDNttNgqpNFY/GeWa7GH/Pz56QRA=
@@ -112,6 +110,8 @@ github.com/form3tech-oss/jwt-go v3.2.3+incompatible/go.mod h1:pbq4aXjuKjdthFRnoD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
+github.com/gertd/go-pluralize v0.2.1 h1:M3uASbVjMnTsPb0PNqg+E/24Vwigyo/tvyMTtAlLgiA=
+github.com/gertd/go-pluralize v0.2.1/go.mod h1:rbYaKDbsXxmRfr8uygAEKhOWsjyrrqrkHVpZvoOp8zk=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-chi/chi/v5 v5.0.2/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
