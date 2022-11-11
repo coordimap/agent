@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
 	post_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
 	"github.com/rs/zerolog/log"
 )
@@ -130,7 +131,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	crawlTime := time.Now().UTC()
 	allCrawledElements := []*bloopi_agent.Element{}
 
-	postDB := post_model.Database{
+	postDB := databasemodels.Database{
 		Name:    postCrawler.DBName,
 		Host:    postCrawler.Host,
 		Schemas: []string{},
@@ -213,7 +214,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			allCrawledElements = append(allCrawledElements, viewElem)
 		}
 
-		schema := post_model.Schema{
+		schema := databasemodels.Schema{
 			Name:     schemaName,
 			Tables:   tableNames,
 			Views:    materializedViewNames,

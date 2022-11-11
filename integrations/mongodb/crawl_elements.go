@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"sort"
 
-	dbModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
+	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (mongoCrawler *mongoCrawler) getMongodbDatabase(dbName string) dbModel.Database {
-	return dbModel.Database{
+func (mongoCrawler *mongoCrawler) getMongodbDatabase(dbName string) databasemodels.Database {
+	return databasemodels.Database{
 		Name:    dbName,
 		Host:    mongoCrawler.Host,
 		Schemas: []string{},
 	}
 }
 
-func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.Database, collectionName string) (dbModel.Table, error) {
+func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.Database, collectionName string) (databasemodels.Table, error) {
 	collectionHandle := dbHandle.Collection(collectionName)
 
 	// get the collection indexes
@@ -41,11 +41,11 @@ func (mongoCrawler *mongoCrawler) getMongodbDatabaseCollection(dbHandle *mongo.D
 		return collectionColumns[i].Name < collectionColumns[j].Name
 	})
 
-	return dbModel.Table{
+	return databasemodels.Table{
 		Name:        fmt.Sprintf("%s.%s", dbHandle.Name(), collectionName),
 		Columns:     collectionColumns,
 		Indexes:     collectionIndexesNames,
-		Constraints: []dbModel.Constraint{},
+		Constraints: []databasemodels.Constraint{},
 		Schema:      dbHandle.Name(),
 	}, nil
 }
@@ -73,8 +73,8 @@ func (mongoCrawler) listCollectionIndexesNames(collectionHandle *mongo.Collectio
 	return foundIndexes, nil
 }
 
-func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([]dbModel.Index, error) {
-	foundIndexes := []dbModel.Index{}
+func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([]databasemodels.Index, error) {
+	foundIndexes := []databasemodels.Index{}
 	indexesCursor, err := collectionHandle.Indexes().List(context.Background())
 	if err != nil {
 		return foundIndexes, err
@@ -88,7 +88,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 	for _, value := range result {
 		indexName := ""
 		indexCollection := ""
-		indexColumns := []dbModel.Column{}
+		indexColumns := []databasemodels.Column{}
 
 		for k, v := range value {
 			switch k {
@@ -100,7 +100,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 
 			case "key":
 				for key := range v.(bson.M) {
-					indexColumns = append(indexColumns, dbModel.Column{
+					indexColumns = append(indexColumns, databasemodels.Column{
 						Name:     key,
 						Type:     "",
 						Position: -1, // not making use of it for the time being
@@ -109,7 +109,7 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 			}
 		}
 
-		foundIndexes = append(foundIndexes, dbModel.Index{
+		foundIndexes = append(foundIndexes, databasemodels.Index{
 			Name:    fmt.Sprintf("%s.%s", indexCollection, indexName),
 			Columns: indexColumns,
 			Table:   fmt.Sprintf("%s.%s", collectionHandle.Database().Name(), indexCollection),
@@ -120,8 +120,8 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 	return foundIndexes, nil
 }
 
-func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collection) ([]dbModel.Column, error) {
-	allFoundColumns := []dbModel.Column{}
+func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collection) ([]databasemodels.Column, error) {
+	allFoundColumns := []databasemodels.Column{}
 	pipeline := []bson.D{{{Key: "$sample", Value: bson.D{{Key: "size", Value: 64}}}}}
 	cursor, err := collection.Aggregate(context.Background(), pipeline)
 	if err != nil {
@@ -150,6 +150,9 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 				valueType = "array"
 			case primitive.ObjectID:
 				// TODO: try to infer references to other tables
+
+				// TODO: create primary key constraint on the column _id
+
 				valueType = "objectId"
 			default:
 				valueType = fmt.Sprintf("%T", value)
@@ -165,7 +168,7 @@ func (mongoCrawler *mongoCrawler) getCollectionColumns(collection *mongo.Collect
 			}
 
 			if !columnExists {
-				allFoundColumns = append(allFoundColumns, dbModel.Column{
+				allFoundColumns = append(allFoundColumns, databasemodels.Column{
 					Name:     key,
 					Type:     valueType,
 					Position: -1,
