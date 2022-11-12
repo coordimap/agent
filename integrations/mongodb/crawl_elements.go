@@ -83,6 +83,7 @@ func (mongoCrawler) listCollectionIndexesNames(collectionHandle *mongo.Collectio
 }
 
 func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([]databasemodels.Index, error) {
+	dbName := collectionHandle.Database().Name()
 	foundIndexes := []databasemodels.Index{}
 	indexesCursor, err := collectionHandle.Indexes().List(context.Background())
 	if err != nil {
@@ -96,16 +97,12 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 
 	for _, value := range result {
 		indexName := ""
-		indexCollection := ""
 		indexColumns := []databasemodels.Column{}
 
 		for k, v := range value {
 			switch k {
 			case "name":
 				indexName = fmt.Sprintf("%v", v)
-
-			case "ns":
-				indexCollection = fmt.Sprintf("%v", v)
 
 			case "key":
 				for key := range v.(bson.M) {
@@ -119,10 +116,10 @@ func (mongoCrawler) listCollectionIndexes(collectionHandle *mongo.Collection) ([
 		}
 
 		foundIndexes = append(foundIndexes, databasemodels.Index{
-			Name:    fmt.Sprintf("%s.%s", indexCollection, indexName),
+			Name:    fmt.Sprintf("%s.%s", collectionHandle.Name(), indexName),
 			Columns: indexColumns,
-			Table:   fmt.Sprintf("%s.%s", collectionHandle.Database().Name(), indexCollection),
-			Schema:  "",
+			Table:   fmt.Sprintf("%s.%s", collectionHandle.Database().Name(), collectionHandle.Name()),
+			Schema:  dbName,
 		})
 	}
 
