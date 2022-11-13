@@ -251,7 +251,7 @@ func (mongoCrawler *mongoCrawler) getCollectionConstraints(collection *mongo.Col
 
 					dst = []databasemodels.Column{
 						{
-							Name:     fmt.Sprintf("%s._id", allCollectionNames[indexFoundReferencedCollection]),
+							Name:     fmt.Sprintf("%s.%s._id", collection.Database().Name(), allCollectionNames[indexFoundReferencedCollection]),
 							Type:     "objectId",
 							Position: 1,
 						},
