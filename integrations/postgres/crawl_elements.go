@@ -106,7 +106,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			select
 				kcu.ordinal_position as position,
 				kcu.column_name as key_column,
-				tco.constraint_type
+				'postgres.' || LOWER(REPLACE(tco.constraint_type, ' ', '_')) AS constraint_type
 			from information_schema.table_constraints tco
 			join information_schema.key_column_usage kcu 
 				on kcu.constraint_name = tco.constraint_name
