@@ -3,13 +3,15 @@ module cleye
 go 1.19
 
 require (
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221113104224-41b494f228e2
+	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221118101921-5e2fb6c693e7
 	github.com/aws/aws-sdk-go v1.44.116
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-redis/redis/v8 v8.8.2
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.2
 	github.com/parnurzeal/gorequest v0.2.16
+	github.com/prometheus/client_golang v1.14.0
+	github.com/prometheus/common v0.37.0
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/viper v1.7.1
 	go.mongodb.org/mongo-driver v1.11.0
@@ -25,7 +27,7 @@ require gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
-	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
@@ -62,15 +64,15 @@ require (
 	go.opentelemetry.io/otel/metric v0.19.0 // indirect
 	go.opentelemetry.io/otel/trace v0.19.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

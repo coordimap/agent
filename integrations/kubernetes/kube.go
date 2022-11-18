@@ -20,6 +20,7 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 		crawlInterval: DEFAULT_CRAWL_TIME,
 		dataSource:    *dataSource,
 		outputChannel: outChannel,
+		istioCrawler:  istioCrawler{},
 	}
 
 	// Assign values from the config
@@ -58,6 +59,14 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 			crawler.kubeClient = clientSet
 
 			clientInitialzed = true
+
+		case KUBE_CONFIG_ISTIO_PROMETHEUS_HOST:
+			istioCrawler, err := makeIstioCrawler(value)
+			if err != nil {
+				return crawler, err
+			}
+
+			crawler.istioCrawler = istioCrawler
 
 		case KUBE_CONFIG_OPTION_CRAWL_INTERVAL:
 			const DEFAULT_CRAWL_TIME = 30 * time.Second
