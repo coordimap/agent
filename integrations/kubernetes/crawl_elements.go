@@ -18,6 +18,7 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (kubeCrawler *kubernetesCrawler) getNodes() ([]v1.Node, error) {
@@ -63,6 +64,23 @@ func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Servi
 	}
 
 	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+	allServicePodsRelationships := []bloopi_agent.RelationshipElement{}
+
+	set := labels.Set(service.Spec.Selector)
+	listOptions := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
+	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
+	for _, pod := range pods.Items {
+		allServicePodsRelationships = append(allServicePodsRelationships, bloopi_agent.RelationshipElement{
+			SourceID:         fmt.Sprintf("%s.%s.%s", namespace, kube_model.KUBERNETES_TYPE_SERVICE, service.Name),
+			DestinationID:    fmt.Sprintf("%s.%s.%s", namespace, kube_model.KUBERNETES_TYPE_POD, pod.Name),
+			RelationshipType: kube_model.KUBERNETES_RELATIONSHIP_TYPE_SERVICE_POD,
+		})
+	}
+
+	return allServicePodsRelationships, err
 }
 
 func (kubeCrawler *kubernetesCrawler) listSecrets(namespace string) ([]v1.Secret, error) {
