@@ -3,10 +3,30 @@ package kubernetes
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/api"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+func makeIstioCrawler(prometheusHost string) (istioCrawler, error) {
+	crawler := istioCrawler{
+		promClient: nil,
+		Host:       prometheusHost,
+	}
+
+	client, err := api.NewClient(api.Config{
+		Address: prometheusHost,
+	})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return crawler, fmt.Errorf("could not connect to the prometheus client because %w", err)
+	}
+
+	crawler.promClient = client
+
+	return crawler, nil
+}
 
 func connectToK8sFromConfigFile(configFilePath string) (*kubernetes.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", configFilePath)

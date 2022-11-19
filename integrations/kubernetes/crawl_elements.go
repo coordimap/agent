@@ -3,7 +3,13 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	kube_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	promV1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
+	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -174,4 +180,163 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1Beta1(namespace s
 	}
 
 	return list.Items, nil
+}
+
+// crawl, queries the prometheus endpoint to get the data regarding the istio relationships
+func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.RelationshipElement, error) {
+	istioMappingFromQueries := map[string]bloopi_agent.RelationshipElement{}
+	allFoundRelationships := []bloopi_agent.RelationshipElement{}
+	if !kubeCrawler.istioConfigured {
+		return allFoundRelationships, nil
+	}
+
+	promBaseQuery := `sum(rate(istio_requests_total{reporter="%s"}[%s])) by (source_workload_namespace, destination_workload_namespace, source_app, destination_app, source_canonical_service, destination_canonical_service, source_workload, destination_workload, pod)`
+	v1api := promV1.NewAPI(kubeCrawler.istioCrawler.promClient)
+	ctx, cancelQuery := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelQuery()
+
+	// get the source
+	sourcePromQuery := fmt.Sprintf(promBaseQuery, "source", kubeCrawler.istioCrawler.promQueryTime)
+	resultSourcePromQuery, warningsSourcePromQuery, errSourcePromQuery := v1api.Query(ctx, sourcePromQuery, time.Now(), promV1.WithTimeout(5*time.Second))
+	if errSourcePromQuery != nil {
+		log.Error().Msgf("Cannot query Istio sources because an error happened: %s", errSourcePromQuery.Error())
+		return nil, fmt.Errorf("cannot query Istio sources because an error happened: %w", errSourcePromQuery)
+	}
+
+	if len(warningsSourcePromQuery) > 0 {
+		log.Warn().Strs("Istio Prometheus Warnings", warningsSourcePromQuery).Msg("Source Warnings")
+	}
+
+	// generate key from the labels. Keep in mind that the kubernetes service internal id is: <namespace name>.KUBERNETES_TYPE_SERVICE.<service name>
+	// There are three types of relationships:
+	// 1. service to service
+	// 2. pod to pod
+	// 3. workload to workload (mainly deployment)
+	for _, source := range resultSourcePromQuery.(model.Vector) {
+		if source.Value == 0 {
+			// nothing happened during the queried time
+			continue
+		}
+
+		sourceCanonicalService := source.Metric["source_canonical_service"]
+		sourceWorkload := source.Metric["source_workload"]
+		sourceWorkloadNamespace := source.Metric["source_workload_namespace"]
+		destinationCanonicalService := source.Metric["destination_canonical_service"]
+		destinationWorkload := source.Metric["destination_workload"]
+		destinationWorkloadNamespace := source.Metric["destination_workload_namespace"]
+		pod := source.Metric["pod"]
+
+		if sourceCanonicalService == "unknown" || sourceWorkload == "unknown" || sourceWorkloadNamespace == "unknown" || destinationCanonicalService == "unknown" || destinationWorkload == "unknown" || destinationWorkloadNamespace == "unknown" {
+			continue
+		}
+
+		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
+			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
+			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.KUBERNETES_TYPE_SERVICE, sourceCanonicalService)
+			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.KUBERNETES_TYPE_SERVICE, destinationCanonicalService)
+
+			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+				SourceID:         sourceID,
+				DestinationID:    destinationID,
+				RelationshipType: kube_model.KUBERNETES_FLOW_ISTIO_RELATIONSHIP_TYPE_SERVICE,
+			})
+
+			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
+		}
+
+		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
+			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
+			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.KUBERNETES_TYPE_DEPLOYMENT, sourceWorkload)
+			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.KUBERNETES_TYPE_DEPLOYMENT, destinationWorkload)
+
+			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+				SourceID:         sourceID,
+				DestinationID:    destinationID,
+				RelationshipType: kube_model.KUBERNETES_FLOW_ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT,
+			})
+
+			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
+		}
+
+		istioMappingFromQueries[fmt.Sprintf("%s.%s.%s-%s.%s.%s", sourceWorkload, sourceCanonicalService, sourceWorkloadNamespace, destinationWorkload, destinationCanonicalService, destinationWorkloadNamespace)] = bloopi_agent.RelationshipElement{
+			SourceID:         string(pod),
+			DestinationID:    "",
+			RelationshipType: kube_model.KUBERNETES_FLOW_ISTIO_RELATIONSHIP_TYPE_POD,
+		}
+	}
+
+	// get the source
+	destinationPromQuery := fmt.Sprintf(promBaseQuery, "destination", kubeCrawler.istioCrawler.promQueryTime)
+	resultDestinationPromQuery, warningsDestinationPromQuery, errDestinationPromQuery := v1api.Query(ctx, destinationPromQuery, time.Now(), promV1.WithTimeout(5*time.Second))
+	if errDestinationPromQuery != nil {
+		log.Error().Msgf("Cannot query Istio destinations because an error happened: %s", errDestinationPromQuery.Error())
+		return nil, fmt.Errorf("cannot query Istio destinations because an error happened: %w", errDestinationPromQuery)
+	}
+
+	if len(warningsDestinationPromQuery) > 0 {
+		log.Warn().Strs("Istio Prometheus Warnings", warningsDestinationPromQuery).Msg("Destination Warnings")
+	}
+
+	for _, destination := range resultDestinationPromQuery.(model.Vector) {
+		if destination.Value == 0 {
+			// nothing happened during the queried time
+			continue
+		}
+
+		sourceCanonicalService := destination.Metric["source_canonical_service"]
+		sourceWorkload := destination.Metric["source_workload"]
+		sourceWorkloadNamespace := destination.Metric["source_workload_namespace"]
+		destinationCanonicalService := destination.Metric["destination_canonical_service"]
+		destinationWorkload := destination.Metric["destination_workload"]
+		destinationWorkloadNamespace := destination.Metric["destination_workload_namespace"]
+		pod := destination.Metric["pod"]
+
+		if sourceCanonicalService == "unknown" || sourceWorkload == "unknown" || sourceWorkloadNamespace == "unknown" || destinationCanonicalService == "unknown" || destinationWorkload == "unknown" || destinationWorkloadNamespace == "unknown" {
+			continue
+		}
+
+		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
+			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
+			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.KUBERNETES_TYPE_SERVICE, sourceCanonicalService)
+			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.KUBERNETES_TYPE_SERVICE, destinationCanonicalService)
+			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
+
+			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
+				allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+					SourceID:         sourceID,
+					DestinationID:    destinationID,
+					RelationshipType: kube_model.KUBERNETES_FLOW_ISTIO_RELATIONSHIP_TYPE_SERVICE,
+				})
+
+				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}
+			}
+		}
+
+		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
+			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
+			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.KUBERNETES_TYPE_DEPLOYMENT, sourceWorkload)
+			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.KUBERNETES_TYPE_DEPLOYMENT, destinationWorkload)
+			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
+
+			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
+				allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+					SourceID:         sourceID,
+					DestinationID:    destinationID,
+					RelationshipType: kube_model.KUBERNETES_FLOW_ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT,
+				})
+
+				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}
+			}
+		}
+
+		// find the correct key and fill in the destinationID
+		key := fmt.Sprintf("%s.%s.%s-%s.%s.%s", sourceWorkload, sourceCanonicalService, sourceWorkloadNamespace, destinationWorkload, destinationCanonicalService, destinationWorkloadNamespace)
+
+		if entry, ok := istioMappingFromQueries[key]; ok {
+			entry.DestinationID = string(pod)
+			allFoundRelationships = append(allFoundRelationships, entry)
+		}
+
+	}
+	return allFoundRelationships, nil
 }
