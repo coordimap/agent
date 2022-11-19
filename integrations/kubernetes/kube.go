@@ -231,6 +231,29 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				// get the service pods
+				servicePods, errServicePods := kubeCrawler.listServicePods(&service, namespace.Name)
+				if errServicePods != nil {
+					continue
+				}
+
+				for _, servicePodRelationship := range servicePods {
+					nameAndID := fmt.Sprintf("%s.%s", servicePodRelationship.SourceID, servicePodRelationship.DestinationID)
+					servicePodRelationshipElem, errSerservicePodRelationshipElem := utils.CreateElement(
+						servicePodRelationship,
+						nameAndID,
+						nameAndID,
+						kube_model.KUBERNETES_RELATIONSHIP_SKIPINSERT,
+						crawlTime,
+					)
+
+					if errSerservicePodRelationshipElem != nil {
+						continue
+					}
+
+					allCrawledElements = append(allCrawledElements, servicePodRelationshipElem)
+				}
+
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
