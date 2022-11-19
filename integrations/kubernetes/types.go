@@ -18,11 +18,12 @@ const (
 )
 
 type kubernetesCrawler struct {
-	kubeClient    *kubernetes.Clientset
-	crawlInterval time.Duration
-	outputChannel chan *bloopi_agent.CloudCrawlData
-	dataSource    bloopi_agent.DataSource
-	istioCrawler  istioCrawler
+	kubeClient      *kubernetes.Clientset
+	crawlInterval   time.Duration
+	outputChannel   chan *bloopi_agent.CloudCrawlData
+	dataSource      bloopi_agent.DataSource
+	istioConfigured bool
+	istioCrawler    istioCrawler
 }
 
 type istioCrawler struct {
