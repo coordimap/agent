@@ -61,13 +61,13 @@ func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (
 
 	columns, errColumns := postCrawler.getTableColumns(schemaName, tableName)
 	if errColumns != nil {
-		log.Warn().Msgf("Something happened while trying to get the columns of %s.%s due to %w", schemaName, tableName, errColumns)
+		log.Warn().Msgf("Something happened while trying to get the columns of %s.%s due to %s", schemaName, tableName, errColumns.Error())
 	}
 	table.Columns = columns
 
 	constraints, errConstraints := postCrawler.getTableConstraints(schemaName, tableName)
 	if errConstraints != nil {
-		log.Warn().Msgf("Something happened while trying to get the constraints of %s.%s due to %w", schemaName, tableName, errConstraints)
+		log.Warn().Msgf("Something happened while trying to get the constraints of %s.%s due to %s", schemaName, tableName, errConstraints.Error())
 	}
 	table.Constraints = constraints
 
@@ -253,7 +253,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 		for rowsIndexCols.Next() {
 			var indexCol databasemodels.Column
 			if err := rowsIndexCols.Scan(&indexCol.Name, &indexCol.Position); err != nil {
-				log.Debug().Msgf("Could not read column from the index %s because %w", indexName, err)
+				log.Debug().Msgf("Could not read column from the index %s because %s", indexName, err.Error())
 				continue
 			}
 			index.Columns = append(index.Columns, indexCol)
