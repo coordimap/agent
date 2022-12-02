@@ -131,7 +131,20 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 				continue
 			}
 
-			constraint.Type = constraintType
+			switch constraintType {
+			case "PRIMARY KEY":
+				constraint.Type = post_model.POSTGRES_CONSTRAINT_PK
+
+			case "FOREIGN KEY":
+				constraint.Type = post_model.POSTGRES_CONSTRAINT_FK
+
+			case "UNIQUE":
+				constraint.Type = post_model.POSTGRES_CONSTRAINT_UNIQUE
+
+			default:
+				constraint.Type = constraintType
+			}
+
 			constraint.Sources = append(constraint.Sources, sourceConstraintCol)
 		}
 
