@@ -76,10 +76,11 @@ func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (
 
 func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName string) ([]databasemodels.Constraint, error) {
 	constraints := []databasemodels.Constraint{}
+	tableNameCleaned := cleanupSchemaName(tableName)
 
 	// Get all constraint names of table
 	sqlTableConstraints := `select constraint_name from information_schema.key_column_usage where table_schema = $1 and table_name = $2`
-	resTableConstraints, errTableConstraints := postCrawler.dbConn.Query(sqlTableConstraints, schemaName, tableName)
+	resTableConstraints, errTableConstraints := postCrawler.dbConn.Query(sqlTableConstraints, schemaName, tableNameCleaned)
 	if errTableConstraints != nil {
 		log.Error().Msgf("Could not get all the constraint names for %s.%s", schemaName, tableName)
 		return constraints, errTableConstraints
@@ -117,7 +118,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 					kcu.table_name,
 					position
 		`
-		rowsConstraintsColumns, errConstraitsColumns := postCrawler.dbConn.Query(sqlConstraintsColumns, schemaName, tableName, constraintName)
+		rowsConstraintsColumns, errConstraitsColumns := postCrawler.dbConn.Query(sqlConstraintsColumns, schemaName, tableNameCleaned, constraintName)
 		if errConstraitsColumns != nil {
 			log.Error().Msgf("Could not get columns of constraint %s.%s.%s", schemaName, tableName, constraintName)
 			return constraints, errConstraitsColumns
@@ -198,8 +199,9 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string) ([]databasemodels.Column, error) {
 	columns := []databasemodels.Column{}
+	tableNameCleaned := cleanupSchemaName(tableName)
 	sqlStatement := `select column_name, data_type, ordinal_position from information_schema.columns where table_schema = $1 and table_name = $2`
-	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableName)
+	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableNameCleaned)
 	if err != nil {
 		return columns, err
 	}
@@ -219,8 +221,9 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 
 func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string) ([]databasemodels.Index, error) {
 	indexes := []databasemodels.Index{}
+	tableNameCleaned := cleanupSchemaName(tableName)
 	sqlStatement := `select schemaname || '.' || indexname from pg_indexes where schemaname = $1 AND tablename = $2`
-	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableName)
+	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableNameCleaned)
 	if err != nil {
 		return indexes, err
 	}
@@ -256,7 +259,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 			LEFT JOIN pg_attribute AS att                                                 
 				ON idx.indrelid = att.attrelid AND k.attnum = att.attnum
 			WHERE idx.indexrelid::regclass = '"%s"'::regclass`
-		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(fmt.Sprintf(indexColsSqlStatement, indexName))
+		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(fmt.Sprintf(indexColsSqlStatement, cleanupSchemaName(indexName)))
 		if errIndexCols != nil {
 			return indexes, errIndexCols
 		}
