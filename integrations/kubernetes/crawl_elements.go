@@ -57,6 +57,23 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	return list.Items, nil
 }
 
+func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+	allDeploymentPodsRelationships := []bloopi_agent.RelationshipElement{}
+
+	set := labels.Set(deployment.Spec.Selector.MatchLabels)
+	listOptions := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
+	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
+	for _, pod := range pods.Items {
+		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, bloopi_agent.RelationshipElement{
+			SourceID:         fmt.Sprintf("%s.%s.%s", namespace, kube_model.KUBERNETES_TYPE_DEPLOYMENT, deployment.Name),
+			DestinationID:    fmt.Sprintf("%s.%s.%s", namespace, kube_model.KUBERNETES_TYPE_POD, pod.Name),
+			RelationshipType: kube_model.KUBERNETES_RELATIONSHIP_TYPE_DEPLOYMENT_POD,
+		})
+	}
+
+	return allDeploymentPodsRelationships, err
+}
+
 func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Service, error) {
 	list, errPods := kubeCrawler.kubeClient.CoreV1().Services(namespace).List(context.Background(), metav1.ListOptions{})
 	if errPods != nil {

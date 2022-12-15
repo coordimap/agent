@@ -191,6 +191,29 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				// get deployment pods
+				deploymentPods, errDeploymentPods := kubeCrawler.listDeplymentPods(&deployment, namespace.Name)
+				if errDeploymentPods != nil {
+					continue
+				}
+
+				for _, deploymentPodRelationship := range deploymentPods {
+					nameAndID := fmt.Sprintf("%s.%s", deploymentPodRelationship.SourceID, deploymentPodRelationship.DestinationID)
+					servicePodRelationshipElem, errSerservicePodRelationshipElem := utils.CreateElement(
+						deploymentPodRelationship,
+						nameAndID,
+						nameAndID,
+						kube_model.KUBERNETES_RELATIONSHIP_SKIPINSERT,
+						crawlTime,
+					)
+
+					if errSerservicePodRelationshipElem != nil {
+						continue
+					}
+
+					allCrawledElements = append(allCrawledElements, servicePodRelationshipElem)
+				}
+
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
