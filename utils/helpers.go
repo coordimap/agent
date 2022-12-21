@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -26,6 +28,19 @@ func LoadValueFromEnvConfig(value string) (string, error) {
 	return value, nil
 }
 
+func encodeAndHashAWSStruct(elem interface{}) ([]byte, string, error) {
+	var buff bytes.Buffer
+	encoder := gob.NewEncoder(&buff)
+	err := encoder.Encode(elem)
+	marshaledElem := buff.Bytes()
+	buff.Reset()
+
+	hashArr := sha256.Sum256(marshaledElem)
+	hashStr := hex.EncodeToString(hashArr[:])
+
+	return marshaledElem, hashStr, err
+}
+
 func encodeAndHashElement(postgresElem interface{}) ([]byte, string, error) {
 	marshaled, errMarshaled := json.Marshal(postgresElem)
 	if errMarshaled != nil {
@@ -40,6 +55,22 @@ func encodeAndHashElement(postgresElem interface{}) ([]byte, string, error) {
 
 func CreateElement(element interface{}, name, id, elemType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashElement(element)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bloopi_agent.Element{
+		RetrievedAt: crawlTime,
+		Name:        name,
+		ID:          id,
+		Type:        elemType,
+		Hash:        hashed,
+		Data:        marshaled,
+	}, nil
+}
+
+func CreateAWSElement(element interface{}, name, id, elemType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
+	marshaled, hashed, err := encodeAndHashAWSStruct(element)
 	if err != nil {
 		return nil, err
 	}
