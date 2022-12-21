@@ -521,6 +521,10 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 		}
 
 		for _, repoImage := range repoImages.ImageIds {
+			if repoImage.ImageTag == nil {
+				continue
+			}
+
 			agentElem, _ := utils.CreateElement(repoImage, *repoImage.ImageTag, *repoImage.ImageTag, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
 
 			returnedElems = append(returnedElems, agentElem)
