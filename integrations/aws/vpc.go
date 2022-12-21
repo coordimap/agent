@@ -50,7 +50,7 @@ func describeAllVPCs(session *session.Session, owner []*string, crawlTime time.T
 	}
 
 	for _, elem := range result.Vpcs {
-		agentElement, _ := utils.CreateElement(elem, *elem.VpcId, *elem.VpcId, aws_shared_model.AWS_TYPE_VPC, crawlTime)
+		agentElement, _ := utils.CreateAWSElement(elem, *elem.VpcId, *elem.VpcId, aws_shared_model.AWS_TYPE_VPC, crawlTime)
 
 		returnedElems = append(returnedElems, agentElement)
 	}
@@ -70,7 +70,7 @@ func describeAllRegions(session *session.Session, crawlTime time.Time) ([]*bloop
 	}
 
 	for _, elem := range result.Regions {
-		agentElem, _ := utils.CreateElement(elem, *elem.RegionName, *elem.Endpoint, aws_shared_model.AWS_TYPE_REGION, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.RegionName, *elem.Endpoint, aws_shared_model.AWS_TYPE_REGION, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -97,7 +97,7 @@ func describeAllRouteTables(session *session.Session, owner []*string, crawlTime
 	}
 
 	for _, elem := range result.RouteTables {
-		agentElem, _ := utils.CreateElement(elem, *elem.RouteTableId, *elem.RouteTableId, aws_shared_model.AWS_TYPE_ROUTE_TABLE, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.RouteTableId, *elem.RouteTableId, aws_shared_model.AWS_TYPE_ROUTE_TABLE, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -125,7 +125,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string, crawlTime
 	}
 
 	for _, elem := range result.DhcpOptions {
-		agentElem, _ := utils.CreateElement(elem, *elem.DhcpOptionsId, *elem.DhcpOptionsId, aws_shared_model.AWS_TYPE_DHCP_OPTIONS, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.DhcpOptionsId, *elem.DhcpOptionsId, aws_shared_model.AWS_TYPE_DHCP_OPTIONS, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -152,7 +152,7 @@ func describeAllSubnets(session *session.Session, owner []*string, crawlTime tim
 	}
 
 	for _, elem := range result.Subnets {
-		agentElem, _ := utils.CreateElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AWS_TYPE_SUBNET, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AWS_TYPE_SUBNET, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -172,7 +172,7 @@ func describeNATGateways(session *session.Session, crawlTime time.Time) ([]*bloo
 	}
 
 	for _, elem := range result.NatGateways {
-		agentElem, _ := utils.CreateElement(elem, *elem.NatGatewayId, *elem.NatGatewayId, aws_shared_model.AWS_TYPE_NAT_GW, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.NatGatewayId, *elem.NatGatewayId, aws_shared_model.AWS_TYPE_NAT_GW, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -199,7 +199,7 @@ func describeNetworkACLs(session *session.Session, owner []*string, crawlTime ti
 	}
 
 	for _, elem := range result.NetworkAcls {
-		agentElem, _ := utils.CreateElement(elem, *elem.NetworkAclId, *elem.NetworkAclId, aws_shared_model.AWS_TYPE_NETWORK_ACL, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.NetworkAclId, *elem.NetworkAclId, aws_shared_model.AWS_TYPE_NETWORK_ACL, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -219,7 +219,7 @@ func describeAllAvailabilityZones(session *session.Session, crawlTime time.Time)
 	}
 
 	for _, elem := range result.AvailabilityZones {
-		agentElem, _ := utils.CreateElement(elem, *elem.ZoneName, *elem.ZoneId, aws_shared_model.AWS_TYPE_AVAILABILITY_ZONE, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.ZoneName, *elem.ZoneId, aws_shared_model.AWS_TYPE_AVAILABILITY_ZONE, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -246,7 +246,7 @@ func describeAllAMIs(session *session.Session, owner []*string, crawlTime time.T
 	}
 
 	for _, elem := range result.Images {
-		agentElem, _ := utils.CreateElement(elem, *elem.Name, *elem.ImageId, aws_shared_model.AWS_TYPE_AMI, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.Name, *elem.ImageId, aws_shared_model.AWS_TYPE_AMI, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -274,7 +274,7 @@ func describeAllInstances(session *session.Session, owner []*string, crawlTime t
 
 	for _, reservation := range result.Reservations {
 		for _, elem := range reservation.Instances {
-			agentElem, _ := utils.CreateElement(elem, *elem.InstanceId, *elem.PrivateDnsName, aws_shared_model.AWS_TYPE_INSTANCE, crawlTime)
+			agentElem, _ := utils.CreateAWSElement(elem, *elem.InstanceId, *elem.PrivateDnsName, aws_shared_model.AWS_TYPE_INSTANCE, crawlTime)
 
 			returnedElems = append(returnedElems, agentElem)
 		}
@@ -302,7 +302,7 @@ func describeAllSecurityGroups(session *session.Session, owner []*string, crawlT
 	}
 
 	for _, elem := range result.SecurityGroups {
-		agentElem, _ := utils.CreateElement(elem, *elem.GroupName, *elem.GroupId, aws_shared_model.AWS_TYPE_SEC_GROUP, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.GroupName, *elem.GroupId, aws_shared_model.AWS_TYPE_SEC_GROUP, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -322,7 +322,7 @@ func describeAllVolumes(session *session.Session, crawlTime time.Time) ([]*bloop
 	}
 
 	for _, elem := range result.Volumes {
-		agentElem, _ := utils.CreateElement(elem, *elem.VolumeId, *elem.VolumeId, aws_shared_model.AWS_TYPE_VOLUME, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.VolumeId, *elem.VolumeId, aws_shared_model.AWS_TYPE_VOLUME, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -352,7 +352,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 			lbType = aws_shared_model.AWS_TYPE_GATEWAY_LOAD_BALANCER
 		}
 
-		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 
@@ -378,7 +378,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 			}
 
 			for _, targetHealthDescription := range result.TargetHealthDescriptions {
-				agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerArn, *targetHealthDescription.Target.Id, aws_shared_model.AWS_TYPE_LOAD_BALANCER_TARGETS_SKIPINSERT, crawlTime)
+				agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerArn, *targetHealthDescription.Target.Id, aws_shared_model.AWS_TYPE_LOAD_BALANCER_TARGETS_SKIPINSERT, crawlTime)
 
 				// add ID-> loadbalancerarn and NAME->TargetGroupArn
 				returnedElems = append(returnedElems, agentElem)
@@ -396,7 +396,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 	}
 
 	for _, elem := range resultElb.LoadBalancerDescriptions {
-		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AWS_TYPE_LOAD_BALANCER, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AWS_TYPE_LOAD_BALANCER, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -421,7 +421,7 @@ func getAllS3Buckets(session *session.Session, owner []*string, crawlTime time.T
 			Buckets: []*s3.Bucket{elem},
 			Owner:   result.Owner,
 		}
-		agentElem, _ := utils.CreateElement(bucketList, *elem.Name, *elem.Name, aws_shared_model.AWS_TYPE_S3_BUCKET, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(bucketList, *elem.Name, *elem.Name, aws_shared_model.AWS_TYPE_S3_BUCKET, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -439,7 +439,7 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 	}
 
 	for _, lambdaFunction := range result.Functions {
-		agentElem, _ := utils.CreateElement(lambdaFunction, *lambdaFunction.FunctionName, *lambdaFunction.FunctionArn, aws_shared_model.AWS_TYPE_LAMBDA, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(lambdaFunction, *lambdaFunction.FunctionName, *lambdaFunction.FunctionArn, aws_shared_model.AWS_TYPE_LAMBDA, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -457,7 +457,7 @@ func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloop
 	}
 
 	for _, dbInstance := range result.DBInstances {
-		agentElem, _ := utils.CreateElement(dbInstance, *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Address, aws_shared_model.AWS_TYPE_RDS, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(dbInstance, *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Address, aws_shared_model.AWS_TYPE_RDS, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -485,7 +485,7 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			return returnedElems, errDescribeCluster
 		}
 
-		agentElem, _ := utils.CreateElement(result, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(result, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -506,7 +506,7 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 
 	for _, ecrRepo := range ecrRepos.Repositories {
 
-		agentElem, _ := utils.CreateElement(ecrRepo, *ecrRepo.RepositoryName, *ecrRepo.RepositoryUri, aws_shared_model.AWS_TYPE_ECR_REPOSITORY, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(ecrRepo, *ecrRepo.RepositoryName, *ecrRepo.RepositoryUri, aws_shared_model.AWS_TYPE_ECR_REPOSITORY, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 
@@ -525,7 +525,7 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 				continue
 			}
 
-			agentElem, _ := utils.CreateElement(repoImage, *repoImage.ImageTag, *repoImage.ImageTag, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
+			agentElem, _ := utils.CreateAWSElement(repoImage, *repoImage.ImageTag, *repoImage.ImageTag, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
 
 			returnedElems = append(returnedElems, agentElem)
 		}
