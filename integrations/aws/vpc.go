@@ -439,6 +439,11 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 	}
 
 	for _, lambdaFunction := range result.Functions {
+		if lambdaFunction.VpcConfig.VpcId == nil {
+			notConfiguredVPCID := "VPC_ID_NOT_CONFIGURED"
+			lambdaFunction.VpcConfig.VpcId = &notConfiguredVPCID
+		}
+
 		agentElem, _ := utils.CreateAWSElement(lambdaFunction, *lambdaFunction.FunctionName, *lambdaFunction.FunctionArn, aws_shared_model.AWS_TYPE_LAMBDA, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
