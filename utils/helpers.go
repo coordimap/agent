@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -32,7 +33,7 @@ func encodeAndHashAWSStruct(elem interface{}) ([]byte, string, error) {
 	var buff bytes.Buffer
 	encoder := gob.NewEncoder(&buff)
 	err := encoder.Encode(elem)
-	marshaledElem := buff.Bytes()
+	marshaledElem := []byte(base64.StdEncoding.EncodeToString(buff.Bytes()))
 	buff.Reset()
 
 	hashArr := sha256.Sum256(marshaledElem)
