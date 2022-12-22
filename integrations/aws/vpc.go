@@ -525,14 +525,33 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 			continue
 		}
 
+		describeImagesInput := &ecr.DescribeImagesInput{
+			ImageIds:       repoImages.ImageIds,
+			RepositoryName: ecrRepo.RepositoryName,
+			RegistryId:     ecrRepo.RegistryId,
+		}
+
+		describedRepoImages, errDescribedRepoImages := svc.DescribeImages(describeImagesInput)
+		if errDescribedRepoImages != nil {
+			continue
+		}
+
+		for _, repoImage := range describedRepoImages.ImageDetails {
+			if len(repoImage.ImageTags) == 0 {
+				continue
+			}
+
+			agentElem, _ := utils.CreateAWSElement(repoImage, *repoImage.ImageTags[0], *repoImage.ImageTags[0], aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
+
+			returnedElems = append(returnedElems, agentElem)
+
+		}
+
 		for _, repoImage := range repoImages.ImageIds {
 			if repoImage.ImageTag == nil {
 				continue
 			}
 
-			agentElem, _ := utils.CreateAWSElement(repoImage, *repoImage.ImageTag, *repoImage.ImageTag, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
-
-			returnedElems = append(returnedElems, agentElem)
 		}
 
 	}
