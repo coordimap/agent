@@ -439,8 +439,8 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 	}
 
 	for _, lambdaFunction := range result.Functions {
-		if lambdaFunction.VpcConfig.VpcId == nil {
-			notConfiguredVPCID := "VPC_ID_NOT_CONFIGURED"
+		if *lambdaFunction.VpcConfig.VpcId == "" {
+			notConfiguredVPCID := "VPC_ID_NOT_FOUND"
 			lambdaFunction.VpcConfig.VpcId = &notConfiguredVPCID
 		}
 
