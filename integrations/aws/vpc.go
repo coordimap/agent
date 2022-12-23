@@ -400,7 +400,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 	}
 
 	for _, elem := range resultElb.LoadBalancerDescriptions {
-		agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AWS_TYPE_LOAD_BALANCER, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AWS_TYPE_CLASSICAL_LB, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
