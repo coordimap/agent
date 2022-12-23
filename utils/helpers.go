@@ -67,6 +67,7 @@ func CreateElement(element interface{}, name, id, elemType string, crawlTime tim
 		Type:        elemType,
 		Hash:        hashed,
 		Data:        marshaled,
+		IsJSONData:  true,
 	}, nil
 }
 
@@ -83,5 +84,6 @@ func CreateAWSElement(element interface{}, name, id, elemType string, crawlTime 
 		Type:        elemType,
 		Hash:        hashed,
 		Data:        marshaled,
+		IsJSONData:  false,
 	}, nil
 }

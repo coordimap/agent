@@ -39,6 +39,8 @@ dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221119080435-1a7d83e
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221119080435-1a7d83e0979e/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221215081858-47db9ce1afc8 h1:U2cXLZXGGmVt0NnmVd33idpB1v+Ae5CJR1up2oFIYig=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221215081858-47db9ce1afc8/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221223062321-aa599c367867 h1:p99IIOAfNtLkgCtpSgkPuYE8vAn0jIHl2Innw9PMZVk=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20221223062321-aa599c367867/go.mod h1:ty7yV1a69FG7uxFTipQNEnqlJc2afdzjas+dv6b5wcM=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
