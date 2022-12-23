@@ -2,6 +2,7 @@ package aws
 
 import (
 	"cleye/utils"
+	"fmt"
 	"time"
 
 	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
@@ -545,9 +546,13 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 				continue
 			}
 
-			agentElem, _ := utils.CreateAWSElement(repoImage, *repoImage.ImageTags[0], *repoImage.ImageTags[0], aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
+			for _, imageTag := range repoImage.ImageTags {
+				imageName := fmt.Sprintf("%s.%s.%s", *repoImage.RegistryId, *repoImage.RepositoryName, *imageTag)
 
-			returnedElems = append(returnedElems, agentElem)
+				agentElem, _ := utils.CreateAWSElement(repoImage, imageName, imageName, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
+
+				returnedElems = append(returnedElems, agentElem)
+			}
 
 		}
 
