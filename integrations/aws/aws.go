@@ -152,9 +152,6 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		go worker("lbs", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker("s3-buckets", owner, regionSession, results, &wg, crawlTime)
-
-		wg.Add(1)
 		go worker("lambdas", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
@@ -166,6 +163,9 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		wg.Add(1)
 		go worker(aws_shared_model.AWS_TYPE_ECR_REPOSITORY, owner, regionSession, results, &wg, crawlTime)
 	}
+
+	wg.Add(1)
+	go worker("s3-buckets", owner, initSession, results, &wg, crawlTime)
 
 	go func() {
 		wg.Wait()
