@@ -494,7 +494,7 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			return returnedElems, errDescribeCluster
 		}
 
-		agentElem, _ := utils.CreateAWSElement(result, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(result.Cluster, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
