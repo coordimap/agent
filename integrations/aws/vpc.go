@@ -383,7 +383,15 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 			}
 
 			for _, targetHealthDescription := range result.TargetHealthDescriptions {
-				agentElem, _ := utils.CreateAWSElement(elem, *elem.LoadBalancerArn, *targetHealthDescription.Target.Id, aws_shared_model.AWS_TYPE_LOAD_BALANCER_TARGETS_SKIPINSERT, crawlTime)
+				loadBalancerTargetRelation := bloopi_agent.RelationshipElement{
+					SourceID:         *elem.LoadBalancerArn,
+					DestinationID:    *targetHealthDescription.Target.Id,
+					RelationshipType: aws_shared_model.AWS_RELATIONSHIP_TYPE_LOAD_BALANCER_V2_TARGETS,
+				}
+
+				dummyID := fmt.Sprintf("%s-%s", loadBalancerTargetRelation.SourceID, loadBalancerTargetRelation.DestinationID)
+
+				agentElem, _ := utils.CreateAWSElement(loadBalancerTargetRelation, dummyID, dummyID, aws_shared_model.AWS_TYPE_LOAD_BALANCER_TARGETS_SKIPINSERT, crawlTime)
 
 				// add ID-> loadbalancerarn and NAME->TargetGroupArn
 				returnedElems = append(returnedElems, agentElem)
