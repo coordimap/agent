@@ -9,6 +9,7 @@ import (
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -503,9 +504,61 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			return returnedElems, errDescribeCluster
 		}
 
-		agentElem, _ := utils.CreateAWSElement(result.Cluster, *result.Cluster.Arn, *result.Cluster.Endpoint, aws_shared_model.AWS_TYPE_EKS, crawlTime)
-
+		agentElem, _ := utils.CreateAWSElement(result.Cluster, *result.Cluster.Name, *result.Cluster.Arn, aws_shared_model.AWS_TYPE_EKS, crawlTime)
 		returnedElems = append(returnedElems, agentElem)
+
+		// list nodegroups of the cluster
+		listNodeGroupInput := eks.ListNodegroupsInput{
+			ClusterName: eksClusterName,
+		}
+
+		clusterNodeGroups, errClusterNodeGroups := svc.ListNodegroups(&listNodeGroupInput)
+		if errClusterNodeGroups != nil {
+			continue
+		}
+
+		for _, clusterNodeGroup := range clusterNodeGroups.Nodegroups {
+			// get the nodegroup
+			clusterNodeGroupInput := &eks.DescribeNodegroupInput{
+				NodegroupName: clusterNodeGroup,
+			}
+
+			clusterNodeGroupInputResult, errClusterNodeGroupInput := svc.DescribeNodegroup(clusterNodeGroupInput)
+			if errClusterNodeGroupInput != nil {
+				continue
+			}
+
+			clusterNodeGroupElem, errClusterNodeGroupelem := utils.CreateAWSElement(clusterNodeGroupInputResult.Nodegroup, *clusterNodeGroupInputResult.Nodegroup.NodegroupName, *clusterNodeGroupInputResult.Nodegroup.NodegroupArn, aws_shared_model.AWS_TYPE_EKS_NODEGROUP, crawlTime)
+			if errClusterNodeGroupelem != nil {
+				continue
+			}
+			returnedElems = append(returnedElems, clusterNodeGroupElem)
+
+			// get the autoscalinggroups of the nodegroup
+			autoScalingSvc := autoscaling.New(session)
+			autoScalingGroupNames := []*string{}
+			for _, autoscalingGroup := range clusterNodeGroupInputResult.Nodegroup.Resources.AutoScalingGroups {
+				autoScalingGroupNames = append(autoScalingGroupNames, autoscalingGroup.Name)
+			}
+
+			inputDescribeAutoscalingGroup := &autoscaling.DescribeAutoScalingGroupsInput{
+				AutoScalingGroupNames: autoScalingGroupNames,
+			}
+
+			describeAutoScalingGroupsResult, errDescribeAutoscalingGroups := autoScalingSvc.DescribeAutoScalingGroups(inputDescribeAutoscalingGroup)
+			if errDescribeAutoscalingGroups != nil {
+				continue
+			}
+			for _, autoScalingGroup := range describeAutoScalingGroupsResult.AutoScalingGroups {
+				elem, errElem := utils.CreateAWSElement(autoScalingGroup, *autoScalingGroup.AutoScalingGroupName, *autoScalingGroup.AutoScalingGroupARN, aws_shared_model.AWS_TYPE_AUTOSCALING_GROUP, crawlTime)
+				if errElem != nil {
+					continue
+				}
+
+				returnedElems = append(returnedElems, elem)
+			}
+		}
+
 	}
 
 	return returnedElems, nil
