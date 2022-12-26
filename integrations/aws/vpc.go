@@ -279,7 +279,7 @@ func describeAllInstances(session *session.Session, owner []*string, crawlTime t
 				continue
 			}
 
-			agentElem, _ := utils.CreateAWSElement(elem, *elem.InstanceId, *elem.PrivateDnsName, aws_shared_model.AWS_TYPE_INSTANCE, crawlTime)
+			agentElem, _ := utils.CreateAWSElement(elem, *elem.InstanceId, *elem.InstanceId, aws_shared_model.AWS_TYPE_INSTANCE, crawlTime)
 
 			returnedElems = append(returnedElems, agentElem)
 		}
