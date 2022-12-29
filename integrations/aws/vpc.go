@@ -154,7 +154,7 @@ func describeAllSubnets(session *session.Session, owner []*string, crawlTime tim
 	}
 
 	for _, elem := range result.Subnets {
-		agentElem, _ := utils.CreateElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AWS_TYPE_SUBNET, crawlTime)
+		agentElem, _ := utils.CreateAWSElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AWS_TYPE_SUBNET, crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
