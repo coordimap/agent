@@ -276,7 +276,7 @@ func describeAllInstances(session *session.Session, owner []*string, crawlTime t
 
 	for _, reservation := range result.Reservations {
 		for _, elem := range reservation.Instances {
-			if *elem.VpcId == "" {
+			if elem.VpcId == nil || *elem.VpcId == "" {
 				continue
 			}
 
