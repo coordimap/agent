@@ -441,9 +441,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		log.Info().Msgf("Crawled %d Kubernetes elements for connection %s and namespace %s", len(allCrawledElements), kubeCrawler.dataSource.Info.Name, namespace.Name)
 
 		kubeCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
-			Timestamp:   time.Now().UTC(),
-			DataSource:  kubeCrawler.dataSource,
-			CrawledData: crawledData,
+			Timestamp:       time.Now().UTC(),
+			DataSource:      kubeCrawler.dataSource,
+			CrawledData:     crawledData,
+			CrawlInternalID: fmt.Sprintf("%s.%s", namespace.Name, kube_model.KUBERNETES_TYPE_NAMESPACE),
 		}
 
 	}

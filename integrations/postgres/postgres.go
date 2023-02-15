@@ -234,9 +234,10 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s and schema %s", len(allCrawledElements), postCrawler.dataSource.Info.Name, schemaName)
 
 		postCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
-			Timestamp:   time.Now().UTC(),
-			DataSource:  *postCrawler.dataSource,
-			CrawledData: crawledData,
+			Timestamp:       time.Now().UTC(),
+			DataSource:      *postCrawler.dataSource,
+			CrawledData:     crawledData,
+			CrawlInternalID: schemaName,
 		}
 	}
 

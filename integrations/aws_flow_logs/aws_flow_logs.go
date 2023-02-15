@@ -256,8 +256,9 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 	}
 
 	return &bloopi_agent.CloudCrawlData{
-		Timestamp:   time.Now().UTC(),
-		DataSource:  *crawler.dataSource,
-		CrawledData: crawledData,
+		Timestamp:       time.Now().UTC(),
+		DataSource:      *crawler.dataSource,
+		CrawledData:     crawledData,
+		CrawlInternalID: crawler.dataSource.Info.Name,
 	}, nil
 }

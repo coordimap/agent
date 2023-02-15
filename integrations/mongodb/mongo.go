@@ -186,9 +186,10 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.dataSource.Info.Name, dbName)
 
 		mongoCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
-			Timestamp:   time.Now().UTC(),
-			DataSource:  *mongoCrawler.dataSource,
-			CrawledData: crawledData,
+			Timestamp:       time.Now().UTC(),
+			DataSource:      *mongoCrawler.dataSource,
+			CrawledData:     crawledData,
+			CrawlInternalID: dbName,
 		}
 	}
 	return nil, nil
