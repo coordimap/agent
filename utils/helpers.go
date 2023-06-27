@@ -53,6 +53,7 @@ func encodeAndHashElement(postgresElem interface{}) ([]byte, string, error) {
 	return marshaled, hashStr, nil
 }
 
+// CreateElement create a generic element
 func CreateElement(element interface{}, name, id, elemType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashElement(element)
 	if err != nil {
@@ -70,6 +71,7 @@ func CreateElement(element interface{}, name, id, elemType string, crawlTime tim
 	}, nil
 }
 
+// CreateAWSElement create an AWS element
 func CreateAWSElement(element interface{}, name, id, elemType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashAWSStruct(element)
 	if err != nil {
@@ -85,4 +87,26 @@ func CreateAWSElement(element interface{}, name, id, elemType string, crawlTime 
 		Data:        marshaled,
 		IsJSONData:  false,
 	}, nil
+}
+
+// CreateRelationship create a relationship element
+func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelationshipType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
+	parentElem := bloopi_agent.RelationshipElement{
+		SourceID:         sourceID,
+		DestinationID:    destinationID,
+		RelationshipType: relationshipType,
+	}
+
+	relationshipWrapperElem, errRelationshipWrapperElem := CreateElement(
+		parentElem,
+		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
+		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
+		wrapperRelationshipType,
+		crawlTime,
+	)
+	if errRelationshipWrapperElem != nil {
+		return nil, errRelationshipWrapperElem
+	}
+
+	return relationshipWrapperElem, nil
 }

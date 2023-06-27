@@ -528,19 +528,12 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 				continue
 			}
 
-			relationshipEKSNodeGroup := bloopi_agent.RelationshipElement{
-				SourceID:         *result.Cluster.Arn,
-				DestinationID:    *clusterNodeGroupInputResult.Nodegroup.NodegroupArn,
-				RelationshipType: aws_shared_model.AWS_RELATIONSHIP_EKS_CLUSTER_NODEGROUP,
-			}
-
-			relationshipEKSNodeGroupElem, errRelationshipEKSNodeGroupElem := utils.CreateElement(
-				relationshipEKSNodeGroup,
-				fmt.Sprintf("%s.%s", relationshipEKSNodeGroup.SourceID, relationshipEKSNodeGroup.DestinationID),
-				fmt.Sprintf("%s.%s", relationshipEKSNodeGroup.SourceID, relationshipEKSNodeGroup.DestinationID),
+			relationshipEKSNodeGroupElem, errRelationshipEKSNodeGroupElem := utils.CreateRelationship(
+				*result.Cluster.Arn,
+				*clusterNodeGroupInputResult.Nodegroup.NodegroupArn,
+				aws_shared_model.AWS_RELATIONSHIP_EKS_CLUSTER_NODEGROUP,
 				aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
-				crawlTime,
-			)
+				crawlTime)
 			if errRelationshipEKSNodeGroupElem == nil {
 				returnedElems = append(returnedElems, relationshipEKSNodeGroupElem)
 			}
@@ -567,19 +560,12 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 				continue
 			}
 			for _, autoScalingGroup := range describeAutoScalingGroupsResult.AutoScalingGroups {
-				relationshipAutoscalingNodegroupNodeGroup := bloopi_agent.RelationshipElement{
-					SourceID:         *autoScalingGroup.AutoScalingGroupARN,
-					DestinationID:    *clusterNodeGroupInputResult.Nodegroup.NodegroupArn,
-					RelationshipType: aws_shared_model.AWS_RELATIONSHIP_AUTOSCALING_GROUP_NODEGROUP,
-				}
-
-				relationshipAutoscalingNodegroupGroupElem, errRelationshipAutoscalingNodegroupNodeGroupElem := utils.CreateElement(
-					relationshipAutoscalingNodegroupNodeGroup,
-					fmt.Sprintf("%s.%s", relationshipAutoscalingNodegroupNodeGroup.SourceID, relationshipAutoscalingNodegroupNodeGroup.DestinationID),
-					fmt.Sprintf("%s.%s", relationshipAutoscalingNodegroupNodeGroup.SourceID, relationshipAutoscalingNodegroupNodeGroup.DestinationID),
+				relationshipAutoscalingNodegroupGroupElem, errRelationshipAutoscalingNodegroupNodeGroupElem := utils.CreateRelationship(
+					*autoScalingGroup.AutoScalingGroupARN,
+					*clusterNodeGroupInputResult.Nodegroup.NodegroupArn,
+					aws_shared_model.AWS_RELATIONSHIP_AUTOSCALING_GROUP_NODEGROUP,
 					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
-					crawlTime,
-				)
+					crawlTime)
 				if errRelationshipAutoscalingNodegroupNodeGroupElem == nil {
 					returnedElems = append(returnedElems, relationshipAutoscalingNodegroupGroupElem)
 				}
@@ -648,19 +634,12 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 
 				returnedElems = append(returnedElems, agentElem)
 
-				relationshipECRRepoImage := bloopi_agent.RelationshipElement{
-					SourceID:         *ecrRepo.RepositoryArn,
-					DestinationID:    imageName,
-					RelationshipType: aws_shared_model.AWS_RELATIONSHIP_AUTOSCALING_GROUP_NODEGROUP,
-				}
-
-				relationshipECRRepoImageElem, errRelationshipECRRepoImageElem := utils.CreateElement(
-					relationshipECRRepoImage,
-					fmt.Sprintf("%s.%s", relationshipECRRepoImage.SourceID, relationshipECRRepoImage.DestinationID),
-					fmt.Sprintf("%s.%s", relationshipECRRepoImage.SourceID, relationshipECRRepoImage.DestinationID),
+				relationshipECRRepoImageElem, errRelationshipECRRepoImageElem := utils.CreateRelationship(
+					*ecrRepo.RepositoryArn,
+					imageName,
 					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
-					crawlTime,
-				)
+					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
+					crawlTime)
 				if errRelationshipECRRepoImageElem == nil {
 					returnedElems = append(returnedElems, relationshipECRRepoImageElem)
 				}
