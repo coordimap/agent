@@ -647,6 +647,23 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 				agentElem, _ := utils.CreateElement(repoImage, imageName, imageName, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
 
 				returnedElems = append(returnedElems, agentElem)
+
+				relationshipECRRepoImage := bloopi_agent.RelationshipElement{
+					SourceID:         *ecrRepo.RepositoryArn,
+					DestinationID:    imageName,
+					RelationshipType: aws_shared_model.AWS_RELATIONSHIP_AUTOSCALING_GROUP_NODEGROUP,
+				}
+
+				relationshipECRRepoImageElem, errRelationshipECRRepoImageElem := utils.CreateElement(
+					relationshipECRRepoImage,
+					fmt.Sprintf("%s.%s", relationshipECRRepoImage.SourceID, relationshipECRRepoImage.DestinationID),
+					fmt.Sprintf("%s.%s", relationshipECRRepoImage.SourceID, relationshipECRRepoImage.DestinationID),
+					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
+					crawlTime,
+				)
+				if errRelationshipECRRepoImageElem == nil {
+					returnedElems = append(returnedElems, relationshipECRRepoImageElem)
+				}
 			}
 
 		}
