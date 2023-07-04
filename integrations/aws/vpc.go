@@ -628,14 +628,14 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 			}
 
 			for _, imageTag := range repoImage.ImageTags {
-				imageName := fmt.Sprintf("%s.%s.%s", *repoImage.RegistryId, *repoImage.RepositoryName, *imageTag)
+				imageName := fmt.Sprintf("%s:%s", *ecrRepo.RepositoryUri, *imageTag)
 
 				agentElem, _ := utils.CreateElement(repoImage, imageName, imageName, aws_shared_model.AWS_TYPE_ECR_REPOSITORY_IMAGE, crawlTime)
 
 				returnedElems = append(returnedElems, agentElem)
 
 				relationshipECRRepoImageElem, errRelationshipECRRepoImageElem := utils.CreateRelationship(
-					*ecrRepo.RepositoryArn,
+					*ecrRepo.RepositoryUri,
 					imageName,
 					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
 					aws_shared_model.AWS_RELATIONSHIP_SKIPINSERT,
