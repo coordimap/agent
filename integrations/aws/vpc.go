@@ -503,6 +503,53 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 
 		returnedElems = append(returnedElems, elem)
 
+		// create link with the load balancer
+		elbV2Svc := elbv2.New(session)
+		input := &elbv2.DescribeLoadBalancersInput{
+			Names: autoScalingGroup.LoadBalancerNames,
+		}
+
+		resultElbV2, err := elbV2Svc.DescribeLoadBalancers(input)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, elem := range resultElbV2.LoadBalancers {
+			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
+				*autoScalingGroup.AutoScalingGroupARN,
+				*elem.LoadBalancerArn,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				crawlTime,
+			)
+			if errAsgInstanceRelationship != nil {
+				continue
+			}
+			returnedElems = append(returnedElems, asgInstanceRelationship)
+		}
+
+		svcElb := elb.New(session)
+		inputElb := &elb.DescribeLoadBalancersInput{}
+
+		resultElb, err := svcElb.DescribeLoadBalancers(inputElb)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, elem := range resultElb.LoadBalancerDescriptions {
+			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
+				*autoScalingGroup.AutoScalingGroupARN,
+				*elem.DNSName,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				crawlTime,
+			)
+			if errAsgInstanceRelationship != nil {
+				continue
+			}
+			returnedElems = append(returnedElems, asgInstanceRelationship)
+		}
+
 		// Add the relationship between the autoscaling group and the instance id
 		for _, instance := range autoScalingGroup.Instances {
 			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
