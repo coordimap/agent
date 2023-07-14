@@ -158,10 +158,13 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		go worker("rds", owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AWS_TYPE_EKS, owner, regionSession, results, &wg, crawlTime)
+		go worker(aws_shared_model.AwsTypeEKS, owner, regionSession, results, &wg, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AWS_TYPE_ECR_REPOSITORY, owner, regionSession, results, &wg, crawlTime)
+		go worker(aws_shared_model.AwsTypeECRRepository, owner, regionSession, results, &wg, crawlTime)
+
+		wg.Add(1)
+		go worker(aws_shared_model.AwsTypeAutoscalingGroup, owner, regionSession, results, &wg, crawlTime)
 	}
 
 	wg.Add(1)

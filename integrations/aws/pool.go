@@ -63,11 +63,14 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 	case "rds":
 		res, _ = getAllRDSInstances(regionSession, crawlTime)
 
-	case aws_shared_model.AWS_TYPE_EKS:
+	case aws_shared_model.AwsTypeEKS:
 		res, _ = getAllEKSClusters(regionSession, crawlTime)
 
-	case aws_shared_model.AWS_TYPE_ECR_REPOSITORY:
+	case aws_shared_model.AwsTypeECRRepository:
 		res, _ = getAllECRReposAndImages(regionSession, crawlTime)
+
+	case aws_shared_model.AwsTypeAutoscalingGroup:
+		res, _ = getAllAutoscalingGroups(regionSession, crawlTime)
 
 	default:
 		fmt.Println("notnig")
