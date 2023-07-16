@@ -642,6 +642,30 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			}
 		}
 
+		// get all instances that have a tag alpha.eksctl.io/cluster-name = <EKS cluster name>
+		ec2TagFilters := map[string]string{
+			"alpha.eksctl.io/cluster-name": *eksClusterName,
+		}
+
+		eksInstances, errEksInstances := getFilteredEC2(session, ec2TagFilters)
+		if errEksInstances != nil {
+			continue
+		}
+
+		for _, eksInstance := range eksInstances {
+			eksClusterInstanceRelationship, errEksClusterInstanceRelationship := utils.CreateRelationship(
+				*result.Cluster.Arn,
+				*eksInstance.InstanceId,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				aws_shared_model.AwsRelationshipSkipinsert,
+				crawlTime,
+			)
+			if errEksClusterInstanceRelationship != nil {
+				continue
+			}
+
+			returnedElems = append(returnedElems, eksClusterInstanceRelationship)
+		}
 	}
 
 	return returnedElems, nil
