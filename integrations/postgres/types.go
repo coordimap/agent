@@ -12,6 +12,7 @@ type postgresCrawler struct {
 	User          string
 	Pass          string
 	DBName        string
+	SSLMode       string
 	dbConn        *sql.DB
 	outputChannel chan *bloopi_agent.CloudCrawlData
 	crawlInterval time.Duration

@@ -1,6 +1,6 @@
 module cleye
 
-go 1.19
+go 1.21
 
 require (
 	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20230714163442-f5122d8da54b
