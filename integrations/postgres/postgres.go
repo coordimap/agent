@@ -4,6 +4,7 @@ import (
 	"cleye/utils"
 	"database/sql"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -26,6 +27,7 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		User:          "postgres",
 		Pass:          "",
 		DBName:        "postgres",
+		SSLMode:       "disable",
 		dataSource:    dataSource,
 	}
 
@@ -48,6 +50,15 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 
 		case "db_host":
 			crawler.Host = dsConfig.Value
+
+		case "ssl_mode":
+			allowedValues := []string{"require", "disable"}
+
+			if slices.Index(allowedValues, dsConfig.Value) == -1 {
+				return &crawler, fmt.Errorf("postgres config error: Value %s of config option %s is not allowed", dsConfig.Value, dsConfig.Key)
+			}
+
+			crawler.SSLMode = dsConfig.Value
 
 		case "crawl_interval":
 			const DEFAULT_CRAWL_TIME = 30 * time.Second
@@ -73,7 +84,7 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 	}
 
 	// 3. connect to the DB
-	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName)
+	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName, crawler.SSLMode)
 	if errDBConn != nil {
 		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
 		return &crawler, errDBConn
@@ -83,8 +94,8 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 	return &crawler, nil
 }
 
-func connectToDB(dbHost, dbUser, dbPass, dbName string) (*sql.DB, error) {
-	psqlConnString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPass, dbName)
+func connectToDB(dbHost, dbUser, dbPass, dbName, sslMode string) (*sql.DB, error) {
+	psqlConnString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s", dbHost, dbUser, dbPass, dbName, sslMode)
 
 	db, err := sql.Open("postgres", psqlConnString)
 	if err != nil {
