@@ -57,7 +57,7 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespacePrefix, namespace string) ([]bloopi_agent.RelationshipElement, error) {
 	allDeploymentPodsRelationships := []bloopi_agent.RelationshipElement{}
 
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
@@ -65,8 +65,8 @@ func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deplo
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         fmt.Sprintf("%s.%s.%s", namespace, kube_model.TypeDeployment, deployment.Name),
-			DestinationID:    fmt.Sprintf("%s.%s.%s", namespace, kube_model.TypePod, pod.Name),
+			SourceID:         fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypeDeployment, deployment.Name),
+			DestinationID:    fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeDeploymentPod,
 		})
 	}
@@ -83,7 +83,7 @@ func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Servi
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespacePrefix, namespace string) ([]bloopi_agent.RelationshipElement, error) {
 	allServicePodsRelationships := []bloopi_agent.RelationshipElement{}
 
 	set := labels.Set(service.Spec.Selector)
@@ -91,8 +91,8 @@ func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, names
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allServicePodsRelationships = append(allServicePodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         fmt.Sprintf("%s.%s.%s", namespace, kube_model.TypeService, service.Name),
-			DestinationID:    fmt.Sprintf("%s.%s.%s", namespace, kube_model.TypePod, pod.Name),
+			SourceID:         fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypeService, service.Name),
+			DestinationID:    fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeServicePod,
 		})
 	}
@@ -218,7 +218,7 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1Beta1(namespace s
 }
 
 // crawl, queries the prometheus endpoint to get the data regarding the istio relationships
-func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.RelationshipElement, error) {
+func (kubeCrawler *kubernetesCrawler) getIstioRelationships(prefix string) ([]bloopi_agent.RelationshipElement, error) {
 	istioMappingFromQueries := map[string]bloopi_agent.RelationshipElement{}
 	allFoundRelationships := []bloopi_agent.RelationshipElement{}
 	if !kubeCrawler.istioConfigured {
@@ -267,8 +267,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
-			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.TypeService, sourceCanonicalService)
-			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.TypeService, destinationCanonicalService)
+			sourceID := fmt.Sprintf("%s.%s.%s.%s", prefix, sourceWorkloadNamespace, kube_model.TypeService, sourceCanonicalService)
+			destinationID := fmt.Sprintf("%s.%s.%s.%s", prefix, destinationWorkloadNamespace, kube_model.TypeService, destinationCanonicalService)
 
 			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
 				SourceID:         sourceID,
@@ -281,8 +281,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
-			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.TypeDeployment, sourceWorkload)
-			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.TypeDeployment, destinationWorkload)
+			sourceID := fmt.Sprintf("%s.%s.%s.%s", prefix, sourceWorkloadNamespace, kube_model.TypeDeployment, sourceWorkload)
+			destinationID := fmt.Sprintf("%s.%s.%s.%s", prefix, destinationWorkloadNamespace, kube_model.TypeDeployment, destinationWorkload)
 
 			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
 				SourceID:         sourceID,
@@ -332,8 +332,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
-			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.TypeService, sourceCanonicalService)
-			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.TypeService, destinationCanonicalService)
+			sourceID := fmt.Sprintf("%s.%s.%s.%s", prefix, sourceWorkloadNamespace, kube_model.TypeService, sourceCanonicalService)
+			destinationID := fmt.Sprintf("%s.%s.%s.%s", prefix, destinationWorkloadNamespace, kube_model.TypeService, destinationCanonicalService)
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
@@ -349,8 +349,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
-			sourceID := fmt.Sprintf("%s.%s.%s", sourceWorkloadNamespace, kube_model.TypeDeployment, sourceWorkload)
-			destinationID := fmt.Sprintf("%s.%s.%s", destinationWorkloadNamespace, kube_model.TypeDeployment, destinationWorkload)
+			sourceID := fmt.Sprintf("%s.%s.%s.%s", prefix, sourceWorkloadNamespace, kube_model.TypeDeployment, sourceWorkload)
+			destinationID := fmt.Sprintf("%s.%s.%s.%s", prefix, destinationWorkloadNamespace, kube_model.TypeDeployment, destinationWorkload)
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {

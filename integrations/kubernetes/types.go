@@ -8,13 +8,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const DEFAULT_CRAWL_TIME = 30 * time.Second
+const defaultCrawlTime = 30 * time.Second
 
 const (
-	KUBE_CONFIG_OPTION_IN_CLUSTER     = "in_cluster"
-	KUBE_CONFIG_OPTION_CONFIG_FILE    = "config_file"
-	KUBE_CONFIG_OPTION_CRAWL_INTERVAL = "crawl_interval"
-	KUBE_CONFIG_ISTIO_PROMETHEUS_HOST = "prometheus_host"
+	kubeConfigInCluster           = "in_cluster"
+	kubeConfigConfigFile          = "config_file"
+	kubeConfigCrawlInterval       = "crawl_interval"
+	kubeConfigIstioPrometheusHost = "prometheus_host"
+	kubeConfigClusterName         = "cluster_name"
 )
 
 type kubernetesCrawler struct {
@@ -24,6 +25,7 @@ type kubernetesCrawler struct {
 	dataSource      bloopi_agent.DataSource
 	istioConfigured bool
 	istioCrawler    istioCrawler
+	clusterName     string
 }
 
 type istioCrawler struct {
