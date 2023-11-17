@@ -27,6 +27,10 @@ func (kubeCrawler *kubernetesCrawler) getNodes() ([]v1.Node, error) {
 		return nil, fmt.Errorf("could not load the kubernetes nodes. %w", err)
 	}
 
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
 	return list.Items, nil
 }
 
@@ -45,6 +49,10 @@ func (kubeCrawler *kubernetesCrawler) listPods(namespace string) ([]v1.Pod, erro
 		return nil, fmt.Errorf("could not list the pods for namespace: %s. %w", namespace, errPods)
 	}
 
+	for _, item := range podList.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
 	return podList.Items, nil
 }
 
@@ -52,6 +60,10 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	list, errPods := kubeCrawler.kubeClient.AppsV1().Deployments(namespace).List(context.Background(), metav1.ListOptions{})
 	if errPods != nil {
 		return nil, fmt.Errorf("could not list the deployments for namespace: %s. %w", namespace, errPods)
+	}
+
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
 	}
 
 	return list.Items, nil
@@ -106,6 +118,10 @@ func (kubeCrawler *kubernetesCrawler) listSecrets(namespace string) ([]v1.Secret
 		return nil, fmt.Errorf("could not list the secrets for namespace: %s. %w", namespace, errList)
 	}
 
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
 	return list.Items, nil
 }
 
@@ -124,6 +140,10 @@ func (kubeCrawler *kubernetesCrawler) listCronJobs(namespace string) ([]batchv1.
 		return nil, fmt.Errorf("could not list the cronjobs for namespace: %s. %w", namespace, errList)
 	}
 
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
 	return list.Items, nil
 }
 
@@ -133,6 +153,10 @@ func (kubeCrawler *kubernetesCrawler) listEndpoints(namespace string) ([]v1.Endp
 		return nil, fmt.Errorf("could not list the endpoints for namespace: %s. %w", namespace, errList)
 	}
 
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
 	return list.Items, nil
 }
 
@@ -140,6 +164,11 @@ func (kubeCrawler *kubernetesCrawler) listConfigMaps(namespace string) ([]v1.Con
 	list, errList := kubeCrawler.kubeClient.CoreV1().ConfigMaps(namespace).List(context.Background(), metav1.ListOptions{})
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the configmaps for namespace: %s. %w", namespace, errList)
+	}
+
+	// set managed fields
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
 	}
 
 	return list.Items, nil
