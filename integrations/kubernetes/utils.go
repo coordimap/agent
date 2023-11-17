@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/api"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -54,4 +55,8 @@ func connectoToK8sInCluster() (*kubernetes.Clientset, error) {
 	}
 
 	return clientset, nil
+}
+
+func clearManagedFields(item *metav1.ObjectMeta) {
+	item.ManagedFields = []metav1.ManagedFieldsEntry{}
 }
