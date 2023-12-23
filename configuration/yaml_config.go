@@ -28,6 +28,14 @@ func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
 	return value, nil
 }
 
+func (coordimapConfig *yamlConfig) GetSkipFields() []string {
+	if !coordimapConfig.parsedCorrectly {
+		return []string{}
+	}
+
+	return coordimapConfig.parsedConfig.SkipFields
+}
+
 func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agent.DataSource {
 	if !coordimapConfig.parsedCorrectly {
 		return map[string][]*bloopi_agent.DataSource{}

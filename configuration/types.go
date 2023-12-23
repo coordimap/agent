@@ -8,6 +8,7 @@ import (
 type Config interface {
 	GetAllDataSources() map[string][]*bloopi_agent.DataSource
 	GetCoordimapKey() (string, error)
+	GetSkipFields() []string
 }
 
 type OldBloopiConfig struct {
@@ -29,6 +30,7 @@ type BloopiConfigDataSource struct {
 
 type Coordimap struct {
 	API_KEY     string                   `yaml:"api_key"`
+	SkipFields  []string                 `yaml:"skip_fields"`
 	DataSources []BloopiConfigDataSource `yaml:"data_sources"`
 }
 

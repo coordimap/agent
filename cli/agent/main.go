@@ -3,6 +3,7 @@ package main
 import (
 	"cleye/configuration"
 	"cleye/integrations"
+	"cleye/utils"
 	"fmt"
 	"time"
 
@@ -66,6 +67,8 @@ func main() {
 		requestStruct := collector.AddCrawledInfraFromAgentRequest{
 			CloudCrawlData: *crawledData,
 		}
+
+		requestStruct.CloudCrawlData.DataSource = *utils.CleanUpDataSource(&requestStruct.CloudCrawlData.DataSource, configuration.GetSkipFields())
 
 		bloopiKey, errBloopiKey := configuration.GetCoordimapKey()
 		if errBloopiKey != nil {
