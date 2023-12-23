@@ -1,5 +1,9 @@
 bloopi:
   api_key: ${BLOOPI_API_KEY}
+  skip_fields:
+    - secret_access_key
+    - access_key_id
+    - db_pass
   data_sources:
     - type: aws
       name: aws1

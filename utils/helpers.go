@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -109,4 +110,25 @@ func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelati
 	}
 
 	return relationshipWrapperElem, nil
+}
+
+func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *bloopi_agent.DataSource {
+	var cleanedDataSource bloopi_agent.DataSource
+
+	cleanedDataSource.Info.Name = inputDS.Info.Name
+	cleanedDataSource.Info.Type = inputDS.Info.Type
+	cleanedDataSource.Info.Desc = inputDS.Info.Desc
+
+	for _, dsConfigKeyValue := range inputDS.Config.ValuePairs {
+		if slices.Contains[[]string](skipFields, strings.ToLower(dsConfigKeyValue.Key)) {
+			continue
+		}
+
+		cleanedDataSource.Config.ValuePairs = append(cleanedDataSource.Config.ValuePairs, bloopi_agent.KeyValue{
+			Key:   dsConfigKeyValue.Key,
+			Value: dsConfigKeyValue.Value,
+		})
+	}
+
+	return &cleanedDataSource
 }
