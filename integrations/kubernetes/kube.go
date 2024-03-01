@@ -191,9 +191,16 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes deployments of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errDeployments.Error())
 		} else {
 			for _, deployment := range deployments {
-				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, namespacePrefix+"."+kube_model.TypeDeployment+"."+deployment.Name, kube_model.TypeDeployment, crawlTime)
+				deploymentInternalID := namespacePrefix + "." + kube_model.TypeDeployment + "." + deployment.Name
+				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, deploymentInternalID, kube_model.TypeDeployment, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				// create namespace - deployment relationship
+				rel, errRel := utils.CreateRelationship(namespacePrefix, deploymentInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				// get deployment pods
@@ -229,9 +236,16 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes services of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errServices.Error())
 		} else {
 			for _, service := range services {
-				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, namespacePrefix+"."+kube_model.TypeService+"."+service.Name, kube_model.TypeService, crawlTime)
+				serviceInternalID := namespacePrefix + "." + kube_model.TypeService + "." + service.Name
+				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, serviceInternalID, kube_model.TypeService, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				// create namespace - service relationship
+				rel, errRel := utils.CreateRelationship(namespacePrefix, serviceInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				// get the service pods
@@ -267,9 +281,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes pods of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errPods.Error())
 		} else {
 			for _, pod := range pods {
-				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, namespacePrefix+"."+kube_model.TypePod+"."+pod.Name, kube_model.TypePod, crawlTime)
+				podInternalID := namespacePrefix + "." + kube_model.TypePod + "." + pod.Name
+				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, podInternalID, kube_model.TypePod, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, podInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -282,9 +302,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes secrets of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errSecrets.Error())
 		} else {
 			for _, secret := range secrets {
-				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, namespacePrefix+"."+kube_model.TypeSecret+"."+secret.Name, kube_model.TypeSecret, crawlTime)
+				secretInternalID := namespacePrefix + "." + kube_model.TypeSecret + "." + secret.Name
+				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, secretInternalID, kube_model.TypeSecret, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, secretInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -297,9 +323,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes endpoints of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errEndpoints.Error())
 		} else {
 			for _, endpoint := range endpoints {
-				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, namespacePrefix+"."+kube_model.TypeEndpoint+"."+endpoint.Name, kube_model.TypeEndpoint, crawlTime)
+				endpointInternalID := namespacePrefix + "." + kube_model.TypeEndpoint + "." + endpoint.Name
+				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, endpointInternalID, kube_model.TypeEndpoint, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, endpointInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -312,9 +344,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes jobs of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errJobs.Error())
 		} else {
 			for _, job := range jobs {
-				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, namespacePrefix+"."+kube_model.TypeJob+"."+job.Name, kube_model.TypeJob, crawlTime)
+				jobInternalID := namespacePrefix + "." + kube_model.TypeJob + "." + job.Name
+				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, jobInternalID, kube_model.TypeJob, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, jobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -327,9 +365,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes cronjobs of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errCronJobs.Error())
 		} else {
 			for _, cronJob := range cronJobs {
-				nodeElement, errNodeElement := utils.CreateElement(cronJob, cronJob.Name, namespacePrefix+"."+kube_model.TypeCronJob+"."+cronJob.Name, kube_model.TypeCronJob, crawlTime)
+				cronJobInternalID := namespacePrefix + "." + kube_model.TypeCronJob + "." + cronJob.Name
+				nodeElement, errNodeElement := utils.CreateElement(cronJob, cronJob.Name, cronJobInternalID, kube_model.TypeCronJob, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, cronJobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -342,9 +386,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes configmaps of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errConfigMaps.Error())
 		} else {
 			for _, configMap := range configMaps {
-				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, namespacePrefix+"."+kube_model.TypeConfigMap+"."+configMap.Name, kube_model.TypeConfigMap, crawlTime)
+				configMapInternalID := namespacePrefix + "." + kube_model.TypeConfigMap + "." + configMap.Name
+				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, configMapInternalID, kube_model.TypeConfigMap, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, configMapInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -357,9 +407,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes statefulsets of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errStatefulSets.Error())
 		} else {
 			for _, statefulSet := range statefulSets {
-				nodeElement, errNodeElement := utils.CreateElement(statefulSet, statefulSet.Name, namespacePrefix+"."+kube_model.TypeStatefulSet+"."+statefulSet.Name, kube_model.TypeStatefulSet, crawlTime)
+				statefulSetInternalID := namespacePrefix + "." + kube_model.TypeStatefulSet + "." + statefulSet.Name
+				nodeElement, errNodeElement := utils.CreateElement(statefulSet, statefulSet.Name, statefulSetInternalID, kube_model.TypeStatefulSet, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, statefulSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -372,9 +428,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes daemonsets of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errDaemonSets.Error())
 		} else {
 			for _, daemonSet := range daemonSets {
-				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, namespacePrefix+"."+kube_model.TypeDaemonSet+"."+daemonSet.Name, kube_model.TypeDaemonSet, crawlTime)
+				daemonSetInternalID := namespacePrefix + "." + kube_model.TypeDaemonSet + "." + daemonSet.Name
+				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, daemonSetInternalID, kube_model.TypeDaemonSet, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, daemonSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -387,9 +449,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes persistenvolumeclaims of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errPVCs.Error())
 		} else {
 			for _, pvc := range pvcs {
-				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, namespacePrefix+"."+kube_model.TypePVC+"."+pvc.Name, kube_model.TypePVC, crawlTime)
+				pvcInternalID := namespacePrefix + "." + kube_model.TypePVC + "." + pvc.Name
+				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, pvcInternalID, kube_model.TypePVC, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, pvcInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -402,9 +470,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1.Error())
 		} else {
 			for _, ingress := range ingressesExtensionsBeta1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespacePrefix+"."+kube_model.TypeIngressExtensionBeta1+"."+ingress.Name, kube_model.TypeIngressExtensionBeta1, crawlTime)
+				ingressInternalID := namespacePrefix + "." + kube_model.TypeIngressExtensionBeta1 + "." + ingress.Name
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressExtensionBeta1, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -416,9 +490,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1.Error())
 		} else {
 			for _, ingress := range ingressesNetworkingV1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespacePrefix+"."+kube_model.TypeIngressNetworkingV1+"."+ingress.Name, kube_model.TypeIngressNetworkingV1, crawlTime)
+				ingressInternalID := namespacePrefix + "." + kube_model.TypeIngressNetworkingV1 + "." + ingress.Name
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -430,9 +510,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes ingresses extensions beta1 of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errIngressesExtensionsBeta1.Error())
 		} else {
 			for _, ingress := range ingressesNetworkingV1Beta1 {
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, namespacePrefix+"."+kube_model.TypeIngressNetworkingV1Beta1+"."+ingress.Name, kube_model.TypeIngressNetworkingV1Beta1, crawlTime)
+				ingressInternalID := namespacePrefix + "." + kube_model.TypeIngressNetworkingV1Beta1 + "." + ingress.Name
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1Beta1, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				rel, errRel := utils.CreateRelationship(namespacePrefix, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
