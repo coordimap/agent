@@ -145,9 +145,15 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		log.Warn().Msgf("Could not get the kubernetes persistenvolumes of data source name: %s because %s", kubeCrawler.dataSource.Info.Name, errPvs.Error())
 	} else {
 		for _, pv := range pvs {
-			nodeElement, errNodeElement := utils.CreateElement(pv, pv.Name, fmt.Sprintf("%s%s", prefix, pv.Name), kube_model.TypePV, crawlTime)
+			pvInternalID := fmt.Sprintf("%s%s", prefix, pv.Name)
+			nodeElement, errNodeElement := utils.CreateElement(pv, pv.Name, pvInternalID, kube_model.TypePV, crawlTime)
 			if errNodeElement != nil {
 				continue
+			}
+
+			rel, errRel := utils.CreateRelationship(pvInternalID, fmt.Sprintf("%s%s", prefix, pv.Spec.StorageClassName), kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+			if errRel == nil {
+				globalCrawledElements = append(globalCrawledElements, rel)
 			}
 
 			globalCrawledElements = append(globalCrawledElements, nodeElement)
@@ -184,6 +190,30 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		}
 
 		allCrawledElements = append(allCrawledElements, nodeElement)
+
+		// add the relevant namespace - storageClass relationship
+		for _, storageClass := range storageClasses {
+			if storageClass.Namespace == namespace.Name {
+				rel, errRel := utils.CreateRelationship(namespacePrefix, fmt.Sprintf("%s%s", prefix, storageClass.Name), kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				break
+			}
+		}
+
+		// add the relevant namespace - persistenVolume relationship
+		for _, pv := range pvs {
+			if pv.Namespace == namespace.Name {
+				rel, errRel := utils.CreateRelationship(namespacePrefix, fmt.Sprintf("%s%s", prefix, pv.Name), kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				break
+			}
+		}
 
 		// get the deployments
 		deployments, errDeployments := kubeCrawler.listDeplyments(namespace.Name)
@@ -292,6 +322,34 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					allCrawledElements = append(allCrawledElements, rel)
 				}
 
+				if pod.Spec.NodeName != "" {
+					rel, errRel := utils.CreateRelationship(pod.Spec.NodeName, podInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
+				}
+
+				for _, podVolume := range pod.Spec.Volumes {
+					rel, errRel := utils.CreateRelationship(podInternalID, fmt.Sprintf("%s%s", prefix, podVolume.Name), kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
+
+					if podVolume.ConfigMap != nil {
+						rel, errRel := utils.CreateRelationship(podInternalID, namespacePrefix+"."+kube_model.TypeConfigMap+"."+podVolume.ConfigMap.Name, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+
+					if podVolume.Secret != nil {
+						rel, errRel := utils.CreateRelationship(podInternalID, namespacePrefix+"."+kube_model.TypeSecret+"."+podVolume.Secret.SecretName, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+				}
+
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
@@ -334,6 +392,9 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					allCrawledElements = append(allCrawledElements, rel)
 				}
 
+				// TODO: add relationship to the target
+				// endpoint.Subsets[0].Addresses[0].TargetRef
+
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
@@ -355,6 +416,13 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					allCrawledElements = append(allCrawledElements, rel)
 				}
 
+				if job.Spec.Template.Spec.NodeName != "" {
+					rel, errRel = utils.CreateRelationship(job.Spec.Template.Spec.NodeName, jobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
+				}
+
 				allCrawledElements = append(allCrawledElements, nodeElement)
 			}
 		}
@@ -374,6 +442,13 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				rel, errRel := utils.CreateRelationship(namespacePrefix, cronJobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				if cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName != "" {
+					rel, errRel = utils.CreateRelationship(cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName, cronJobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
@@ -416,6 +491,23 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				rel, errRel := utils.CreateRelationship(namespacePrefix, statefulSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				if statefulSet.Spec.Template.Spec.NodeName != "" {
+					rel, errRel := utils.CreateRelationship(statefulSet.Spec.Template.Spec.NodeName, statefulSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
+				}
+
+				// add volume details
+				for _, pvc := range statefulSet.Spec.VolumeClaimTemplates {
+					volInternalID := fmt.Sprintf("%s%s", prefix, pvc.Spec.VolumeName)
+
+					rel, errRel := utils.CreateRelationship(statefulSetInternalID, volInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
