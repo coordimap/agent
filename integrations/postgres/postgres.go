@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -162,9 +163,14 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		return nil, errDBElem
 	}
 
-	for _, schemaName := range schemaNames {
-		allCrawledElements = append(allCrawledElements, dbElem)
+	rel, errRel := utils.CreateRelationship(postCrawler.Host, postCrawler.DBName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+	if errRel == nil {
+		allCrawledElements = append(allCrawledElements, rel)
+	}
 
+	allCrawledElements = append(allCrawledElements, dbElem)
+
+	for _, schemaName := range schemaNames {
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
@@ -172,11 +178,37 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			continue
 		}
 
+		rel, errRel := utils.CreateRelationship(postCrawler.DBName, schemaName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+		if errRel == nil {
+			allCrawledElements = append(allCrawledElements, rel)
+		}
+
 		for _, tableName := range tableNames {
 			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
 				log.Error().Msgf("Error while getting table data for table: %s.%s due to: %s", schemaName, tableName, errTable.Error())
+			}
+			rel, errRel := utils.CreateRelationship(schemaName, tableName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+			if errRel == nil {
+				allCrawledElements = append(allCrawledElements, rel)
+			}
+
+			for _, constraint := range table.Constraints {
+				if constraint.Type != post_model.POSTGRES_CONSTRAINT_FK {
+					continue
+				}
+
+				for _, destination := range constraint.Destinations {
+					separatorIndex := strings.LastIndex(destination.Name, ".")
+					destinationTable := destination.Name[0:separatorIndex]
+
+					// add the referenced tableName in the current elem's relations
+					rel, errRel := utils.CreateRelationship(table.Name, destinationTable, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+					if errRel == nil {
+						allCrawledElements = append(allCrawledElements, rel)
+					}
+				}
 			}
 
 			log.Debug().Msgf("Starting retrieval of Postgres DB table indexes for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
@@ -194,6 +226,16 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
 				table.Indexes = append(table.Indexes, tableIndex.Name)
+
+				rel, errRel := utils.CreateRelationship(tableName, tableIndex.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				rel, errRel = utils.CreateRelationship(postCrawler.DBName, indexElem.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
+				}
 			}
 
 			tableElem, errTableElem := utils.CreateElement(table, tableName, tableName, post_model.POSTGRES_TYPE_TABLE, crawlTime)
@@ -215,6 +257,11 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			if errView != nil {
 				log.Info().Msgf("Cannot get view data for materialized view: %s because %s", materializedViewName, errView.Error())
 				continue
+			}
+
+			rel, errRel := utils.CreateRelationship(postCrawler.DBName, materializedViewName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+			if errRel == nil {
+				allCrawledElements = append(allCrawledElements, rel)
 			}
 
 			viewElem, errViewElem := utils.CreateElement(view, view.Name, view.Name, post_model.POSTGRES_TYPE_MATERIALIZED_VIEW, crawlTime)
