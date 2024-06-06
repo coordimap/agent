@@ -10,7 +10,6 @@ import (
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mariadb"
-	mariadbmodel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/mariadb"
 	"github.com/rs/zerolog/log"
 )
 
@@ -116,7 +115,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 	schemaName := mariaCrawler.DBName
 
-	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, mariadbmodel.MARIADB_TYPE_DB, crawlTime)
+	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, mariadb.MARIADB_TYPE_DB, crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", mariaCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
@@ -143,7 +142,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 		// add constraints relationships
 		for _, constraint := range tableData.Constraints {
-			if constraint.Type != mariadbmodel.MARIADB_CONSTRAINT_FK {
+			if constraint.Type != mariadb.MARIADB_CONSTRAINT_FK {
 				continue
 			}
 
@@ -179,7 +178,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 		}
 
-		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, tableData.Name, mariadbmodel.MARIADB_TYPE_TABLE, crawlTime)
+		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, tableData.Name, mariadb.MARIADB_TYPE_TABLE, crawlTime)
 		if errTableElem != nil {
 			continue
 		}
