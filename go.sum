@@ -39,7 +39,13 @@ dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20230714163442-f5122d8
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20230714163442-f5122d8da54b/go.mod h1:hdhCTSDyvBogM/u3dL0Vt0f9+w8oAfHxXp5Ld3+Hm+s=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240302221158-daadd6627e1b h1:mt2wbijPddDGf/YiFzQB9Kj8nUhrmkmUH/G2MQaJ+gE=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240302221158-daadd6627e1b/go.mod h1:RYbnyFXnNkBttnVmfq4GrTqbXDdYcu434oIyao/+JMc=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240604084712-4e029e99b122 h1:G1Usd92v9e5uxi5RTVPLd4L9Ziaisv46QipupiiwrLM=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240604084712-4e029e99b122/go.mod h1:RYbnyFXnNkBttnVmfq4GrTqbXDdYcu434oIyao/+JMc=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240606093749-ef2a751a016b h1:t7E+cbgJgYI5HcC1hu89EPGuf2Vx6FwqOwVsUfNWJEE=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240606093749-ef2a751a016b/go.mod h1:RYbnyFXnNkBttnVmfq4GrTqbXDdYcu434oIyao/+JMc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
+filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
@@ -122,6 +128,8 @@ github.com/go-openapi/swag v0.22.3 h1:yMBqmnQ0gyZvEb/+KzuWZOXgllrXT4SADYbvDaXHv/
 github.com/go-openapi/swag v0.22.3/go.mod h1:UzaqsxGiab7freDnrUUra0MwWfN/q7tE4j+VcZ0yl14=
 github.com/go-redis/redis/v8 v8.11.5 h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=
 github.com/go-redis/redis/v8 v8.11.5/go.mod h1:gREzHqY1hg6oD9ngVRbLStwAWKhA0FEgq8Jd4h5lpwo=
+github.com/go-sql-driver/mysql v1.8.1 h1:LedoTUt/eveggdHS9qUFC1EFSa8bU2+1pZjSRpvNJ1Y=
+github.com/go-sql-driver/mysql v1.8.1/go.mod h1:wEBSXgmK//2ZFJyE+qWnIsVGmvmEKlqwuVSjsCm7DZg=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=

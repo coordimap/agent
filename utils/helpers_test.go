@@ -1,9 +1,15 @@
-package utils_test
+package utils
 
 import (
-	"cleye/utils"
+	"bytes"
+	"encoding/gob"
 	"os"
+	"reflect"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 func TestLoadValueFromEnvConfig(t *testing.T) {
@@ -39,7 +45,7 @@ func TestLoadValueFromEnvConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv(tt.args.env, tt.want)
-			got, err := utils.LoadValueFromEnvConfig(tt.args.value)
+			got, err := LoadValueFromEnvConfig(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LoadValueFromEnvConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -47,6 +53,76 @@ func TestLoadValueFromEnvConfig(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("LoadValueFromEnvConfig() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_encodeAndHashAWSStruct(t *testing.T) {
+	type args struct {
+		elem interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		want1   string
+		wantErr bool
+	}{
+		{
+			name: "test1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			session, _ := session.NewSession(
+				&aws.Config{
+					Region: aws.String("eu-central-1"),
+				},
+			)
+
+			accountID := "359635641082"
+
+			svc := ec2.New(session)
+			input := &ec2.DescribeInstancesInput{
+				Filters: []*ec2.Filter{
+					{
+						Name:   aws.String("owner-id"),
+						Values: []*string{&accountID},
+					},
+				},
+			}
+
+			result, err := svc.DescribeInstances(input)
+			if err != nil {
+				t.Errorf("encodeAndHashAWSStruct() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			for _, reservation := range result.Reservations {
+				for _, elem := range reservation.Instances {
+					got, _, err := encodeAndHashAWSStruct(elem)
+					if err != nil {
+						t.Errorf("encodeAndHashAWSStruct() error = %v, wantErr %v", err, tt.wantErr)
+						return
+					}
+
+					var instance ec2.Instance
+					buffer := bytes.NewBuffer(got)
+					decoder := gob.NewDecoder(buffer)
+
+					decoder.Decode(&instance)
+
+					if (err != nil) != tt.wantErr {
+						t.Errorf("encodeAndHashAWSStruct() error = %v, wantErr %v", err, tt.wantErr)
+						return
+					}
+					if !reflect.DeepEqual(elem, instance) {
+						t.Errorf("encodeAndHashAWSStruct() got = %v, want %v", elem, instance)
+					}
+				}
+			}
+
 		})
 	}
 }
