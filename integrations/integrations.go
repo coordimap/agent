@@ -28,9 +28,12 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 
 	case INTEGRATION_MONGODB:
 		return mongodb.NewMongoDBCrawler(dataSource, outChannel)
-	
+
 	case INTEGRATION_MARIADB:
 		return mariadb.NewMariadbCrawler(dataSource, outChannel)
+
+	case INTEGRATION_MYSQL:
+		return mariadb.NewMysqlCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)

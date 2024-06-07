@@ -11,6 +11,7 @@ const (
 	INTEGRATION_AWS_FLOW_LOGS = "aws_flow_logs"
 	INTEGRATION_MONGODB       = "mongodb"
 	INTEGRATION_MARIADB       = "mariadb"
+	INTEGRATION_MYSQL         = "mysql"
 )
 
 type BaseConfig struct {
