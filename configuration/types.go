@@ -25,6 +25,7 @@ type BloopiConfigDataSource struct {
 	Type   string
 	Name   string
 	Desc   string
+	ID     string
 	Config []BloopiConfigNameValueConfig
 }
 
