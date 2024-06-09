@@ -58,7 +58,8 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agen
 		}
 
 		currentDS := &bloopi_agent.DataSource{
-			Info: info,
+			Info:         info,
+			DataSourceID: dataSource.ID,
 			Config: bloopi_agent.DataSourceConfig{
 				ValuePairs: dsValuePairs,
 			},
