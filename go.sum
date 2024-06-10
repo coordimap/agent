@@ -37,6 +37,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240609090328-e14c58c7d6a0 h1:1QV3SbZYeFoxGJapLa3MadOcUdBG0Gu8LnDxedL1tw8=
 dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240609090328-e14c58c7d6a0/go.mod h1:NwZcVNvqaciXNEgX+Qbm0PTxJLhC8Xe8chNoHabnOyY=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240610181506-16d22e19ce3c h1:ThGaOQQVDpA1i3OYvZpV4FkRsNK/lvndkiO6hbYVLzE=
+dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240610181506-16d22e19ce3c/go.mod h1:7t0i2R9U+GF65HfwWKhDwOpRd8TlTqfmDv71WMX6k40=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
