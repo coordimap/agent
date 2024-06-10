@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS build-env
+FROM golang:1.22.3-alpine AS build-env
 ADD . /src
 RUN apk add --no-cache git
 ARG GIT_TOKEN
