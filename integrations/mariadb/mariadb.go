@@ -91,7 +91,7 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 func (mariaCrawler *mariadbCrawler) Crawl() {
 	crawlTicker := time.NewTicker(mariaCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", mariaCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", mariaCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := mariaCrawler.crawl()
 		log.Info().Msgf("Crawling Postgres DB for %s-%s", mariaCrawler.dataSource.Info.Type, mariaCrawler.dataSource.Info.Name)
@@ -178,7 +178,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 		}
 
-		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, tableData.Name, mariadb.MARIADB_TYPE_TABLE, crawlTime)
+		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, internalTableName, mariadb.MARIADB_TYPE_TABLE, crawlTime)
 		if errTableElem != nil {
 			continue
 		}

@@ -94,7 +94,7 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 func (crawler *awsFlowLogsCrawler) Crawl() {
 	crawlTicker := time.NewTicker(crawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", crawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", crawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		go func() {
 			crawledData, errCrawl := crawler.crawl()

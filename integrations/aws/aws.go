@@ -40,7 +40,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 
 	crawlTicker := time.NewTicker(durationInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", awsCrawl.ds.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", awsCrawl.ds.DataSourceID)
 	for range crawlTicker.C {
 		crawledData, errCrawl := awsCrawl.crawl()
 		if errCrawl != nil {

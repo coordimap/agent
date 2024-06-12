@@ -69,7 +69,7 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespacePrefix, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespace string) ([]bloopi_agent.RelationshipElement, error) {
 	allDeploymentPodsRelationships := []bloopi_agent.RelationshipElement{}
 
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
@@ -77,8 +77,8 @@ func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deplo
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypeDeployment, deployment.Name),
-			DestinationID:    fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypePod, pod.Name),
+			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, deployment.Name),
+			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeDeploymentPod,
 		})
 	}
@@ -95,7 +95,7 @@ func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Servi
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespacePrefix, namespace string) ([]bloopi_agent.RelationshipElement, error) {
+func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespace string) ([]bloopi_agent.RelationshipElement, error) {
 	allServicePodsRelationships := []bloopi_agent.RelationshipElement{}
 
 	set := labels.Set(service.Spec.Selector)
@@ -103,8 +103,8 @@ func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, names
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allServicePodsRelationships = append(allServicePodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypeService, service.Name),
-			DestinationID:    fmt.Sprintf("%s.%s.%s", namespacePrefix, kube_model.TypePod, pod.Name),
+			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, service.Name),
+			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeServicePod,
 		})
 	}
@@ -296,8 +296,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships(prefix string) ([]bl
 
 		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
-			sourceID := fmt.Sprintf("%s.%s.%s.%s", prefix, sourceWorkloadNamespace, kube_model.TypeService, sourceCanonicalService)
-			destinationID := fmt.Sprintf("%s.%s.%s.%s", prefix, destinationWorkloadNamespace, kube_model.TypeService, destinationCanonicalService)
+			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), string(sourceCanonicalService))
+			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), string(destinationCanonicalService))
 
 			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
 				SourceID:         sourceID,
