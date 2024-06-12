@@ -108,7 +108,7 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 func (kubeCrawler *kubernetesCrawler) Crawl() {
 	crawlTicker := time.NewTicker(kubeCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := kubeCrawler.crawl()
 		log.Info().Msgf("Crawling Kubernetes cluster for %s-%s", kubeCrawler.dataSource.Info.Type, kubeCrawler.dataSource.Info.Name)

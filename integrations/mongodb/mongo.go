@@ -116,7 +116,7 @@ func connectToDB(host, user, pass string) (*mongo.Client, error) {
 func (mongoCrawler *mongoCrawler) Crawl() {
 	crawlTicker := time.NewTicker(mongoCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := mongoCrawler.crawl()
 		log.Info().Msgf("Crawling Postgres DB for %s-%s", mongoCrawler.dataSource.Info.Type, mongoCrawler.dataSource.Info.Name)

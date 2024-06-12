@@ -126,7 +126,7 @@ func connectToDB(dbHost, dbUser, dbPass, dbName, sslMode string) (*sql.DB, error
 func (postCrawler *postgresCrawler) Crawl() {
 	crawlTicker := time.NewTicker(postCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.Info.Name)
+	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := postCrawler.crawl()
 		log.Info().Msgf("Crawling Postgres DB for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
@@ -157,13 +157,14 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 
 	postDB.Schemas = schemaNames
-	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, post_model.POSTGRES_TYPE_DB, crawlTime)
+	dbInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, "", "")
+	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, post_model.POSTGRES_TYPE_DB, crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", postCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
 	}
 
-	rel, errRel := utils.CreateRelationship(postCrawler.Host, postCrawler.DBName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+	rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
 	}
@@ -171,6 +172,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	allCrawledElements = append(allCrawledElements, dbElem)
 
 	for _, schemaName := range schemaNames {
+		schemaInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, "")
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
@@ -178,18 +180,19 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			continue
 		}
 
-		rel, errRel := utils.CreateRelationship(postCrawler.DBName, schemaName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+		rel, errRel := utils.CreateRelationship(dbInternalName, schemaInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 		if errRel == nil {
 			allCrawledElements = append(allCrawledElements, rel)
 		}
 
 		for _, tableName := range tableNames {
+			tableInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
 			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
 				log.Error().Msgf("Error while getting table data for table: %s.%s due to: %s", schemaName, tableName, errTable.Error())
 			}
-			rel, errRel := utils.CreateRelationship(schemaName, tableName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+			rel, errRel := utils.CreateRelationship(schemaInternalName, tableInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 			if errRel == nil {
 				allCrawledElements = append(allCrawledElements, rel)
 			}
@@ -201,10 +204,10 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 				for _, destination := range constraint.Destinations {
 					separatorIndex := strings.LastIndex(destination.Name, ".")
-					destinationTable := destination.Name[0:separatorIndex]
+					destinationTableInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, destination.Name[0:separatorIndex])
 
 					// add the referenced tableName in the current elem's relations
-					rel, errRel := utils.CreateRelationship(table.Name, destinationTable, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+					rel, errRel := utils.CreateRelationship(tableInternalName, destinationTableInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 					if errRel == nil {
 						allCrawledElements = append(allCrawledElements, rel)
 					}
@@ -219,7 +222,8 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 
 			for _, tableIndex := range tableIndexes {
-				indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, tableIndex.Name, post_model.POSTGRES_TYPE_INDEX, crawlTime)
+				indexInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableIndex.Name)
+				indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, post_model.POSTGRES_TYPE_INDEX, crawlTime)
 				if errIndexElem != nil {
 					log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())
 					continue
@@ -227,23 +231,23 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				allCrawledElements = append(allCrawledElements, indexElem)
 				table.Indexes = append(table.Indexes, tableIndex.Name)
 
-				relTableIndex, errRelTableIndex := utils.CreateRelationship(tableName, tableIndex.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+				relTableIndex, errRelTableIndex := utils.CreateRelationship(tableInternalName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 				if errRelTableIndex == nil {
 					allCrawledElements = append(allCrawledElements, relTableIndex)
 				}
 
-				relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(postCrawler.DBName, indexElem.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+				relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(dbInternalName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 				if errRelDBNameIndex == nil {
 					allCrawledElements = append(allCrawledElements, relDBNameIndex)
 				}
 
-				relSchemaIndex, errRelSchemaIndex := utils.CreateRelationship(schemaName, indexElem.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+				relSchemaIndex, errRelSchemaIndex := utils.CreateRelationship(schemaInternalName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 				if errRelSchemaIndex == nil {
 					allCrawledElements = append(allCrawledElements, relSchemaIndex)
 				}
 			}
 
-			tableElem, errTableElem := utils.CreateElement(table, tableName, tableName, post_model.POSTGRES_TYPE_TABLE, crawlTime)
+			tableElem, errTableElem := utils.CreateElement(table, tableName, tableInternalName, post_model.POSTGRES_TYPE_TABLE, crawlTime)
 			if errTableElem != nil {
 				log.Info().Msgf("Cannot create table element for table: %s because %s", tableName, errTableElem.Error())
 				continue
@@ -258,23 +262,25 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		}
 
 		for _, materializedViewName := range materializedViewNames {
-			view, errView := postCrawler.getView(schemaName, materializedViewName)
+			view, errView := postCrawler.getMaterializedView(schemaName, materializedViewName)
 			if errView != nil {
 				log.Info().Msgf("Cannot get view data for materialized view: %s because %s", materializedViewName, errView.Error())
 				continue
 			}
 
-			rel, errRel := utils.CreateRelationship(postCrawler.DBName, materializedViewName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+			materializedViewInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, materializedViewName)
+
+			rel, errRel := utils.CreateRelationship(dbInternalName, materializedViewInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 			if errRel == nil {
 				allCrawledElements = append(allCrawledElements, rel)
 			}
 
-			relSchema, errRelSchema := utils.CreateRelationship(schemaName, materializedViewName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+			relSchema, errRelSchema := utils.CreateRelationship(schemaInternalName, materializedViewInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 			if errRelSchema == nil {
 				allCrawledElements = append(allCrawledElements, relSchema)
 			}
 
-			viewElem, errViewElem := utils.CreateElement(view, view.Name, view.Name, post_model.POSTGRES_TYPE_MATERIALIZED_VIEW, crawlTime)
+			viewElem, errViewElem := utils.CreateElement(view, view.Name, materializedViewInternalName, post_model.POSTGRES_TYPE_MATERIALIZED_VIEW, crawlTime)
 			if errViewElem != nil {
 				log.Info().Msgf("Cannot create materialized view element for view: %s because %s", materializedViewName, errViewElem.Error())
 				continue
@@ -288,7 +294,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			Views:    materializedViewNames,
 			Database: postDB.Name,
 		}
-		schemaElem, errSchemaElem := utils.CreateElement(schema, schemaName, schemaName, post_model.POSTGRES_TYPE_SCHEMA, crawlTime)
+		schemaElem, errSchemaElem := utils.CreateElement(schema, schemaName, schemaInternalName, post_model.POSTGRES_TYPE_SCHEMA, crawlTime)
 		if errSchemaElem != nil {
 			// We cannot process anymore if there is no schema
 			continue

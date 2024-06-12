@@ -31,7 +31,7 @@ func (postCrawler *postgresCrawler) getSchemaNames() ([]string, error) {
 
 func (postCrawler *postgresCrawler) getSchemaTables(schemaName string) ([]string, error) {
 	tableNames := []string{}
-	sqlStatement := `select table_schema || '.' || table_name from information_schema.tables where table_schema not in ('pg_catalog', 'information_schema') and table_schema = $1`
+	sqlStatement := `select table_name from information_schema.tables where table_schema not in ('pg_catalog', 'information_schema') and table_schema = $1`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName)
 	if err != nil {
 		return tableNames, err
@@ -109,7 +109,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 				kcu.column_name as key_column,
 				'postgres.' || LOWER(REPLACE(tco.constraint_type, ' ', '_')) AS constraint_type
 			from information_schema.table_constraints tco
-			join information_schema.key_column_usage kcu 
+			join information_schema.key_column_usage kcu
 				on kcu.constraint_name = tco.constraint_name
 				and kcu.constraint_schema = tco.constraint_schema
 				and kcu.constraint_name = tco.constraint_name
@@ -131,6 +131,8 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			if err := rowsConstraintsColumns.Scan(&sourceConstraintCol.Position, &sourceConstraintCol.Name, &constraintType); err != nil {
 				continue
 			}
+
+			sourceConstraintCol.Table = generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
 
 			switch constraintType {
 			case "PRIMARY KEY":
@@ -159,16 +161,16 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			select
 				ctu.table_schema || '.' || ctu.table_name || '.' || c.column_name as foreign_table,
 				c.ordinal_position
-			from 
+			from
 				information_schema.columns c,
 					information_schema.constraint_table_usage ctu,
 					information_schema.constraint_column_usage ccu
 			where
 					ctu.constraint_name = $1 and
-					ctu.table_schema = $2 and 
+					ctu.table_schema = $2 and
 					ccu.constraint_name = ctu.constraint_name and
 					ccu.table_schema = ctu.table_schema and
-					c.table_schema = ctu.table_schema and 
+					c.table_schema = ctu.table_schema and
 					c.table_name = ccu.table_name and
 					ccu.column_name = c.column_name
 		`
@@ -185,6 +187,8 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			if err := rowsFKConstraint.Scan(&fkColumn.Name, &fkColumn.Position); err != nil {
 				continue
 			}
+
+			fkColumn.Table = generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
 
 			constraint.Destinations = append(constraint.Destinations, fkColumn)
 			break
@@ -213,6 +217,9 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 		if err := rows.Scan(&column.Name, &column.Type, &column.Position); err != nil {
 			return columns, err
 		}
+
+		column.Table = generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
+
 		columns = append(columns, column)
 	}
 
@@ -222,7 +229,7 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string) ([]databasemodels.Index, error) {
 	indexes := []databasemodels.Index{}
 	tableNameCleaned := cleanupSchemaName(tableName)
-	sqlStatement := `select schemaname || '.' || indexname from pg_indexes where schemaname = $1 AND tablename = $2`
+	sqlStatement := `select indexname from pg_indexes where schemaname = $1 AND tablename = $2`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableNameCleaned)
 	if err != nil {
 		return indexes, err
@@ -232,8 +239,8 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 
 	for rows.Next() {
 		index := databasemodels.Index{
-			Table:  tableName,
-			Schema: schemaName,
+			Table:  generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName),
+			Schema: generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, ""),
 		}
 		var indexName string
 		if err := rows.Scan(&indexName); err != nil {
@@ -244,22 +251,22 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 
 		// Get index columns
 		indexColsSqlStatement := `
-			SELECT 
+			SELECT
 				coalesce(att.attname,
 							(('{' || pg_get_expr(
 										idx.indexprs,
 										idx.indrelid
 									)
-								|| '}')::text[]                                          
-							)[k.i]                                                         
+								|| '}')::text[]
+							)[k.i]
 						) AS index_column,
-				k.i AS index_order                                          
-			FROM pg_index idx                                                                
-			CROSS JOIN LATERAL unnest(idx.indkey) WITH ORDINALITY AS k(attnum, i)         
-			LEFT JOIN pg_attribute AS att                                                 
+				k.i AS index_order
+			FROM pg_index idx
+			CROSS JOIN LATERAL unnest(idx.indkey) WITH ORDINALITY AS k(attnum, i)
+			LEFT JOIN pg_attribute AS att
 				ON idx.indrelid = att.attrelid AND k.attnum = att.attnum
 			WHERE idx.indexrelid::regclass = '"%s"'::regclass`
-		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(fmt.Sprintf(indexColsSqlStatement, cleanupSchemaName(indexName)))
+		rowsIndexCols, errIndexCols := postCrawler.dbConn.Query(fmt.Sprintf(indexColsSqlStatement, indexName))
 		if errIndexCols != nil {
 			return indexes, errIndexCols
 		}
@@ -284,7 +291,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 func (postCrawler *postgresCrawler) getSchemaMaterializedViewNames(schemaName string) ([]string, error) {
 	viewNames := []string{}
 	sqlStatement := `
-		select schemaname || '.' || matviewname as view_name
+		select matviewname as view_name
 		from pg_matviews
 		where schemaname = $1
 		order by schemaname,
@@ -308,8 +315,8 @@ func (postCrawler *postgresCrawler) getSchemaMaterializedViewNames(schemaName st
 	return viewNames, nil
 }
 
-func (postCrawler *postgresCrawler) getView(schemaName, viewName string) (databasemodels.View, error) {
-	view := databasemodels.View{
+func (postCrawler *postgresCrawler) getMaterializedView(schemaName, viewName string) (databasemodels.MaterializedView, error) {
+	view := databasemodels.MaterializedView{
 		Name:   viewName,
 		Schema: schemaName,
 	}
