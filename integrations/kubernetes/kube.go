@@ -122,7 +122,6 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 }
 
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
-	// prefix := kubeCrawler.clusterName
 	crawlTime := time.Now().UTC()
 	globalCrawledElements := []*bloopi_agent.Element{}
 
@@ -642,7 +641,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		return nil, nil
 	}
 
-	istioRelationships, errIstioRelationships := kubeCrawler.getIstioRelationships(prefix)
+	istioRelationships, errIstioRelationships := kubeCrawler.getIstioRelationships()
 	if errIstioRelationships != nil {
 		log.Info().Msgf("There was an error finding the istio relationships for kubernetes connection %s because %s", kubeCrawler.dataSource.Info.Name, errIstioRelationships.Error())
 		return nil, errIstioRelationships
