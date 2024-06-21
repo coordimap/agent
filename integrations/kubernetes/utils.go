@@ -64,3 +64,9 @@ func clearManagedFields(item *metav1.ObjectMeta) {
 func generateInternalName(dataSourceID, namespace, name string) string {
 	return fmt.Sprintf("%s-%s-%s", dataSourceID, namespace, name)
 }
+
+func labelExists(label string, labelsToCheckIn map[string]string) bool {
+	_, exists := labelsToCheckIn[label]
+
+	return exists
+}

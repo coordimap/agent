@@ -124,6 +124,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
 	globalCrawledElements := []*bloopi_agent.Element{}
+	createdElementsFromLabels := []string{}
 
 	nodes, errNodes := kubeCrawler.getNodes()
 	if errNodes != nil {
@@ -150,6 +151,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				continue
 			}
 
+			elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(pvInternalID, "", pv.Labels, createdElementsFromLabels, crawlTime)
+			createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+			globalCrawledElements = append(globalCrawledElements, elems...)
+
 			rel, errRel := utils.CreateRelationship(pvInternalID, generateInternalName(kubeCrawler.dataSource.DataSourceID, "", pv.Spec.StorageClassName), kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 			if errRel == nil {
 				globalCrawledElements = append(globalCrawledElements, rel)
@@ -170,6 +175,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				continue
 			}
 
+			elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(storageClassInternalID, "", storageClass.Labels, createdElementsFromLabels, crawlTime)
+			createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+			globalCrawledElements = append(globalCrawledElements, elems...)
+
 			globalCrawledElements = append(globalCrawledElements, nodeElement)
 		}
 	}
@@ -188,6 +197,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		if errNodeElement != nil {
 			continue
 		}
+
+		elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(namespaceInternalID, namespace.Name, namespace.Labels, createdElementsFromLabels, crawlTime)
+		createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+		allCrawledElements = append(allCrawledElements, elems...)
 
 		allCrawledElements = append(allCrawledElements, nodeElement)
 
@@ -228,6 +241,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(deploymentInternalID, namespace.Name, deployment.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				// create namespace - deployment relationship
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, deploymentInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
@@ -274,6 +291,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(serviceInternalID, namespace.Name, service.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				// create namespace - service relationship
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, serviceInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -318,6 +339,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(podInternalID, namespace.Name, pod.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, podInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -371,6 +396,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(secretInternalID, namespace.Name, secret.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, secretInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -391,6 +420,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(endpointInternalID, namespace.Name, endpoint.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, endpointInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -415,6 +448,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(jobInternalID, namespace.Name, job.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, jobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -444,6 +481,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(cronJobInternalID, namespace.Name, cronJob.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, cronJobInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -472,6 +513,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(configMapInternalID, namespace.Name, configMap.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, configMapInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -492,6 +537,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(statefulSetInternalID, namespace.Name, statefulSet.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, statefulSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -531,6 +580,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(daemonSetInternalID, namespace.Name, daemonSet.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, daemonSetInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -551,6 +604,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(pvcInternalID, namespace.Name, pvc.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, pvcInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
@@ -573,6 +630,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -593,6 +654,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
+
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
@@ -612,6 +677,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				if errNodeElement != nil {
 					continue
 				}
+
+				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
+				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
+				allCrawledElements = append(allCrawledElements, elems...)
 
 				rel, errRel := utils.CreateRelationship(namespaceInternalID, ingressInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime)
 				if errRel == nil {
