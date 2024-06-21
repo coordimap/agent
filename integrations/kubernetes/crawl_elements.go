@@ -1,8 +1,10 @@
 package kubernetes
 
 import (
+	"cleye/utils"
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -244,6 +246,92 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1Beta1(namespace s
 	}
 
 	return list.Items, nil
+}
+
+func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInternalID, namespace string, labelsToCheckIn map[string]string, createdElementsFromLabels []string, crawlTime time.Time) ([]*bloopi_agent.Element, []string) {
+	allFoundElementsAndRelationships := []*bloopi_agent.Element{}
+	createdElements := []string{}
+
+	// check for helm chart
+	helmChartLabel := "helm.sh/chart"
+	if name, isHelmChart := labelsToCheckIn[helmChartLabel]; isHelmChart {
+		chartInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, name)
+
+		if !slices.Contains(createdElementsFromLabels, chartInternalID) {
+			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, crawlTime); errElem == nil {
+				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
+				createdElements = append(createdElements, chartInternalID)
+			}
+		}
+
+		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+		}
+	}
+
+	// check for part-of
+	partOfLabel := "app.kubernetes.io/part-of"
+	partOfLabelValue, partOfLabelExists := labelsToCheckIn[partOfLabel]
+	partOfLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, partOfLabelValue)
+	if partOfLabelExists {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, crawlTime); errElem == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
+			createdElements = append(createdElements, partOfLabelInternalID)
+		}
+
+		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+		}
+	}
+
+	// check for component
+	componentLabel := "app.kubernetes.io/component"
+	componentLabelValue, componentLabelExists := labelsToCheckIn[componentLabel]
+	componentLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, componentLabelValue)
+	if componentLabelExists {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, crawlTime); errElem == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
+			createdElements = append(createdElements, componentLabelInternalID)
+		}
+
+		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+		}
+
+		if partOfLabelExists {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+			}
+		}
+	}
+
+	nameLabel := "app.kubernetes.io/name"
+	nameLabelValue, nameLabelExists := labelsToCheckIn[nameLabel]
+	nameLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, nameLabelValue)
+	if nameLabelExists {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, crawlTime); errElem == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
+			createdElements = append(createdElements, nameLabelInternalID)
+		}
+
+		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+		}
+
+		if partOfLabelExists {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+			}
+		}
+
+		if componentLabelExists {
+			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
+			}
+		}
+	}
+
+	return allFoundElementsAndRelationships, createdElements
 }
 
 // crawl, queries the prometheus endpoint to get the data regarding the istio relationships
