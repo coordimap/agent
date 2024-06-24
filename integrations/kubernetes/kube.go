@@ -22,8 +22,9 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 		dataSource:      *dataSource,
 		outputChannel:   outChannel,
 		istioConfigured: false,
-		istioCrawler:    istioCrawler{},
+		istioCrawler:    prometheusCrawler{},
 		clusterName:     "",
+		retinaCrawler:   nil,
 	}
 
 	promQueryTime := ""
@@ -66,13 +67,21 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 			clientInitialzed = true
 
 		case kubeConfigIstioPrometheusHost:
-			istioCrawler, err := makeIstioCrawler(value)
+			istioCrawler, err := makePrometheusCrawler(value)
 			if err != nil {
 				return crawler, err
 			}
 
 			crawler.istioCrawler = istioCrawler
 			crawler.istioConfigured = true
+
+		case kubeConfigRetinaPrometheusHost:
+			retinaCrawler, err := makePrometheusCrawler(value)
+			if err != nil {
+				return crawler, err
+			}
+
+			crawler.retinaCrawler = &retinaCrawler
 
 		case kubeConfigClusterName:
 			crawler.clusterName = value
@@ -688,6 +697,12 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		if kubeCrawler.retinaCrawler != nil {
+			if retinaElems, errRetina := kubeCrawler.getRetinaFlowsRelationships(crawlTime); errRetina == nil {
+				allCrawledElements = append(allCrawledElements, retinaElems...)
 			}
 		}
 

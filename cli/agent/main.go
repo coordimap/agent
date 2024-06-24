@@ -18,7 +18,6 @@ import (
 
 var (
 	endpoint   = kingpin.Flag("endpoint", "The server URL where to send data.").Default("http://localhost:8000/crawlers/infra/aws").OverrideDefaultFromEnvar("CLEYE_ENDPOINT").String()
-	serverKey  = kingpin.Flag("key", "The authentication API key.").Default("bloopie-test-key").OverrideDefaultFromEnvar("BLOOPIE_KEY").String()
 	configFile = kingpin.Flag("config", "The config file path.").Default("config.yaml").OverrideDefaultFromEnvar("BLOOPIE_CONFIG_PATH").String()
 	debug      = kingpin.Flag("debug", "Displays debug statements giving the user more information as to what is happening inside the agent.").Bool()
 )
@@ -63,6 +62,11 @@ func main() {
 
 	for crawledData := range sender {
 		// call the endpoint
+
+		if crawledData.DataSource.DataSourceID == "" {
+			log.Error().Msgf("Cannot push data to the cloud because no data source id was found for the data source of type: %s", crawledData.DataSource.Info.Type)
+			continue
+		}
 
 		requestStruct := collector.AddCrawledInfraFromAgentRequest{
 			CloudCrawlData: *crawledData,

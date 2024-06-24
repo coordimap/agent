@@ -11,11 +11,12 @@ import (
 const defaultCrawlTime = 30 * time.Second
 
 const (
-	kubeConfigInCluster           = "in_cluster"
-	kubeConfigConfigFile          = "config_file"
-	kubeConfigCrawlInterval       = "crawl_interval"
-	kubeConfigIstioPrometheusHost = "prometheus_host"
-	kubeConfigClusterName         = "cluster_name"
+	kubeConfigInCluster            = "in_cluster"
+	kubeConfigConfigFile           = "config_file"
+	kubeConfigCrawlInterval        = "crawl_interval"
+	kubeConfigIstioPrometheusHost  = "prometheus_host"
+	kubeConfigClusterName          = "cluster_name"
+	kubeConfigRetinaPrometheusHost = "retina_prometheus"
 )
 
 type kubernetesCrawler struct {
@@ -24,11 +25,12 @@ type kubernetesCrawler struct {
 	outputChannel   chan *bloopi_agent.CloudCrawlData
 	dataSource      bloopi_agent.DataSource
 	istioConfigured bool
-	istioCrawler    istioCrawler
+	istioCrawler    prometheusCrawler
 	clusterName     string
+	retinaCrawler   *prometheusCrawler
 }
 
-type istioCrawler struct {
+type prometheusCrawler struct {
 	Host          string
 	promClient    api.Client
 	promQueryTime string
