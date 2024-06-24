@@ -10,8 +10,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func makeIstioCrawler(prometheusHost string) (istioCrawler, error) {
-	crawler := istioCrawler{
+func makePrometheusCrawler(prometheusHost string) (prometheusCrawler, error) {
+	crawler := prometheusCrawler{
 		promClient: nil,
 		Host:       prometheusHost,
 	}
@@ -63,10 +63,4 @@ func clearManagedFields(item *metav1.ObjectMeta) {
 
 func generateInternalName(dataSourceID, namespace, name string) string {
 	return fmt.Sprintf("%s-%s-%s", dataSourceID, namespace, name)
-}
-
-func labelExists(label string, labelsToCheckIn map[string]string) bool {
-	_, exists := labelsToCheckIn[label]
-
-	return exists
 }
