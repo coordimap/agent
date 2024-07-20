@@ -118,6 +118,7 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 	cleanedDataSource.Info.Name = inputDS.Info.Name
 	cleanedDataSource.Info.Type = inputDS.Info.Type
 	cleanedDataSource.Info.Desc = inputDS.Info.Desc
+	cleanedDataSource.DataSourceID = inputDS.DataSourceID
 
 	for _, dsConfigKeyValue := range inputDS.Config.ValuePairs {
 		if slices.Contains[[]string](skipFields, strings.ToLower(dsConfigKeyValue.Key)) {

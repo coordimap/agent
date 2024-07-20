@@ -3,7 +3,7 @@ module cleye
 go 1.22.3
 
 require (
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240620171721-6a6d236e50d2
+	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20240710173040-24214cccccea
 	github.com/aws/aws-sdk-go v1.44.143
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-redis/redis/v8 v8.11.5
