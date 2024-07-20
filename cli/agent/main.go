@@ -69,12 +69,7 @@ func main() {
 		}
 
 		requestStruct := collector.AddCrawledInfraFromAgentRequest{
-			CloudCrawlData: bloopi_agent.CloudCrawlData{
-				DataSource:      crawledData.DataSource,
-				CrawledData:     crawledData.CrawledData,
-				CrawlInternalID: crawledData.CrawlInternalID,
-				Timestamp:       crawledData.Timestamp,
-			},
+			CloudCrawlData: *crawledData,
 		}
 
 		requestStruct.CloudCrawlData.DataSource = *utils.CleanUpDataSource(&requestStruct.CloudCrawlData.DataSource, configuration.GetSkipFields())
