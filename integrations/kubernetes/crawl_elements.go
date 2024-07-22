@@ -265,7 +265,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			}
 		}
 
-		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -280,7 +280,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, partOfLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -295,12 +295,12 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, componentLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -315,18 +315,18 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, nameLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
 
 		if componentLabelExists {
-			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -372,7 +372,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		sourceInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), string(metric["source_podname"]))
 		destinationInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), string(metric["destination_podname"]))
 
-		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
 		}
 
@@ -380,7 +380,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 			hyphenIndex := strings.LastIndex(string(metric["destination_workload_name"]), "-")
 			workloadName := string(metric["destination_workload_name"])[0:hyphenIndex]
 			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), workloadName)
-			if rel, err := utils.CreateRelationship(sourceInternalID, deploymentInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); err == nil {
+			if rel, err := utils.CreateRelationship(sourceInternalID, deploymentInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); err == nil {
 				allFoundRelationships = append(allFoundRelationships, rel)
 			}
 		}
@@ -389,7 +389,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 			hyphenIndex := strings.LastIndex(string(metric["source_workload_name"]), "-")
 			workloadName := string(metric["source_workload_name"])[0:hyphenIndex]
 			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), workloadName)
-			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, kube_model.RelationshipSkipinsert, kube_model.RelationshipSkipinsert, crawlTime); err == nil {
+			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime); err == nil {
 				allFoundRelationships = append(allFoundRelationships, rel)
 			}
 		}
