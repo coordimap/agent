@@ -365,6 +365,28 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					}
 				}
 
+				for _, podContainer := range pod.Spec.Containers {
+					for _, containerEnv := range podContainer.Env {
+						if containerEnv.ValueFrom != nil {
+							if containerEnv.ValueFrom.ConfigMapKeyRef != nil {
+								configMapInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, containerEnv.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+								rel, errRel := utils.CreateRelationship(podInternalID, configMapInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+								if errRel == nil {
+									allCrawledElements = append(allCrawledElements, rel)
+								}
+							}
+
+							if containerEnv.ValueFrom.SecretKeyRef != nil {
+								podSecretInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, containerEnv.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+								rel, errRel := utils.CreateRelationship(podInternalID, podSecretInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+								if errRel == nil {
+									allCrawledElements = append(allCrawledElements, rel)
+								}
+							}
+						}
+					}
+				}
+
 				for _, podVolume := range pod.Spec.Volumes {
 					podVolumeInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, podVolume.Name)
 					rel, errRel := utils.CreateRelationship(podInternalID, podVolumeInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
@@ -375,6 +397,14 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					if podVolume.ConfigMap != nil {
 						podConfigMapInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, podVolume.ConfigMap.Name)
 						rel, errRel := utils.CreateRelationship(podInternalID, podConfigMapInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+
+					if podVolume.PersistentVolumeClaim != nil {
+						podPersisternVolumeClaim := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, podVolume.PersistentVolumeClaim.ClaimName)
+						rel, errRel := utils.CreateRelationship(podInternalID, podPersisternVolumeClaim, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 						if errRel == nil {
 							allCrawledElements = append(allCrawledElements, rel)
 						}
