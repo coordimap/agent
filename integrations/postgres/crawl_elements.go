@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
 	post_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
@@ -188,7 +189,9 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 				continue
 			}
 
-			fkColumn.Table = generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
+			splitValues := strings.Split(fkColumn.Name, ".")
+
+			fkColumn.Table = generateInternalName(postCrawler.Host, postCrawler.DBName, splitValues[0], splitValues[1])
 
 			constraint.Destinations = append(constraint.Destinations, fkColumn)
 			break
