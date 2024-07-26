@@ -129,7 +129,7 @@ func (postCrawler *postgresCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", postCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := postCrawler.crawl()
-		log.Info().Msgf("Crawling Postgres DB for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawling Postgres DB for %s", postCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())
@@ -149,7 +149,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		Schemas: []string{},
 	}
 
-	log.Debug().Msgf("Starting retrieval of Postgres DB schemas for %s-%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name)
+	log.Debug().Msgf("Starting retrieval of Postgres DB schemas for %s", postCrawler.dataSource.DataSourceID)
 
 	schemaNames, errGetSchemaNames := postCrawler.getSchemaNames()
 	if errGetSchemaNames != nil {

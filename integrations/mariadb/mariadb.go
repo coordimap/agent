@@ -80,7 +80,7 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.User, crawler.Pass, crawler.Host, "3306", crawler.DBName)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
+		log.Error().Msgf("Cannot connect to the MariaDB of the config %s", dataSource.DataSourceID)
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
@@ -94,7 +94,7 @@ func (mariaCrawler *mariadbCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", mariaCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := mariaCrawler.crawl()
-		log.Info().Msgf("Crawling Postgres DB for %s-%s", mariaCrawler.dataSource.Info.Type, mariaCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawling MariaDB for %s", mariaCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())

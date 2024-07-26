@@ -78,7 +78,7 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.User, crawler.Pass, crawler.Host, "3306", crawler.DBName)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
+		log.Error().Msgf("Cannot connect to the MySQL of the config %s", crawler.dataSource.DataSourceID)
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
