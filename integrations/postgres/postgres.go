@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -203,11 +202,9 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				}
 
 				for _, destination := range constraint.Destinations {
-					separatorIndex := strings.LastIndex(destination.Name, ".")
-					destinationTableInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, destination.Name[0:separatorIndex])
 
 					// add the referenced tableName in the current elem's relations
-					rel, errRel := utils.CreateRelationship(tableInternalName, destinationTableInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+					rel, errRel := utils.CreateRelationship(tableInternalName, destination.Table, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
 					if errRel == nil {
 						allCrawledElements = append(allCrawledElements, rel)
 					}
