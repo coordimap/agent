@@ -120,7 +120,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", kubeCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := kubeCrawler.crawl()
-		log.Info().Msgf("Crawling Kubernetes cluster for %s-%s", kubeCrawler.dataSource.Info.Type, kubeCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawling Kubernetes cluster for %s", kubeCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())

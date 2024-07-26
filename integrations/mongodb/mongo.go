@@ -79,7 +79,7 @@ func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
+		log.Error().Msgf("Cannot connect to the MongoDB of the config %s", crawler.dataSource.Info.Name)
 		return &crawler, errDBConn
 	}
 
@@ -119,7 +119,7 @@ func (mongoCrawler *mongoCrawler) Crawl() {
 	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.dataSource.DataSourceID)
 	for range crawlTicker.C {
 		_, errCrawl := mongoCrawler.crawl()
-		log.Info().Msgf("Crawling Postgres DB for %s-%s", mongoCrawler.dataSource.Info.Type, mongoCrawler.dataSource.Info.Name)
+		log.Info().Msgf("Crawling MongoDB for %s", mongoCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())
