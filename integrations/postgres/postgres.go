@@ -163,7 +163,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		return nil, errDBElem
 	}
 
-	rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+	rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
 	}
