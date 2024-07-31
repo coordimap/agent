@@ -208,6 +208,8 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 			}
 		}
 
+		constraints = append(constraints, constraint)
+
 	}
 
 	return constraints, nil

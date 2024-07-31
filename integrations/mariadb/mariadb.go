@@ -123,7 +123,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 	allCrawledElements = append(allCrawledElements, dbElem)
 
-	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipExternalSourceSideType, crawlTime)
+	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
 	}
