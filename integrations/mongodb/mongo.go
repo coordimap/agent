@@ -79,7 +79,7 @@ func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the MongoDB of the config %s", crawler.dataSource.Info.Name)
+		log.Error().Msgf("Cannot connect to the MongoDB of the config %s", crawler.dataSource.DataSourceID)
 		return &crawler, errDBConn
 	}
 
@@ -153,12 +153,12 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			collectionHandle := dbHandle.Collection(collection.Name)
 			mongoCollection, errMongoCollection := mongoCrawler.getMongodbDatabaseCollection(dbHandle, collection.Name)
 			if errMongoCollection != nil {
-				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
+				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
 				continue
 			}
 			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, mongodb.MONGODB_TYPE_COLLECTION, crawlTime)
 			if errCollectionElem != nil {
-				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
+				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, collectionElem)
@@ -166,13 +166,13 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			// get indexes
 			collectionIndexes, errCollectionIndexes := mongoCrawler.listCollectionIndexes(collectionHandle)
 			if errCollectionIndexes != nil {
-				log.Error().Msgf("could not get collection indexes for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.Info.Name)
+				log.Error().Msgf("could not get collection indexes for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
 			}
 
 			for _, foundIndex := range collectionIndexes {
 				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, mongodb.MONGODB_TYPE_INDEX, crawlTime)
 				if errIndexElem != nil {
-					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.Info.Name)
+					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.DataSourceID)
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
@@ -183,7 +183,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			Data: allCrawledElements,
 		}
 
-		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.dataSource.Info.Name, dbName)
+		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.dataSource.DataSourceID, dbName)
 
 		mongoCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
 			Timestamp:       time.Now().UTC(),
