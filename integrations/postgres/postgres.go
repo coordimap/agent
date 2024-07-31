@@ -86,7 +86,7 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName, crawler.SSLMode)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.Info.Name)
+		log.Error().Msgf("Cannot connect to the Postgres db of the config %s", crawler.dataSource.DataSourceID)
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
@@ -172,7 +172,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 	for _, schemaName := range schemaNames {
 		schemaInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, "")
-		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName)
+		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
 			log.Error().Msgf("Could not get the table names for the schema %s because %s", schemaName, errGetTableNames.Error())
@@ -186,7 +186,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 		for _, tableName := range tableNames {
 			tableInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
-			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
+			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName, tableName)
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
 				log.Error().Msgf("Error while getting table data for table: %s.%s due to: %s", schemaName, tableName, errTable.Error())
@@ -211,7 +211,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				}
 			}
 
-			log.Debug().Msgf("Starting retrieval of Postgres DB table indexes for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.Info.Name, schemaName, tableName)
+			log.Debug().Msgf("Starting retrieval of Postgres DB table indexes for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName, tableName)
 			tableIndexes, errTableIndexes := postCrawler.getTableIndexes(schemaName, tableName)
 			if errTableIndexes != nil {
 				log.Info().Msgf("Cannot get the table index names for table: %s.%s because %s", schemaName, tableName, errTableIndexes.Error())
@@ -302,7 +302,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			Data: allCrawledElements,
 		}
 
-		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s and schema %s", len(allCrawledElements), postCrawler.dataSource.Info.Name, schemaName)
+		log.Info().Msgf("Crawled %d PostgreSQL elements for connection %s and schema %s", len(allCrawledElements), postCrawler.dataSource.DataSourceID, schemaName)
 
 		postCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
 			Timestamp:       time.Now().UTC(),

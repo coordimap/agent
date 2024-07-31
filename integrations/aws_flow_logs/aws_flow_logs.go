@@ -104,7 +104,7 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 				return
 			}
 			// ship the crawledData to the backend
-			log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.dataSource.Info.Name)
+			log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.dataSource.DataSourceID)
 			crawler.outputChannel <- crawledData
 		}()
 	}
@@ -259,6 +259,6 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 		Timestamp:       time.Now().UTC(),
 		DataSource:      *crawler.dataSource,
 		CrawledData:     crawledData,
-		CrawlInternalID: crawler.dataSource.Info.Name,
+		CrawlInternalID: crawler.dataSource.DataSourceID,
 	}, nil
 }
