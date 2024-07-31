@@ -669,6 +669,16 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				for _, rules := range ingress.Spec.Rules {
+					for _, path := range rules.HTTP.Paths {
+						internalServiceName := generateInternalName(kubeCrawler.dataSource.DataSourceID, ingress.Namespace, path.Backend.ServiceName)
+						rel, errRel := utils.CreateRelationship(ingressInternalID, internalServiceName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+				}
+
 				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
 				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
 				allCrawledElements = append(allCrawledElements, elems...)
@@ -693,6 +703,16 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					continue
 				}
 
+				for _, rules := range ingress.Spec.Rules {
+					for _, path := range rules.HTTP.Paths {
+						internalServiceName := generateInternalName(kubeCrawler.dataSource.DataSourceID, ingress.Namespace, path.Backend.Service.Name)
+						rel, errRel := utils.CreateRelationship(ingressInternalID, internalServiceName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+				}
+
 				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
 				createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
 				allCrawledElements = append(allCrawledElements, elems...)
@@ -715,6 +735,16 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1Beta1, crawlTime)
 				if errNodeElement != nil {
 					continue
+				}
+
+				for _, rules := range ingress.Spec.Rules {
+					for _, path := range rules.HTTP.Paths {
+						internalServiceName := generateInternalName(kubeCrawler.dataSource.DataSourceID, ingress.Namespace, path.Backend.ServiceName)
+						rel, errRel := utils.CreateRelationship(ingressInternalID, internalServiceName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
 				}
 
 				elems, createdElems := kubeCrawler.getLabelElementsAndRelationships(ingressInternalID, namespace.Name, ingress.Labels, createdElementsFromLabels, crawlTime)
