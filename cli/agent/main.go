@@ -93,15 +93,15 @@ func main() {
 			continue
 		}
 
-		log.Info().Msgf("Sending %d Elements to the collector %s for %s", len(crawledData.CrawledData.Data), *endpoint, crawledData.DataSource.Info.Name)
+		log.Info().Msgf("Sending %d elements to the collector %s for %s", len(crawledData.CrawledData.Data), *endpoint, crawledData.DataSource.DataSourceID)
 
 		if resp.StatusCode != 200 {
-			log.Error().Msgf("Could not ship any elements to the collector. Response was %d", resp.StatusCode)
+			log.Error().Msgf("Could not ship any elements to the collector for data source: %s. Response was %d", crawledData.DataSource.DataSourceID, resp.StatusCode)
 			continue
 		}
 
 		resp.Body.Close()
-		log.Info().Msgf("Successfully shipped all element for %s", crawledData.DataSource.Info.Name)
+		log.Info().Msgf("Successfully shipped all element for %s", crawledData.DataSource.DataSourceID)
 	}
 
 	fmt.Println("Goodbye!!!")
