@@ -290,11 +290,6 @@ func describeAllAMIs(session *session.Session, owner []*string, crawlTime time.T
 	for _, elem := range result.Images {
 		agentElem, _ := utils.CreateElement(elem, *elem.Name, *elem.ImageId, aws_shared_model.AwsTypeAMI, crawlTime)
 		returnedElems = append(returnedElems, agentElem)
-
-		rel, errRel := utils.CreateRelationship(*elem.ImageId, *elem.ImageId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, crawlTime)
-		if errRel == nil {
-			returnedElems = append(returnedElems, rel)
-		}
 	}
 
 	return returnedElems, nil
