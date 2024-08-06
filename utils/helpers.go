@@ -91,11 +91,12 @@ func CreateAWSElement(element interface{}, name, id, elemType string, crawlTime 
 }
 
 // CreateRelationship create a relationship element
-func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelationshipType string, crawlTime time.Time) (*bloopi_agent.Element, error) {
+func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelationshipType string, relationType int, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	parentElem := bloopi_agent.RelationshipElement{
 		SourceID:         sourceID,
 		DestinationID:    destinationID,
 		RelationshipType: relationshipType,
+		RelationType:     relationType,
 	}
 
 	relationshipWrapperElem, errRelationshipWrapperElem := CreateElement(
