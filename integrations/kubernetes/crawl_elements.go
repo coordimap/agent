@@ -83,6 +83,7 @@ func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deplo
 			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, deployment.Name),
 			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeDeploymentPod,
+			RelationType:     bloopi_agent.ParentChildTypeRelation,
 		})
 	}
 
@@ -109,6 +110,7 @@ func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, names
 			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, service.Name),
 			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeServicePod,
+			RelationType:     bloopi_agent.ParentChildTypeRelation,
 		})
 	}
 
@@ -455,6 +457,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeService,
+				RelationType:     bloopi_agent.FlowTypeRelation,
 			})
 
 			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
@@ -469,6 +472,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
+				RelationType:     bloopi_agent.FlowTypeRelation,
 			})
 
 			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
@@ -478,6 +482,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 			SourceID:         string(pod),
 			DestinationID:    "",
 			RelationshipType: kube_model.FlowIstioRelationshipTypePod,
+			RelationType:     bloopi_agent.FlowTypeRelation,
 		}
 	}
 
@@ -522,6 +527,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeService,
+					RelationType:     bloopi_agent.FlowTypeRelation,
 				})
 
 				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}
@@ -539,6 +545,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
+					RelationType:     bloopi_agent.FlowTypeRelation,
 				})
 
 				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}

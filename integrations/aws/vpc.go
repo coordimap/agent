@@ -470,6 +470,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 					SourceID:         *elem.LoadBalancerArn,
 					DestinationID:    *targetHealthDescription.Target.Id,
 					RelationshipType: aws_shared_model.AwsRelationshipTypeLoadBalancerV2Targets,
+					RelationType:     bloopi_agent.ParentChildTypeRelation,
 				}
 
 				dummyID := fmt.Sprintf("%s-%s", loadBalancerTargetRelation.SourceID, loadBalancerTargetRelation.DestinationID)
