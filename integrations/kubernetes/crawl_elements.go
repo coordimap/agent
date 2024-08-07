@@ -391,7 +391,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 			hyphenIndex := strings.LastIndex(string(metric["source_workload_name"]), "-")
 			workloadName := string(metric["source_workload_name"])[0:hyphenIndex]
 			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), workloadName)
-			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); err == nil {
+			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); err == nil {
 				allFoundRelationships = append(allFoundRelationships, rel)
 			}
 		}
