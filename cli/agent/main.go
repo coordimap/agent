@@ -49,7 +49,7 @@ func main() {
 	// 3. Call Crawl() from each object to initiate crawling of the respective DataSource
 	for integrationName, dss := range configuration.GetAllDataSources() {
 		for _, ds := range dss {
-			log.Info().Msgf("Loading crawler for %s:%s", integrationName, ds.Info.Name)
+			log.Info().Msgf("Loading crawler for %s:%s", integrationName, ds.DataSourceID)
 			dsCrawler, errCrawler := integrations.IntegrationsFactory(integrationName, ds, sender)
 			if errCrawler != nil {
 				log.Info().Msgf("Could not create Crawler for integration: %s. The error was: %s", integrationName, errCrawler.Error())
@@ -64,7 +64,7 @@ func main() {
 		// call the endpoint
 
 		if crawledData.DataSource.DataSourceID == "" {
-			log.Error().Msgf("Cannot push data to the cloud because no data source id was found for the data source of type: %s", crawledData.DataSource.Info.Type)
+			log.Error().Msgf("Cannot push data to the cloud because no data source id was found for the data source of type: %s", crawledData.DataSource.DataSourceID)
 			continue
 		}
 
