@@ -191,7 +191,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 
 	// return &crawledData, nil
 	return &bloopi_agent.CloudCrawlData{
-		Timestamp:       time.Now().UTC(),
+		Timestamp:       crawlTime,
 		DataSource:      *awsCrawl.ds,
 		CrawledData:     crawledData,
 		CrawlInternalID: awsCrawl.ds.Info.Name,

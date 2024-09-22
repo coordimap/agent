@@ -101,7 +101,10 @@ func main() {
 		}
 
 		resp.Body.Close()
-		log.Info().Msgf("Successfully shipped all element for %s", crawledData.DataSource.DataSourceID)
+		log.Info().
+			Str("CrawlTime", time.Since(crawledData.Timestamp).String()).
+			Str("DataSourceID", crawledData.DataSource.DataSourceID).
+			Msgf("Successfully shipped all elements.")
 	}
 
 	fmt.Println("Goodbye!!!")

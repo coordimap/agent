@@ -195,5 +195,6 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		CrawledData:     crawledData,
 		CrawlInternalID: schemaName,
 	}
+
 	return nil, nil
 }
