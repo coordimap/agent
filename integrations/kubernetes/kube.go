@@ -773,12 +773,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		log.Info().Msgf("Crawled %d Kubernetes elements for connection %s and namespace %s", len(allCrawledElements), kubeCrawler.dataSource.DataSourceID, namespace.Name)
 
 		kubeCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
-			Timestamp:       time.Now().UTC(),
+			Timestamp:       crawlTime,
 			DataSource:      kubeCrawler.dataSource,
 			CrawledData:     crawledData,
 			CrawlInternalID: fmt.Sprintf("%s.%s", namespace.Name, kube_model.TypeNamespace),
 		}
-
 	}
 
 	if !kubeCrawler.istioConfigured {
@@ -812,7 +811,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	kubeCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
-		Timestamp:   time.Now().UTC(),
+		Timestamp:   crawlTime,
 		DataSource:  kubeCrawler.dataSource,
 		CrawledData: crawledData,
 	}

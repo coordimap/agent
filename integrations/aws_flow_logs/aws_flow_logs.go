@@ -249,14 +249,14 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 	errFlowLogStateWrite := writeState(crawler.stateFilename, crawler.lastHandledKey)
 	if errFlowLogStateWrite != nil {
 		return &bloopi_agent.CloudCrawlData{
-			Timestamp:   time.Now().UTC(),
+			Timestamp:   crawlTime,
 			DataSource:  *crawler.dataSource,
 			CrawledData: bloopi_agent.CrawledData{},
 		}, fmt.Errorf("could not store flow logs state in file %s because %w", crawler.stateFilename, errFlowLogStateWrite)
 	}
 
 	return &bloopi_agent.CloudCrawlData{
-		Timestamp:       time.Now().UTC(),
+		Timestamp:       crawlTime,
 		DataSource:      *crawler.dataSource,
 		CrawledData:     crawledData,
 		CrawlInternalID: crawler.dataSource.DataSourceID,
