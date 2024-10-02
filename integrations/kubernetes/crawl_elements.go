@@ -261,7 +261,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 		chartInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, name)
 
 		if !slices.Contains(createdElementsFromLabels, chartInternalID) {
-			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, crawlTime); errElem == nil {
+			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 				createdElements = append(createdElements, chartInternalID)
 			}
@@ -277,7 +277,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	partOfLabelValue, partOfLabelExists := labelsToCheckIn[partOfLabel]
 	partOfLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, partOfLabelValue)
 	if partOfLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, partOfLabelInternalID)
 		}
@@ -292,7 +292,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	componentLabelValue, componentLabelExists := labelsToCheckIn[componentLabel]
 	componentLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, componentLabelValue)
 	if componentLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, componentLabelInternalID)
 		}
@@ -312,7 +312,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	nameLabelValue, nameLabelExists := labelsToCheckIn[nameLabel]
 	nameLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, nameLabelValue)
 	if nameLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, nameLabelInternalID)
 		}

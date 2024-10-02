@@ -137,7 +137,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 
 		// get the mongo database
 		mongoDB := mongoCrawler.getMongodbDatabase(dbName)
-		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, mongodb.MONGODB_TYPE_DATABASE, crawlTime)
+		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, mongodb.MONGODB_TYPE_DATABASE, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errDBElem != nil {
 			return nil, errDBElem
 		}
@@ -156,7 +156,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
 				continue
 			}
-			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, mongodb.MONGODB_TYPE_COLLECTION, crawlTime)
+			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, mongodb.MONGODB_TYPE_COLLECTION, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errCollectionElem != nil {
 				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
 				continue
@@ -170,7 +170,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			}
 
 			for _, foundIndex := range collectionIndexes {
-				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, mongodb.MONGODB_TYPE_INDEX, crawlTime)
+				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, mongodb.MONGODB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 				if errIndexElem != nil {
 					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.DataSourceID)
 					continue
