@@ -171,7 +171,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	wg.Add(1)
 	go worker("s3-buckets", owner, initSession, results, &wg, crawlTime)
 
-	ownerElement, errOwnerElement := utils.CreateElement(owner, *owner[0], *owner[0], aws_shared_model.AwsTypeOwner, crawlTime)
+	ownerElement, errOwnerElement := utils.CreateElement(owner, *owner[0], *owner[0], aws_shared_model.AwsTypeOwner, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errOwnerElement == nil {
 		results <- []*bloopi_agent.Element{ownerElement}
 	}

@@ -233,7 +233,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 
 		// FIXME: add a custom date time
 		elementName := fmt.Sprintf("%s-%s", foundFlow.Src.InterfaceID, foundFlow.Dst.InterfaceID)
-		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2_SKIPINSERT, crawlTime)
+		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2_SKIPINSERT, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errFlowElement != nil {
 			continue
 		}

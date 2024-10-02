@@ -115,7 +115,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 	schemaName := mariaCrawler.DBName
 
-	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, mariadb.MARIADB_TYPE_DB, crawlTime)
+	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, mariadb.MARIADB_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", mariaCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
@@ -159,7 +159,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		tableIndexes, _ := mariaCrawler.getTableIndexes(schemaName, tableName)
 		for _, tableIndex := range tableIndexes {
 			indexInternalName := generateInternalName(mariaCrawler.Host, schemaName, tableIndex.Name)
-			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, crawlTime)
+			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errIndexElem != nil {
 				log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())
 				continue
@@ -178,7 +178,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 		}
 
-		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, internalTableName, mariadb.MARIADB_TYPE_TABLE, crawlTime)
+		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, internalTableName, mariadb.MARIADB_TYPE_TABLE, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errTableElem != nil {
 			continue
 		}
