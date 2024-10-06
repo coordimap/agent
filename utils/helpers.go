@@ -69,6 +69,7 @@ func CreateElement(element interface{}, name, id, elemType, status, version stri
 		Hash:        hashed,
 		Data:        marshaled,
 		IsJSONData:  true,
+		Status:      status,
 		Version:     version,
 	}, nil
 }
