@@ -61,6 +61,10 @@ func CreateElement(element interface{}, name, id, elemType, status, version stri
 		return nil, err
 	}
 
+	if status == "" {
+		status = bloopi_agent.StatusNoStatus
+	}
+
 	return &bloopi_agent.Element{
 		RetrievedAt: crawlTime,
 		Name:        name,
