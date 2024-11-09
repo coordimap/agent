@@ -134,11 +134,22 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 
 	for _, region := range awsRegions {
 		// var err error = nil
-		regionSession, _ := session.NewSession(
+		regionSession, errRegionSession := session.NewSession(
 			&aws.Config{
 				Region: aws.String(region.Name),
+				Credentials: credentials.NewCredentials(&credentials.StaticProvider{
+					Value: credentials.Value{
+						AccessKeyID:     awsCrawl.accessKeyID,
+						SecretAccessKey: awsCrawl.secretAccessKey,
+					},
+				}),
 			},
 		)
+
+		if errRegionSession != nil {
+			log.Err(errRegionSession).Msg("Region Session creation.")
+			return nil, fmt.Errorf("Cannot create session for the AWS region: %w", errRegionSession)
+		}
 
 		wg.Add(1)
 		go worker("vpcs", owner, regionSession, results, &wg, crawlTime)
