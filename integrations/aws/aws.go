@@ -13,20 +13,38 @@ import (
 	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 type AwsCrawl struct {
-	ds         *bloopi_agent.DataSource
-	outChannel chan *bloopi_agent.CloudCrawlData
+	ds              *bloopi_agent.DataSource
+	outChannel      chan *bloopi_agent.CloudCrawlData
+	secretAccessKey string
+	accessKeyID     string
 }
 
 // MakeAWS creates an AWS cloud struct
 func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) *AwsCrawl {
-	return &AwsCrawl{
-		ds:         dsConfig,
-		outChannel: outChannel,
+	secretAccessKey := ""
+	accessKeyID := ""
+
+	for _, dsConfigValuePair := range dsConfig.Config.ValuePairs {
+		switch dsConfigValuePair.Key {
+		case "access_key_id":
+			accessKeyID, _ = utils.LoadValueFromEnvConfig(dsConfigValuePair.Value)
+		case "secret_access_key":
+			secretAccessKey, _ = utils.LoadValueFromEnvConfig(dsConfigValuePair.Value)
+		}
 	}
+
+	return &AwsCrawl{
+		ds:              dsConfig,
+		outChannel:      outChannel,
+		secretAccessKey: secretAccessKey,
+		accessKeyID:     accessKeyID,
+	}
+
 }
 
 func (awsCrawl *AwsCrawl) Crawl() {
@@ -94,6 +112,12 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	initSession, _ := session.NewSession(
 		&aws.Config{
 			Region: aws.String("us-east-1"),
+			Credentials: credentials.NewCredentials(&credentials.StaticProvider{
+				Value: credentials.Value{
+					AccessKeyID:     awsCrawl.accessKeyID,
+					SecretAccessKey: awsCrawl.secretAccessKey,
+				},
+			}),
 		},
 	)
 
