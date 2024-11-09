@@ -581,7 +581,7 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 		agentElem, _ := utils.CreateElement(lambdaFun, *lambdaFun.FunctionName, *lambdaFun.FunctionArn, aws_shared_model.AwsTypeLambda, lambdaFunState, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		if *lambdaFun.VpcConfig.VpcId == "" {
+		if lambdaFun.VpcConfig == nil || *lambdaFun.VpcConfig.VpcId == "" {
 			continue
 		}
 
