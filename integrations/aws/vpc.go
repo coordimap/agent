@@ -568,12 +568,14 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 	for _, lambdaFun := range result.Functions {
 		lambdaFunState := bloopi_agent.StatusNoStatus
 
-		if *lambdaFun.State == lambda.StateActive {
-			lambdaFunState = bloopi_agent.StatusGreen
-		} else if *lambdaFun.State == lambda.StateFailed || *lambdaFun.State == lambda.StateInactive {
-			lambdaFunState = bloopi_agent.StatusRed
-		} else if *lambdaFun.State == lambda.StatePending {
-			lambdaFunState = bloopi_agent.StatusOrange
+		if lambdaFun.State != nil {
+			if *lambdaFun.State == lambda.StateActive {
+				lambdaFunState = bloopi_agent.StatusGreen
+			} else if *lambdaFun.State == lambda.StateFailed || *lambdaFun.State == lambda.StateInactive {
+				lambdaFunState = bloopi_agent.StatusRed
+			} else if *lambdaFun.State == lambda.StatePending {
+				lambdaFunState = bloopi_agent.StatusOrange
+			}
 		}
 
 		agentElem, _ := utils.CreateElement(lambdaFun, *lambdaFun.FunctionName, *lambdaFun.FunctionArn, aws_shared_model.AwsTypeLambda, lambdaFunState, "", crawlTime)
