@@ -169,7 +169,7 @@ func describeAllSubnets(session *session.Session, owner []*string, crawlTime tim
 	}
 
 	for _, elem := range result.Subnets {
-		agentElem, _ := utils.CreateElement(elem, *elem.SubnetArn, *elem.SubnetId, aws_shared_model.AwsTypeSubnet, bloopi_agent.StatusNoStatus, "", crawlTime)
+		agentElem, _ := utils.CreateElement(elem, *elem.SubnetId, *elem.SubnetId, aws_shared_model.AwsTypeSubnet, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
 		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.SubnetId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
