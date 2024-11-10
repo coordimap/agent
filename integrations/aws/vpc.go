@@ -713,7 +713,7 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 				describedSubnets, errDescribeSubnet := svc.DescribeSubnets(input)
 				if errDescribeSubnet == nil {
 					for _, subnet := range describedSubnets.Subnets {
-						rel, errRel := utils.CreateRelationship(*subnet.VpcId, subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						rel, errRel := utils.CreateRelationship(*subnet.VpcId, *autoScalingGroup.AutoScalingGroupARN, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 						if errRel == nil {
 							returnedElems = append(returnedElems, rel)
 						}
