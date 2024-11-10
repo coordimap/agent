@@ -697,9 +697,33 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 		returnedElems = append(returnedElems, elem)
 
 		for _, subnetID := range strings.Split(*autoScalingGroup.VPCZoneIdentifier, ",") {
-			rel, errRel := utils.CreateRelationship(*autoScalingGroup.AutoScalingGroupARN, subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-			if errRel == nil {
-				returnedElems = append(returnedElems, rel)
+			if strings.HasPrefix(*autoScalingGroup.VPCZoneIdentifier, "subnet") {
+				svc := ec2.New(session)
+				input := &ec2.DescribeSubnetsInput{
+					Filters: []*ec2.Filter{
+						{
+							Name: aws.String("subnet-id"),
+							Values: []*string{
+								aws.String(subnetID),
+							},
+						},
+					},
+				}
+
+				describedSubnets, errDescribeSubnet := svc.DescribeSubnets(input)
+				if errDescribeSubnet == nil {
+					for _, subnet := range describedSubnets.Subnets {
+						rel, errRel := utils.CreateRelationship(*subnet.VpcId, subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							returnedElems = append(returnedElems, rel)
+						}
+					}
+				}
+
+				rel, errRel := utils.CreateRelationship(*autoScalingGroup.AutoScalingGroupARN, subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				if errRel == nil {
+					returnedElems = append(returnedElems, rel)
+				}
 			}
 		}
 
