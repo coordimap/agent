@@ -436,8 +436,20 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 
 		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, bloopi_agent.StatusNoStatus, "", crawlTime)
 
+		relVpc, errRelVpc := utils.CreateRelationship(*elem.VpcId, *elem.LoadBalancerArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		if errRelVpc == nil {
+			returnedElems = append(returnedElems, relVpc)
+		}
+
 		for _, secGroupID := range elem.SecurityGroups {
 			rel, errRel := utils.CreateRelationship(*elem.LoadBalancerArn, *secGroupID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			if errRel == nil {
+				returnedElems = append(returnedElems, rel)
+			}
+		}
+
+		for _, availabilityZone := range elem.AvailabilityZones {
+			rel, errRel := utils.CreateRelationship(*elem.LoadBalancerArn, *availabilityZone.SubnetId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -516,6 +528,13 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 
 		for _, secGroupID := range elem.SecurityGroups {
 			rel, errRel := utils.CreateRelationship(*elem.DNSName, *secGroupID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			if errRel == nil {
+				returnedElems = append(returnedElems, rel)
+			}
+		}
+
+		for _, subnet := range elem.Subnets {
+			rel, errRel := utils.CreateRelationship(*elem.DNSName, *subnet, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
