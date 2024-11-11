@@ -436,6 +436,11 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 
 		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, bloopi_agent.StatusNoStatus, "", crawlTime)
 
+		relVpc, errRelVpc := utils.CreateRelationship(*elem.VpcId, *elem.LoadBalancerArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		if errRelVpc == nil {
+			returnedElems = append(returnedElems, relVpc)
+		}
+
 		for _, secGroupID := range elem.SecurityGroups {
 			rel, errRel := utils.CreateRelationship(*elem.LoadBalancerArn, *secGroupID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
