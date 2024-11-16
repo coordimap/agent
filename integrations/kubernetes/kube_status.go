@@ -31,28 +31,18 @@ func getDeploymentStatus(deploymentConditions []appsv1.DeploymentCondition) stri
 	return deploymentStatus
 }
 
-func getPodStatus(conditions []v1.PodCondition) string {
-	var mostRecentStatusTime time.Time
-	podStatus := bloopi_agent.StatusNoStatus
+func getPodStatus(condition v1.PodPhase) string {
+	switch condition {
+	case v1.PodFailed:
+		return bloopi_agent.StatusRed
 
-	for _, condition := range conditions {
-		if mostRecentStatusTime.After(condition.LastProbeTime.Time) {
-			continue
-		}
+	case v1.PodSucceeded:
+		return bloopi_agent.StatusGreen
 
-		mostRecentStatusTime = condition.LastProbeTime.Time
+	case v1.PodPending:
+		return bloopi_agent.StatusOrange
 
-		switch condition.Type {
-		case v1.AlphaNoCompatGuaranteeDisruptionTarget:
-			podStatus = bloopi_agent.StatusRed
-
-		case v1.ContainersReady, v1.PodReady:
-			podStatus = bloopi_agent.StatusGreen
-
-		case v1.PodInitialized, v1.PodScheduled:
-			podStatus = bloopi_agent.StatusOrange
-		}
+	default:
+		return bloopi_agent.StatusNoStatus
 	}
-
-	return podStatus
 }

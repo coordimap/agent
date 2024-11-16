@@ -346,7 +346,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			log.Warn().Msgf("Could not get the kubernetes pods of data source name: %s because %s", kubeCrawler.dataSource.DataSourceID, errPods.Error())
 		} else {
 			for _, pod := range pods {
-				podStatus := getPodStatus(pod.Status.Conditions)
+				podStatus := getPodStatus(pod.Status.Phase)
 				podInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, pod.Name)
 				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, podInternalID, kube_model.TypePod, podStatus, "", crawlTime)
 				if errNodeElement != nil {
