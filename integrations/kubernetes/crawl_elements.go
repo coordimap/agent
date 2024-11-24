@@ -80,8 +80,8 @@ func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deplo
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, deployment.Name),
-			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
+			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeDeployment, deployment.Name),
+			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeDeploymentPod,
 			RelationType:     bloopi_agent.ParentChildTypeRelation,
 		})
@@ -107,8 +107,8 @@ func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, names
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
 		allServicePodsRelationships = append(allServicePodsRelationships, bloopi_agent.RelationshipElement{
-			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, service.Name),
-			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, pod.Name),
+			SourceID:         generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeService, service.Name),
+			DestinationID:    generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeServicePod,
 			RelationType:     bloopi_agent.ParentChildTypeRelation,
 		})
@@ -258,7 +258,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	// check for helm chart
 	helmChartLabel := "helm.sh/chart"
 	if name, isHelmChart := labelsToCheckIn[helmChartLabel]; isHelmChart {
-		chartInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, name)
+		chartInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeHelmChart, name)
 
 		if !slices.Contains(createdElementsFromLabels, chartInternalID) {
 			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
@@ -275,7 +275,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	// check for part-of
 	partOfLabel := "app.kubernetes.io/part-of"
 	partOfLabelValue, partOfLabelExists := labelsToCheckIn[partOfLabel]
-	partOfLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, partOfLabelValue)
+	partOfLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeLabelPartOf, partOfLabelValue)
 	if partOfLabelExists {
 		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
@@ -290,7 +290,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	// check for component
 	componentLabel := "app.kubernetes.io/component"
 	componentLabelValue, componentLabelExists := labelsToCheckIn[componentLabel]
-	componentLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, componentLabelValue)
+	componentLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeLabelComponent, componentLabelValue)
 	if componentLabelExists {
 		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
@@ -310,7 +310,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 
 	nameLabel := "app.kubernetes.io/name"
 	nameLabelValue, nameLabelExists := labelsToCheckIn[nameLabel]
-	nameLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, nameLabelValue)
+	nameLabelInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, namespace, kube_model.TypeLabelName, nameLabelValue)
 	if nameLabelExists {
 		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
@@ -371,8 +371,8 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 			continue
 		}
 
-		sourceInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), string(metric["source_podname"]))
-		destinationInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), string(metric["destination_podname"]))
+		sourceInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), kube_model.TypePod, string(metric["source_podname"]))
+		destinationInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), kube_model.TypePod, string(metric["destination_podname"]))
 
 		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
@@ -381,7 +381,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		if metric["destination_workload_kind"] == "ReplicaSet" {
 			hyphenIndex := strings.LastIndex(string(metric["destination_workload_name"]), "-")
 			workloadName := string(metric["destination_workload_name"])[0:hyphenIndex]
-			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), workloadName)
+			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), kube_model.TypeDeployment, workloadName)
 			if rel, err := utils.CreateRelationship(sourceInternalID, deploymentInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); err == nil {
 				allFoundRelationships = append(allFoundRelationships, rel)
 			}
@@ -390,7 +390,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		if metric["source_workload_kind"] == "ReplicaSet" {
 			hyphenIndex := strings.LastIndex(string(metric["source_workload_name"]), "-")
 			workloadName := string(metric["source_workload_name"])[0:hyphenIndex]
-			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), workloadName)
+			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), kube_model.TypeDeployment, workloadName)
 			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); err == nil {
 				allFoundRelationships = append(allFoundRelationships, rel)
 			}
@@ -450,8 +450,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
-			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), string(sourceCanonicalService))
-			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), string(destinationCanonicalService))
+			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), kube_model.TypeService, string(sourceCanonicalService))
+			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), kube_model.TypeService, string(destinationCanonicalService))
 
 			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
 				SourceID:         sourceID,
@@ -465,8 +465,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
-			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), string(sourceWorkload))
-			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), string(destinationWorkload))
+			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), kube_model.TypeDeployment, string(sourceWorkload))
+			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), kube_model.TypeDeployment, string(destinationWorkload))
 
 			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
 				SourceID:         sourceID,
@@ -518,8 +518,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceCanonicalService != "unknown" && sourceWorkloadNamespace != "unknown" && destinationCanonicalService != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the services and create a ISTIO_RELATIONSHIP_TYPE_SERVICE relationship
-			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), string(sourceCanonicalService))
-			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), string(destinationCanonicalService))
+			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), kube_model.TypeService, string(sourceCanonicalService))
+			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), kube_model.TypeService, string(destinationCanonicalService))
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
@@ -536,8 +536,8 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 
 		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
 			// create a relationship between the deployments and create a ISTIO_RELATIONSHIP_TYPE_DEPLOYMENT relationship
-			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), string(sourceWorkload))
-			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), string(destinationWorkload))
+			sourceID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(sourceWorkloadNamespace), kube_model.TypeDeployment, string(sourceWorkload))
+			destinationID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(destinationWorkloadNamespace), kube_model.TypeDeployment, string(destinationWorkload))
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
