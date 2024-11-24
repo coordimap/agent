@@ -61,6 +61,6 @@ func clearManagedFields(item *metav1.ObjectMeta) {
 	item.ManagedFields = []metav1.ManagedFieldsEntry{}
 }
 
-func generateInternalName(dataSourceID, namespace, name string) string {
-	return fmt.Sprintf("%s-%s-%s", dataSourceID, namespace, name)
+func generateInternalName(dataSourceID, namespace, assetType, name string) string {
+	return fmt.Sprintf("%s-%s-%s-%s", dataSourceID, namespace, assetType, name)
 }
