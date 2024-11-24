@@ -36,7 +36,7 @@ func getPodStatus(condition v1.PodPhase) string {
 	case v1.PodFailed:
 		return bloopi_agent.StatusRed
 
-	case v1.PodSucceeded:
+	case v1.PodSucceeded, v1.PodRunning:
 		return bloopi_agent.StatusGreen
 
 	case v1.PodPending:
