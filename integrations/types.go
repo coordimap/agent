@@ -12,6 +12,7 @@ const (
 	INTEGRATION_MONGODB       = "mongodb"
 	INTEGRATION_MARIADB       = "mariadb"
 	INTEGRATION_MYSQL         = "mysql"
+	INTEGRATION_GCP           = "gcp"
 )
 
 type BaseConfig struct {
