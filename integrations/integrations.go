@@ -3,6 +3,7 @@ package integrations
 import (
 	"cleye/integrations/aws"
 	awsflowlogs "cleye/integrations/aws_flow_logs"
+	"cleye/integrations/gcp"
 	"cleye/integrations/kubernetes"
 	"cleye/integrations/mariadb"
 	"cleye/integrations/mongodb"
@@ -34,6 +35,9 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 
 	case INTEGRATION_MYSQL:
 		return mariadb.NewMysqlCrawler(dataSource, outChannel)
+
+	case INTEGRATION_GCP:
+		return gcp.NewGCPCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)
