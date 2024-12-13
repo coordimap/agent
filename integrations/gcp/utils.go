@@ -6,6 +6,21 @@ import (
 	"os"
 )
 
+func createGCPInternalName(zone string, name string) string {
+	return fmt.Sprintf("%s-%s", zone, name)
+}
+
+func getZoneFromScopedZone(scopedZone string) string {
+	var zone string
+	fmt.Sscanf(scopedZone, "zones/%s", &zone)
+
+	if zone == "" {
+		fmt.Sscanf(scopedZone, "regions/%s", &zone)
+	}
+
+	return zone
+}
+
 // GetProjectIDFromCredentialsFile extracts project ID from a credentials file
 func GetProjectIDFromCredentialsFile(filename string) (string, error) {
 	data, err := os.ReadFile(filename)
