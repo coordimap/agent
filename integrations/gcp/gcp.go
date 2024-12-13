@@ -142,5 +142,44 @@ func (gcpCrawler *gcpCrawler) GetProjectID(ctx context.Context) (string, error) 
 }
 
 func (gcpCrawler *gcpCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+	logger := log.With().Str("DataSourceType", "gcp").Str("ProjectID", gcpCrawler.ConfiguredProjectID).Str("DataSourceID", gcpCrawler.dataSource.DataSourceID).Logger()
+	crawlTime := time.Now().UTC()
+	allCrawledElemsAndRelationships := []*bloopi_agent.Element{}
+
+	bucketElems, errBucketElems := gcpCrawler.GetBuckets(crawlTime)
+	if errBucketElems != nil {
+		logger.Debug().Msgf("could not retrieve buckets because %s", errBucketElems.Error())
+	} else {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, bucketElems...)
+	}
+
+	cloudRunElems, errCloudRunElems := gcpCrawler.GetCloudRuns(crawlTime)
+	if errCloudRunElems != nil {
+		logger.Err(errCloudRunElems).Msgf("could not retrieve cloud runs.")
+	} else {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, cloudRunElems...)
+	}
+
+	computeElems, errComputeElems := gcpCrawler.GetComputeElems(crawlTime)
+	if errComputeElems == nil {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, computeElems...)
+	}
+
+	gkeClusterElems, errGkeClusterElems := gcpCrawler.getGKEClusters(crawlTime)
+	if errGkeClusterElems == nil {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, gkeClusterElems...)
+	}
+
+	crawledData := bloopi_agent.CrawledData{
+		Data: allCrawledElemsAndRelationships,
+	}
+
+	gcpCrawler.outputChan <- &bloopi_agent.CloudCrawlData{
+		Timestamp:       crawlTime,
+		DataSource:      gcpCrawler.dataSource,
+		CrawledData:     crawledData,
+		CrawlInternalID: gcpCrawler.dataSource.DataSourceID,
+	}
+
 	return nil, nil
 }
