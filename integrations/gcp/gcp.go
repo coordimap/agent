@@ -101,7 +101,7 @@ func (gcpCrawler *gcpCrawler) Crawl() {
 		log.Info().Msgf("Crawling GCP Project for %s", gcpCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
+			log.Info().Msg(errCrawl.Error())
 			continue
 		}
 		// ship the crawledData to the backend

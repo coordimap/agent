@@ -7,10 +7,10 @@ func getComputeStatus(status string) string {
 	case "RUNNING", "READY":
 		return bloopi_agent.StatusGreen
 
-	case "DEPROVISIONING", "STOPPED", "STOPPING", "SUSPENDED", "SUSPENDING", "TERMINATED", "INVALID", "DRAINING":
+	case "DEPROVISIONING", "STOPPED", "STOPPING", "SUSPENDED", "SUSPENDING", "TERMINATED", "INVALID", "DRAINING", "ERROR", "FAILED", "UNAVAILABLE":
 		return bloopi_agent.StatusRed
 
-	case "PROVISIONING", "STAGING", "REPAIRING", "DELETING", "CREATING":
+	case "PROVISIONING", "STAGING", "REPAIRING", "DELETING", "CREATING", "RECONCILING", "DEGRADED", "RUNNING_WITH_ERROR":
 		return bloopi_agent.StatusOrange
 	}
 
