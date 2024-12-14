@@ -26,6 +26,8 @@ require (
 	k8s.io/client-go v0.25.4
 )
 
+require google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f // indirect
+
 require (
 	cloud.google.com/go/auth v0.11.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
