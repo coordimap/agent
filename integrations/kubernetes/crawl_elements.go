@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -339,7 +338,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 
 func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	allFoundRelationships := []*bloopi_agent.Element{}
-	sourcePromQuery := "networkobservability_adv_forward_bytes[5m]"
+	sourcePromQuery := `networkobservability_adv_forward_bytes{destination_namespace!="unknown", source_namespace!="unknown"}[5m]`
 
 	v1api := promV1.NewAPI(kubeCrawler.retinaCrawler.promClient)
 	ctx, cancelQuery := context.WithTimeout(context.Background(), 20*time.Second)
@@ -347,8 +346,8 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 
 	resultSourcePromQuery, _, errSourcePromQuery := v1api.Query(ctx, sourcePromQuery, time.Now(), promV1.WithTimeout(15*time.Second))
 	if errSourcePromQuery != nil {
-		log.Error().Msgf("Cannot query Istio sources because an error happened: %s", errSourcePromQuery.Error())
-		return nil, fmt.Errorf("cannot query Istio sources because an error happened: %w", errSourcePromQuery)
+		log.Error().Msgf("Cannot query Retina sources because an error happened: %s", errSourcePromQuery.Error())
+		return nil, fmt.Errorf("cannot query Retina sources because an error happened: %w", errSourcePromQuery)
 	}
 
 	for _, source := range resultSourcePromQuery.(model.Matrix) {
@@ -366,34 +365,11 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		}
 
 		metric := source.Metric
-
-		if (metric["destination_namespace"] == "unknown" && metric["destination_podname"] == "unknown") || (metric["source_namespace"] == "unknown" && metric["source_podname"] == "unknown") {
-			continue
-		}
-
 		sourceInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), kube_model.TypePod, string(metric["source_podname"]))
 		destinationInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), kube_model.TypePod, string(metric["destination_podname"]))
 
 		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
-		}
-
-		if metric["destination_workload_kind"] == "ReplicaSet" {
-			hyphenIndex := strings.LastIndex(string(metric["destination_workload_name"]), "-")
-			workloadName := string(metric["destination_workload_name"])[0:hyphenIndex]
-			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), kube_model.TypeDeployment, workloadName)
-			if rel, err := utils.CreateRelationship(sourceInternalID, deploymentInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); err == nil {
-				allFoundRelationships = append(allFoundRelationships, rel)
-			}
-		}
-
-		if metric["source_workload_kind"] == "ReplicaSet" {
-			hyphenIndex := strings.LastIndex(string(metric["source_workload_name"]), "-")
-			workloadName := string(metric["source_workload_name"])[0:hyphenIndex]
-			deploymentInternalID := generateInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), kube_model.TypeDeployment, workloadName)
-			if rel, err := utils.CreateRelationship(deploymentInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); err == nil {
-				allFoundRelationships = append(allFoundRelationships, rel)
-			}
 		}
 	}
 
