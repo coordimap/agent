@@ -122,8 +122,6 @@ func (crawler *gcpFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 		return nil, nil
 	}
 
-	fmt.Println(entries)
-
 	for _, logEntry := range entries.Entries {
 		var jsonPayload flowJSONStructure
 		errUnmarshal := json.Unmarshal(logEntry.JsonPayload, &jsonPayload)

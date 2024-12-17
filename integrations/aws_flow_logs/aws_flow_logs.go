@@ -100,7 +100,7 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 			crawledData, errCrawl := crawler.crawl()
 			if errCrawl != nil {
 				// do not ship any data
-				log.Info().Msgf(errCrawl.Error())
+				log.Info().Msg(errCrawl.Error())
 				return
 			}
 			// ship the crawledData to the backend
