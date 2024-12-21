@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/compute/v1"
 	run "google.golang.org/api/run/v1"
+	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"google.golang.org/api/storage/v1"
 )
 
@@ -362,4 +363,28 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 	}
 
 	return allGKEClusterElems, nil
+}
+
+func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+	allCrawledSqlInstances := []*bloopi_agent.Element{}
+
+	client, errClient := sqladmin.NewService(context.Background(), gcp.clientOpts...)
+	if errClient != nil {
+		return nil, errClient
+	}
+
+	sqlInstancesList, errSqlInstancesList := client.Instances.List(gcp.ConfiguredProjectID).Do()
+	if errSqlInstancesList != nil {
+		return nil, errSqlInstancesList
+	}
+
+	for _, sqlInstance := range sqlInstancesList.Items {
+		sqlInternalName := createGCPInternalName(sqlInstance.GceZone, sqlInstance.Name)
+		elem, errElem := utils.CreateElement(sqlInstance, sqlInstance.Name, sqlInternalName, gcpModel.TypeCloudSQL, getComputeStatus(sqlInstance.State), "", crawlTime)
+		if errElem == nil {
+			allCrawledSqlInstances = append(allCrawledSqlInstances, elem)
+		}
+	}
+
+	return allCrawledSqlInstances, nil
 }
