@@ -170,6 +170,11 @@ func (gcpCrawler *gcpCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, gkeClusterElems...)
 	}
 
+	sqlElems, errSqlElems := gcpCrawler.getSqlInstances(crawlTime)
+	if errSqlElems == nil {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, sqlElems...)
+	}
+
 	crawledData := bloopi_agent.CrawledData{
 		Data: allCrawledElemsAndRelationships,
 	}
