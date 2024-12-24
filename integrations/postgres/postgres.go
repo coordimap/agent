@@ -20,16 +20,19 @@ import (
 func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	// 1. initialize postgresCrawler with default values
 	crawler := postgresCrawler{
-		dbConn:        nil,
-		outputChannel: outChannel,
-		crawlInterval: 30 * time.Second,
-		Host:          "localhost",
-		User:          "postgres",
-		Pass:          "",
-		DBName:        "postgres",
-		SSLMode:       "disable",
-		dataSource:    dataSource,
+		dbConn:            nil,
+		outputChannel:     outChannel,
+		crawlInterval:     30 * time.Second,
+		Host:              "localhost",
+		User:              "postgres",
+		Pass:              "",
+		DBName:            "postgres",
+		SSLMode:           "disable",
+		dataSource:        dataSource,
+		externalMappingID: "",
 	}
+
+	var mappingDSID, mappingInternalID string
 
 	// 2. populate postgresCrawler with the provided configuration
 	for _, dsConfig := range dataSource.Config.ValuePairs {
@@ -50,6 +53,12 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 
 		case "db_host":
 			crawler.Host = dsConfig.Value
+
+		case "mapping_data_source_id":
+			mappingDSID = dsConfig.Value
+
+		case "mapping_internal_id":
+			mappingInternalID = dsConfig.Value
 
 		case "ssl_mode":
 			allowedValues := []string{"require", "disable"}
@@ -81,6 +90,10 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 				crawler.crawlInterval = DEFAULT_CRAWL_TIME
 			}
 		}
+	}
+
+	if mappingDSID != "" && mappingInternalID != "" {
+		crawler.externalMappingID = fmt.Sprintf("%s-%s", mappingDSID, mappingInternalID)
 	}
 
 	// 3. connect to the DB
@@ -161,6 +174,11 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", postCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
+	}
+
+	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(postCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+	if errExtIDDBNameRel == nil {
+		allCrawledElements = append(allCrawledElements, extIDDBNameRel)
 	}
 
 	rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
