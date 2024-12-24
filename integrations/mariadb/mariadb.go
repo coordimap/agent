@@ -15,15 +15,17 @@ import (
 
 func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	crawler := mariadbCrawler{
-		dbConn:        nil,
-		outputChannel: outChannel,
-		crawlInterval: 30 * time.Second,
-		Host:          "localhost",
-		User:          "postgres",
-		Pass:          "",
-		DBName:        "postgres",
-		dataSource:    dataSource,
+		dbConn:            nil,
+		outputChannel:     outChannel,
+		crawlInterval:     30 * time.Second,
+		Host:              "localhost",
+		User:              "postgres",
+		Pass:              "",
+		DBName:            "postgres",
+		dataSource:        dataSource,
+		externalMappingID: "",
 	}
+	var mappingDSID, mappingInternalID string
 
 	// 2. populate postgresCrawler with the provided configuration
 	for _, dsConfig := range dataSource.Config.ValuePairs {
@@ -44,6 +46,12 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 
 		case "db_host":
 			crawler.Host = dsConfig.Value
+
+		case "mapping_data_source_id":
+			mappingDSID = dsConfig.Value
+
+		case "mapping_internal_id":
+			mappingInternalID = dsConfig.Value
 
 		case "ssl_mode":
 			allowedValues := []string{"require", "disable"}
@@ -75,6 +83,10 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 				crawler.crawlInterval = DEFAULT_CRAWL_TIME
 			}
 		}
+	}
+
+	if mappingDSID != "" && mappingInternalID != "" {
+		crawler.externalMappingID = fmt.Sprintf("%s-%s", mappingDSID, mappingInternalID)
 	}
 
 	// 3. connect to the DB
@@ -113,16 +125,20 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		Host:    mariaCrawler.Host,
 		Schemas: []string{},
 	}
-	schemaName := mariaCrawler.DBName
 
-	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, postDB.Name, mariadb.MARIADB_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
+	schemaName := mariaCrawler.DBName
+	dbInternalName := generateInternalName(mariaCrawler.dataSource.DataSourceID, mariaCrawler.DBName, "")
+	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, mariadb.MARIADB_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", mariaCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
 	}
 
 	allCrawledElements = append(allCrawledElements, dbElem)
-
+	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(mariaCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+	if errExtIDDBNameRel == nil {
+		allCrawledElements = append(allCrawledElements, extIDDBNameRel)
+	}
 	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
