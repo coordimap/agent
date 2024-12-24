@@ -75,7 +75,7 @@ func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string
 			return columns, err
 		}
 
-		column.Table = generateInternalName(mariaCrawler.Host, schemaName, tableName)
+		column.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
 
 		columns = append(columns, column)
 	}
@@ -89,9 +89,9 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 	// get primary key
 	sqlPrimaryKeyQuery := `
 	SELECT kcu.COLUMN_NAME, kcu.ORDINAL_POSITION, c.data_type
-	FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE as kcu, 
-				information_schema.columns as c 
-	WHERE kcu.table_name = c.table_name and 
+	FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE as kcu,
+				information_schema.columns as c
+	WHERE kcu.table_name = c.table_name and
 				kcu.column_name = c.column_name and
         kcu.TABLE_SCHEMA = ? and
         kcu.CONSTRAINT_NAME='PRIMARY' and
@@ -130,10 +130,10 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 	sqlConstraintsNames := `
 	select kcu.constraint_name
 	FROM information_schema.key_column_usage AS kcu,
-					information_schema.columns as c 
-	WHERE kcu.table_name = c.table_name AND 
-					kcu.table_schema = c.table_schema AND 
-					kcu.table_schema = ? AND 
+					information_schema.columns as c
+	WHERE kcu.table_name = c.table_name AND
+					kcu.table_schema = c.table_schema AND
+					kcu.table_schema = ? AND
 					kcu.table_name = ? AND
 					c.column_key != 'PRI' AND kcu.constraint_name != 'PRIMARY'
     ;
@@ -168,10 +168,10 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 						WHEN c.column_key = 'MUL' THEN 'mariadb.unique'
 						ELSE 'UNKNOWN'
 				END) AS costraint_type
-		FROM (INFORMATION_SCHEMA.KEY_COLUMN_USAGE as kcu INNER JOIN information_schema.columns as c1 ON kcu.table_name = c1.table_name AND kcu.column_name = c1.column_name)  LEFT JOIN 
-            information_schema.columns as c 
-			ON kcu.referenced_table_name = c.table_name and 
-            kcu.referenced_column_name = c.column_name 
+		FROM (INFORMATION_SCHEMA.KEY_COLUMN_USAGE as kcu INNER JOIN information_schema.columns as c1 ON kcu.table_name = c1.table_name AND kcu.column_name = c1.column_name)  LEFT JOIN
+            information_schema.columns as c
+			ON kcu.referenced_table_name = c.table_name and
+            kcu.referenced_column_name = c.column_name
 		WHERE kcu.TABLE_SCHEMA = ? and kcu.constraint_name = ?;
 		`
 
@@ -195,7 +195,7 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 				continue
 			}
 
-			columnFrom.Table = generateInternalName(mariaCrawler.Host, schemaName, columnFrom.Table)
+			columnFrom.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, columnFrom.Table)
 
 			if constraintType != "UNKNOWN" {
 				constraint.Type = constraintType
@@ -203,7 +203,7 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 
 			switch constraint.Type {
 			case mariadb.MARIADB_CONSTRAINT_FK:
-				columnTo.Table = generateInternalName(mariaCrawler.Host, schemaName, columnTo.Table)
+				columnTo.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, columnTo.Table)
 				constraint.Destinations = append(constraint.Destinations, columnTo)
 			}
 		}
@@ -240,7 +240,7 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 		index := databasemodels.Index{
 			Name:    indexName,
 			Columns: []databasemodels.Column{},
-			Table:   generateInternalName(mariaCrawler.Host, schemaName, tableName),
+			Table:   generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName),
 			Schema:  schemaName,
 		}
 
@@ -248,11 +248,11 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 		SELECT s.column_name, s.seq_in_index, c.data_type
 		FROM information_schema.statistics AS s,
 				information_schema.COLUMNS AS c
-		WHERE s.TABLE_schema = c.table_schema AND 
-				s.table_name = c.table_name AND 
-				s.column_name = c.column_name AND 
-				s.table_schema = ? AND 
-				s.table_name = ? AND 
+		WHERE s.TABLE_schema = c.table_schema AND
+				s.table_name = c.table_name AND
+				s.column_name = c.column_name AND
+				s.table_schema = ? AND
+				s.table_name = ? AND
 				s.index_name = ?;
 		`
 		indexColumnsRows, errIndexColumnsRows := mariaCrawler.dbConn.Query(indexColumnsQuery, schemaName, tableName, indexName)
@@ -267,7 +267,7 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 				continue
 			}
 
-			indexColumn.Table = generateInternalName(mariaCrawler.Host, schemaName, tableName)
+			indexColumn.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
 
 			index.Columns = append(index.Columns, indexColumn)
 		}

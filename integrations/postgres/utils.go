@@ -15,6 +15,6 @@ func cleanupSchemaName(tableName string) string {
 	return splitTableName[1]
 }
 
-func generateInternalName(host, dbName, schema, name string) string {
-	return fmt.Sprintf("%s/%s-%s@%s", host, dbName, schema, name)
+func generateInternalName(dataSourceID, dbName, schema, name string) string {
+	return fmt.Sprintf("%s/%s-%s@%s", dataSourceID, dbName, schema, name)
 }

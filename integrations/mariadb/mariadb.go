@@ -97,7 +97,7 @@ func (mariaCrawler *mariadbCrawler) Crawl() {
 		log.Info().Msgf("Crawling MariaDB for %s", mariaCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
+			log.Info().Msg(errCrawl.Error())
 			continue
 		}
 		// ship the crawledData to the backend
@@ -132,7 +132,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	tableNames, _ := mariaCrawler.GetTableNames(mariaCrawler.DBName)
 
 	for _, tableName := range tableNames {
-		internalTableName := generateInternalName(mariaCrawler.Host, schemaName, tableName)
+		internalTableName := generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
 		// get table data
 		tableData, errTableData := mariaCrawler.GetTableData(schemaName, tableName)
 		if errTableData != nil {
@@ -158,7 +158,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		// get table indexes
 		tableIndexes, _ := mariaCrawler.getTableIndexes(schemaName, tableName)
 		for _, tableIndex := range tableIndexes {
-			indexInternalName := generateInternalName(mariaCrawler.Host, schemaName, tableIndex.Name)
+			indexInternalName := generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableIndex.Name)
 			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errIndexElem != nil {
 				log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())
