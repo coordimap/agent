@@ -23,6 +23,6 @@ func connectToDB(username, password, host, port, dbName string) (*sql.DB, error)
 	return db, nil
 }
 
-func generateInternalName(host, schema, name string) string {
-	return fmt.Sprintf("%s/%s@%s", host, schema, name)
+func generateInternalName(dataSourceID, schema, name string) string {
+	return fmt.Sprintf("%s/%s@%s", dataSourceID, schema, name)
 }

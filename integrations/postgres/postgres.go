@@ -131,7 +131,7 @@ func (postCrawler *postgresCrawler) Crawl() {
 		log.Info().Msgf("Crawling Postgres DB for %s", postCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
+			log.Info().Msg(errCrawl.Error())
 			continue
 		}
 		// ship the crawledData to the backend
@@ -156,7 +156,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 
 	postDB.Schemas = schemaNames
-	dbInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, "", "")
+	dbInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, "", "")
 	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, post_model.POSTGRES_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", postCrawler.DBName, errDBElem.Error())
@@ -171,7 +171,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	allCrawledElements = append(allCrawledElements, dbElem)
 
 	for _, schemaName := range schemaNames {
-		schemaInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, "")
+		schemaInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, "")
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName)
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
@@ -185,7 +185,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		}
 
 		for _, tableName := range tableNames {
-			tableInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableName)
+			tableInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, tableName)
 			log.Debug().Msgf("Starting retrieval of Postgres DB table columns & constraints for %s-%s %s.%s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName, tableName)
 			table, errTable := postCrawler.getTableData(schemaName, tableName)
 			if errTable != nil {
@@ -219,7 +219,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			}
 
 			for _, tableIndex := range tableIndexes {
-				indexInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, tableIndex.Name)
+				indexInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, tableIndex.Name)
 				indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, post_model.POSTGRES_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 				if errIndexElem != nil {
 					log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())
@@ -265,7 +265,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 				continue
 			}
 
-			materializedViewInternalName := generateInternalName(postCrawler.Host, postCrawler.DBName, schemaName, materializedViewName)
+			materializedViewInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, materializedViewName)
 
 			rel, errRel := utils.CreateRelationship(dbInternalName, materializedViewInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
 			if errRel == nil {
