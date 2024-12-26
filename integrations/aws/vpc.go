@@ -35,7 +35,7 @@ func getAwsAccountID(session *session.Session) (*string, error) {
 	return result.Account, nil
 }
 
-func describeAllVPCs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllVPCs(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -54,10 +54,11 @@ func describeAllVPCs(session *session.Session, owner []*string, crawlTime time.T
 	}
 
 	for _, elem := range result.Vpcs {
-		agentElement, _ := utils.CreateElement(elem, *elem.VpcId, *elem.VpcId, aws_shared_model.AwsTypeVpc, bloopi_agent.StatusNoStatus, "", crawlTime)
+		vpcInternalID := generateInternalID(dataSourceID, *elem.VpcId)
+		agentElement, _ := utils.CreateElement(elem, vpcInternalID, *elem.VpcId, aws_shared_model.AwsTypeVpc, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElement)
 
-		rel, errRel := utils.CreateRelationship(*elem.OwnerId, *elem.VpcId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.OwnerId), vpcInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -66,7 +67,7 @@ func describeAllVPCs(session *session.Session, owner []*string, crawlTime time.T
 	return returnedElems, nil
 }
 
-func describeAllRegions(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllRegions(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -78,7 +79,8 @@ func describeAllRegions(session *session.Session, crawlTime time.Time) ([]*bloop
 	}
 
 	for _, elem := range result.Regions {
-		agentElem, _ := utils.CreateElement(elem, *elem.RegionName, *elem.Endpoint, aws_shared_model.AwsTypeRegion, bloopi_agent.StatusNoStatus, "", crawlTime)
+		regionInternalID := generateInternalID(dataSourceID, *elem.RegionName)
+		agentElem, _ := utils.CreateElement(elem, *elem.RegionName, regionInternalID, aws_shared_model.AwsTypeRegion, bloopi_agent.StatusNoStatus, "", crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -86,7 +88,7 @@ func describeAllRegions(session *session.Session, crawlTime time.Time) ([]*bloop
 	return returnedElems, nil
 }
 
-func describeAllRouteTables(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllRouteTables(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -105,15 +107,16 @@ func describeAllRouteTables(session *session.Session, owner []*string, crawlTime
 	}
 
 	for _, elem := range result.RouteTables {
-		agentElem, _ := utils.CreateElement(elem, *elem.RouteTableId, *elem.RouteTableId, aws_shared_model.AwsTypeRouteTable, bloopi_agent.StatusNoStatus, "", crawlTime)
+		routeTableInternalID := generateInternalID(dataSourceID, *elem.RouteTableId)
+		agentElem, _ := utils.CreateElement(elem, *elem.RouteTableId, routeTableInternalID, aws_shared_model.AwsTypeRouteTable, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.RouteTableId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), routeTableInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
-		rel, errRel = utils.CreateRelationship(*elem.OwnerId, *elem.RouteTableId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *elem.OwnerId), routeTableInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -122,7 +125,7 @@ func describeAllRouteTables(session *session.Session, owner []*string, crawlTime
 	return returnedElems, nil
 }
 
-func describeAllDHCPOptions(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllDHCPOptions(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -142,7 +145,8 @@ func describeAllDHCPOptions(session *session.Session, owner []*string, crawlTime
 	}
 
 	for _, elem := range result.DhcpOptions {
-		agentElem, _ := utils.CreateElement(elem, *elem.DhcpOptionsId, *elem.DhcpOptionsId, aws_shared_model.AwsTypeDHCPOptions, bloopi_agent.StatusNoStatus, "", crawlTime)
+		dhcpOptionInternalID := generateInternalID(dataSourceID, *elem.DhcpOptionsId)
+		agentElem, _ := utils.CreateElement(elem, *elem.DhcpOptionsId, dhcpOptionInternalID, aws_shared_model.AwsTypeDHCPOptions, bloopi_agent.StatusNoStatus, "", crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 	}
@@ -150,7 +154,7 @@ func describeAllDHCPOptions(session *session.Session, owner []*string, crawlTime
 	return returnedElems, nil
 }
 
-func describeAllSubnets(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllSubnets(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -169,15 +173,16 @@ func describeAllSubnets(session *session.Session, owner []*string, crawlTime tim
 	}
 
 	for _, elem := range result.Subnets {
-		agentElem, _ := utils.CreateElement(elem, *elem.SubnetId, *elem.SubnetId, aws_shared_model.AwsTypeSubnet, bloopi_agent.StatusNoStatus, "", crawlTime)
+		subnetInternalID := generateInternalID(dataSourceID, *elem.SubnetId)
+		agentElem, _ := utils.CreateElement(elem, *elem.SubnetId, subnetInternalID, aws_shared_model.AwsTypeSubnet, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.SubnetId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), subnetInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
-		rel, errRel = utils.CreateRelationship(*elem.OwnerId, *elem.SubnetId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *elem.OwnerId), subnetInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -186,7 +191,7 @@ func describeAllSubnets(session *session.Session, owner []*string, crawlTime tim
 	return returnedElems, nil
 }
 
-func describeNATGateways(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeNATGateways(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -198,15 +203,16 @@ func describeNATGateways(session *session.Session, crawlTime time.Time) ([]*bloo
 	}
 
 	for _, elem := range result.NatGateways {
-		agentElem, _ := utils.CreateElement(elem, *elem.NatGatewayId, *elem.NatGatewayId, aws_shared_model.AwsTypeNatGw, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.NatGatewayId)
+		agentElem, _ := utils.CreateElement(elem, *elem.NatGatewayId, internalID, aws_shared_model.AwsTypeNatGw, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.NatGatewayId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
-		rel, errRel = utils.CreateRelationship(*elem.SubnetId, *elem.NatGatewayId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *elem.SubnetId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -215,7 +221,7 @@ func describeNATGateways(session *session.Session, crawlTime time.Time) ([]*bloo
 	return returnedElems, nil
 }
 
-func describeNetworkACLs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeNetworkACLs(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -234,10 +240,11 @@ func describeNetworkACLs(session *session.Session, owner []*string, crawlTime ti
 	}
 
 	for _, elem := range result.NetworkAcls {
-		agentElem, _ := utils.CreateElement(elem, *elem.NetworkAclId, *elem.NetworkAclId, aws_shared_model.AwsTypeNetworkACL, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.NetworkAclId)
+		agentElem, _ := utils.CreateElement(elem, *elem.NetworkAclId, internalID, aws_shared_model.AwsTypeNetworkACL, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.NetworkAclId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -246,7 +253,7 @@ func describeNetworkACLs(session *session.Session, owner []*string, crawlTime ti
 	return returnedElems, nil
 }
 
-func describeAllAvailabilityZones(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllAvailabilityZones(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -258,10 +265,11 @@ func describeAllAvailabilityZones(session *session.Session, crawlTime time.Time)
 	}
 
 	for _, elem := range result.AvailabilityZones {
-		agentElem, _ := utils.CreateElement(elem, *elem.ZoneName, *elem.ZoneId, aws_shared_model.AwsTypeAvailabilityZone, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.ZoneId)
+		agentElem, _ := utils.CreateElement(elem, *elem.ZoneName, internalID, aws_shared_model.AwsTypeAvailabilityZone, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.RegionName, *elem.ZoneId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.RegionName), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -270,7 +278,7 @@ func describeAllAvailabilityZones(session *session.Session, crawlTime time.Time)
 	return returnedElems, nil
 }
 
-func describeAllAMIs(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllAMIs(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -289,14 +297,15 @@ func describeAllAMIs(session *session.Session, owner []*string, crawlTime time.T
 	}
 
 	for _, elem := range result.Images {
-		agentElem, _ := utils.CreateElement(elem, *elem.Name, *elem.ImageId, aws_shared_model.AwsTypeAMI, bloopi_agent.StatusNoStatus, "", crawlTime)
+		imageInternalID := generateInternalID(dataSourceID, *elem.ImageId)
+		agentElem, _ := utils.CreateElement(elem, *elem.Name, imageInternalID, aws_shared_model.AwsTypeAMI, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 	}
 
 	return returnedElems, nil
 }
 
-func describeAllInstances(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllInstances(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -325,26 +334,27 @@ func describeAllInstances(session *session.Session, owner []*string, crawlTime t
 				ec2Status = bloopi_agent.StatusGreen
 			}
 
-			agentElem, _ := utils.CreateElement(elem, *elem.InstanceId, *elem.InstanceId, aws_shared_model.AwsTypeInstance, ec2Status, "", crawlTime)
+			internalID := generateInternalID(dataSourceID, *elem.InstanceId)
+			agentElem, _ := utils.CreateElement(elem, *elem.InstanceId, internalID, aws_shared_model.AwsTypeInstance, ec2Status, "", crawlTime)
 			returnedElems = append(returnedElems, agentElem)
 
-			rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.InstanceId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 
-			rel, errRel = utils.CreateRelationship(*elem.SubnetId, *elem.InstanceId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *elem.SubnetId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 
-			rel, errRel = utils.CreateRelationship(*elem.InstanceId, *elem.ImageId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel = utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *elem.ImageId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 
 			for _, secGroup := range elem.SecurityGroups {
-				rel, errRel := utils.CreateRelationship(*elem.InstanceId, *secGroup.GroupId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *secGroup.GroupId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
 					returnedElems = append(returnedElems, rel)
 				}
@@ -355,7 +365,7 @@ func describeAllInstances(session *session.Session, owner []*string, crawlTime t
 	return returnedElems, nil
 }
 
-func describeAllSecurityGroups(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllSecurityGroups(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -374,10 +384,11 @@ func describeAllSecurityGroups(session *session.Session, owner []*string, crawlT
 	}
 
 	for _, elem := range result.SecurityGroups {
-		agentElem, _ := utils.CreateElement(elem, *elem.GroupName, *elem.GroupId, aws_shared_model.AwsTypeSecGroup, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.GroupId)
+		agentElem, _ := utils.CreateElement(elem, generateInternalID(dataSourceID, *elem.GroupName), internalID, aws_shared_model.AwsTypeSecGroup, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.GroupId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -386,7 +397,7 @@ func describeAllSecurityGroups(session *session.Session, owner []*string, crawlT
 	return returnedElems, nil
 }
 
-func describeAllVolumes(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllVolumes(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ec2.New(session)
@@ -398,11 +409,12 @@ func describeAllVolumes(session *session.Session, crawlTime time.Time) ([]*bloop
 	}
 
 	for _, elem := range result.Volumes {
-		agentElem, _ := utils.CreateElement(elem, *elem.VolumeId, *elem.VolumeId, aws_shared_model.AwsTypeVolume, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.VolumeId)
+		agentElem, _ := utils.CreateElement(elem, *elem.VolumeId, internalID, aws_shared_model.AwsTypeVolume, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
 		for _, volumeAttachment := range elem.Attachments {
-			rel, errRel := utils.CreateRelationship(*volumeAttachment.InstanceId, *volumeAttachment.VolumeId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *volumeAttachment.InstanceId), generateInternalID(dataSourceID, *volumeAttachment.VolumeId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -412,7 +424,7 @@ func describeAllVolumes(session *session.Session, crawlTime time.Time) ([]*bloop
 	return returnedElems, nil
 }
 
-func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func describeAllLoadBalancers(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := elbv2.New(session)
@@ -434,28 +446,29 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 			lbType = aws_shared_model.AwsTypeGatewayLoadBalancer
 		}
 
-		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.LoadBalancerArn, lbType, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.LoadBalancerArn)
+		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, internalID, lbType, bloopi_agent.StatusNoStatus, "", crawlTime)
 
-		relVpc, errRelVpc := utils.CreateRelationship(*elem.VpcId, *elem.LoadBalancerArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		relVpc, errRelVpc := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRelVpc == nil {
 			returnedElems = append(returnedElems, relVpc)
 		}
 
 		for _, secGroupID := range elem.SecurityGroups {
-			rel, errRel := utils.CreateRelationship(*elem.LoadBalancerArn, *secGroupID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *secGroupID), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
 		for _, availabilityZone := range elem.AvailabilityZones {
-			rel, errRel := utils.CreateRelationship(*elem.LoadBalancerArn, *availabilityZone.SubnetId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *availabilityZone.SubnetId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
-		rel, errRel := utils.CreateRelationship(*elem.VpcId, *elem.LoadBalancerArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -485,8 +498,8 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 
 			for _, targetHealthDescription := range result.TargetHealthDescriptions {
 				loadBalancerTargetRelation := bloopi_agent.RelationshipElement{
-					SourceID:         *elem.LoadBalancerArn,
-					DestinationID:    *targetHealthDescription.Target.Id,
+					SourceID:         internalID,
+					DestinationID:    generateInternalID(dataSourceID, *targetHealthDescription.Target.Id),
 					RelationshipType: aws_shared_model.AwsRelationshipTypeLoadBalancerV2Targets,
 					RelationType:     bloopi_agent.ParentChildTypeRelation,
 				}
@@ -511,30 +524,31 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 	}
 
 	for _, elem := range resultElb.LoadBalancerDescriptions {
-		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, *elem.DNSName, aws_shared_model.AwsTypeClassicalLB, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.DNSName)
+		agentElem, _ := utils.CreateElement(elem, *elem.LoadBalancerName, internalID, aws_shared_model.AwsTypeClassicalLB, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*elem.VPCId, *elem.DNSName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *elem.VPCId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
 		for _, instance := range elem.Instances {
-			rel, errRel := utils.CreateRelationship(*elem.DNSName, *instance.InstanceId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *instance.InstanceId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
 		for _, secGroupID := range elem.SecurityGroups {
-			rel, errRel := utils.CreateRelationship(*elem.DNSName, *secGroupID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *secGroupID), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
 		for _, subnet := range elem.Subnets {
-			rel, errRel := utils.CreateRelationship(*elem.DNSName, *subnet, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(*elem.DNSName, generateInternalID(dataSourceID, *subnet), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -544,7 +558,7 @@ func describeAllLoadBalancers(session *session.Session, crawlTime time.Time) ([]
 	return returnedElems, nil
 }
 
-func getAllS3Buckets(session *session.Session, owner []*string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllS3Buckets(session *session.Session, owner []*string, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := s3.New(session)
 
@@ -561,10 +575,11 @@ func getAllS3Buckets(session *session.Session, owner []*string, crawlTime time.T
 			Buckets: []*s3.Bucket{elem},
 			Owner:   result.Owner,
 		}
-		agentElem, _ := utils.CreateElement(bucketList, *elem.Name, *elem.Name, aws_shared_model.AwsTypeS3Bucket, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *elem.Name)
+		agentElem, _ := utils.CreateElement(bucketList, *elem.Name, internalID, aws_shared_model.AwsTypeS3Bucket, bloopi_agent.StatusNoStatus, "", crawlTime)
 
 		// add relationship between the owner and the bucket
-		rel, errRel := utils.CreateRelationship(*owner[0], *elem.Name, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *owner[0]), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -575,7 +590,7 @@ func getAllS3Buckets(session *session.Session, owner []*string, crawlTime time.T
 	return returnedElems, nil
 }
 
-func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllLambdaFunctions(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := lambda.New(session)
 
@@ -597,27 +612,28 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 			}
 		}
 
-		agentElem, _ := utils.CreateElement(lambdaFun, *lambdaFun.FunctionName, *lambdaFun.FunctionArn, aws_shared_model.AwsTypeLambda, lambdaFunState, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *lambdaFun.FunctionArn)
+		agentElem, _ := utils.CreateElement(lambdaFun, *lambdaFun.FunctionName, internalID, aws_shared_model.AwsTypeLambda, lambdaFunState, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
 		if lambdaFun.VpcConfig == nil || *lambdaFun.VpcConfig.VpcId == "" {
 			continue
 		}
 
-		rel, errRel := utils.CreateRelationship(*lambdaFun.VpcConfig.VpcId, *lambdaFun.FunctionArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *lambdaFun.VpcConfig.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
 		for _, lambdaSubnetID := range lambdaFun.VpcConfig.SubnetIds {
-			rel, errRel := utils.CreateRelationship(*lambdaSubnetID, *lambdaFun.FunctionArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *lambdaSubnetID), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
 		for _, lambdaSecGroupID := range lambdaFun.VpcConfig.SecurityGroupIds {
-			rel, errRel := utils.CreateRelationship(*lambdaSecGroupID, *lambdaFun.FunctionArn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *lambdaSecGroupID), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -627,7 +643,7 @@ func getAllLambdaFunctions(session *session.Session, crawlTime time.Time) ([]*bl
 	return returnedElems, nil
 }
 
-func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllRDSInstances(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := rds.New(session)
 
@@ -650,10 +666,11 @@ func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloop
 			dbStatus = bloopi_agent.StatusOrange
 		}
 
-		agentElem, _ := utils.CreateElement(dbInstance, *dbInstance.Endpoint.Address, *dbInstance.Endpoint.Address, aws_shared_model.AwsTypeRDS, dbStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *dbInstance.Endpoint.Address)
+		agentElem, _ := utils.CreateElement(dbInstance, internalID, internalID, aws_shared_model.AwsTypeRDS, dbStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*dbInstance.AvailabilityZone, *dbInstance.Endpoint.Address, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *dbInstance.AvailabilityZone), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -667,25 +684,25 @@ func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloop
 		}
 
 		for _, dbSecGroup := range dbInstance.VpcSecurityGroups {
-			rel, errRel := utils.CreateRelationship(*dbInstance.Endpoint.Address, *dbSecGroup.VpcSecurityGroupId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *dbSecGroup.VpcSecurityGroupId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 		}
 
-		rel, errRel = utils.CreateRelationship(*dbInstance.DBSubnetGroup.VpcId, *dbInstance.Endpoint.Address, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *dbInstance.DBSubnetGroup.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
 		for _, subnet := range dbInstance.DBSubnetGroup.Subnets {
-			rel, errRel = utils.CreateRelationship(*subnet.SubnetIdentifier, *dbInstance.Endpoint.Address, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *subnet.SubnetIdentifier), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
 
 			// FIXME: this will not work as we need the AZ ID
-			rel, errRel = utils.CreateRelationship(*subnet.SubnetAvailabilityZone.Name, *dbInstance.Endpoint.Address, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel = utils.CreateRelationship(generateInternalID(dataSourceID, *subnet.SubnetAvailabilityZone.Name), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -696,7 +713,7 @@ func getAllRDSInstances(session *session.Session, crawlTime time.Time) ([]*bloop
 	return returnedElems, nil
 }
 
-func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllAutoscalingGroups(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	returnedElems := []*bloopi_agent.Element{}
 
 	autoScalingSvc := autoscaling.New(session)
@@ -708,7 +725,8 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 	}
 
 	for _, autoScalingGroup := range describeAutoScalingGroupsResult.AutoScalingGroups {
-		elem, errElem := utils.CreateElement(autoScalingGroup, *autoScalingGroup.AutoScalingGroupName, *autoScalingGroup.AutoScalingGroupARN, aws_shared_model.AwsTypeAutoscalingGroup, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *autoScalingGroup.AutoScalingGroupARN)
+		elem, errElem := utils.CreateElement(autoScalingGroup, *autoScalingGroup.AutoScalingGroupName, internalID, aws_shared_model.AwsTypeAutoscalingGroup, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errElem != nil {
 			continue
 		}
@@ -732,14 +750,14 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 				describedSubnets, errDescribeSubnet := svc.DescribeSubnets(input)
 				if errDescribeSubnet == nil {
 					for _, subnet := range describedSubnets.Subnets {
-						rel, errRel := utils.CreateRelationship(*subnet.VpcId, *autoScalingGroup.AutoScalingGroupARN, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *subnet.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 						if errRel == nil {
 							returnedElems = append(returnedElems, rel)
 						}
 					}
 				}
 
-				rel, errRel := utils.CreateRelationship(*autoScalingGroup.AutoScalingGroupARN, subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, subnetID), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
 					returnedElems = append(returnedElems, rel)
 				}
@@ -747,7 +765,7 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 		}
 
 		for _, instance := range autoScalingGroup.Instances {
-			rel, errRel := utils.CreateRelationship(*autoScalingGroup.AutoScalingGroupARN, *instance.InstanceId, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *instance.InstanceId), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -766,8 +784,8 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 
 		for _, elem := range resultElbV2.LoadBalancers {
 			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
-				*autoScalingGroup.AutoScalingGroupARN,
-				*elem.LoadBalancerArn,
+				internalID,
+				generateInternalID(dataSourceID, *elem.LoadBalancerArn),
 				aws_shared_model.AwsRelationshipSkipinsert,
 				aws_shared_model.AwsRelationshipSkipinsert,
 				bloopi_agent.ParentChildTypeRelation,
@@ -789,8 +807,8 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 
 		for _, elem := range resultElb.LoadBalancerDescriptions {
 			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
-				*autoScalingGroup.AutoScalingGroupARN,
-				*elem.DNSName,
+				internalID,
+				generateInternalID(dataSourceID, *elem.DNSName),
 				aws_shared_model.AwsRelationshipSkipinsert,
 				aws_shared_model.AwsRelationshipSkipinsert,
 				bloopi_agent.ParentChildTypeRelation,
@@ -805,8 +823,8 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 		// Add the relationship between the autoscaling group and the instance id
 		for _, instance := range autoScalingGroup.Instances {
 			asgInstanceRelationship, errAsgInstanceRelationship := utils.CreateRelationship(
-				*autoScalingGroup.AutoScalingGroupARN,
-				*instance.InstanceId,
+				internalID,
+				generateInternalID(dataSourceID, *instance.InstanceId),
 				aws_shared_model.AwsTypeAutoscalingGroup,
 				aws_shared_model.AwsRelationshipSkipinsert,
 				bloopi_agent.ParentChildTypeRelation,
@@ -822,7 +840,7 @@ func getAllAutoscalingGroups(session *session.Session, crawlTime time.Time) ([]*
 	return returnedElems, nil
 }
 
-func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllEKSClusters(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 	svc := eks.New(session)
 	input := &eks.ListClustersInput{}
@@ -842,16 +860,17 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			return returnedElems, errDescribeCluster
 		}
 
-		agentElem, _ := utils.CreateElement(result.Cluster, *result.Cluster.Name, *result.Cluster.Arn, aws_shared_model.AwsTypeEKS, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *result.Cluster.Arn)
+		agentElem, _ := utils.CreateElement(result.Cluster, *result.Cluster.Name, internalID, aws_shared_model.AwsTypeEKS, bloopi_agent.StatusNoStatus, "", crawlTime)
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*result.Cluster.ResourcesVpcConfig.VpcId, *result.Cluster.Arn, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *result.Cluster.ResourcesVpcConfig.VpcId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
 
 		for _, subnetID := range result.Cluster.ResourcesVpcConfig.SubnetIds {
-			rel, errRel := utils.CreateRelationship(*result.Cluster.Arn, *subnetID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(internalID, generateInternalID(dataSourceID, *subnetID), bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
@@ -878,10 +897,11 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 				continue
 			}
 
+			clusterNodeGroupInternalID := generateInternalID(dataSourceID, *clusterNodeGroupInput.NodegroupName)
 			clusterNodeGroupElem, errClusterNodeGroupElem := utils.CreateAWSElement(
 				clusterNodeGroupInputResult,
-				*clusterNodeGroupInput.NodegroupName,
-				*clusterNodeGroupInput.NodegroupName,
+				clusterNodeGroupInternalID,
+				clusterNodeGroupInternalID,
 				aws_shared_model.AwsTypeEKSNodeGroup,
 				bloopi_agent.StatusNoStatus,
 				"",
@@ -892,8 +912,8 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			}
 
 			rel, errRel := utils.CreateRelationship(
-				*result.Cluster.Arn,
-				*clusterNodeGroupInput.NodegroupName,
+				internalID,
+				clusterNodeGroupInternalID,
 				bloopi_agent.RelationshipType,
 				bloopi_agent.RelationshipType,
 				bloopi_agent.ParentChildTypeRelation,
@@ -920,8 +940,8 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 			}
 			for _, autoScalingGroup := range describeAutoScalingGroupsResult.AutoScalingGroups {
 				relationshipAutoscalingNodegroupGroupElem, errRelationshipAutoscalingNodegroupNodeGroupElem := utils.CreateRelationship(
-					*result.Cluster.Arn,
-					*autoScalingGroup.AutoScalingGroupARN,
+					internalID,
+					generateInternalID(dataSourceID, *autoScalingGroup.AutoScalingGroupARN),
 					aws_shared_model.AwsRelationshipSkipinsert,
 					aws_shared_model.AwsRelationshipSkipinsert,
 					bloopi_agent.ParentChildTypeRelation,
@@ -945,8 +965,8 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 
 		for _, eksInstance := range eksInstances {
 			eksClusterInstanceRelationship, errEksClusterInstanceRelationship := utils.CreateRelationship(
-				*result.Cluster.Arn,
-				*eksInstance.InstanceId,
+				internalID,
+				generateInternalID(dataSourceID, *eksInstance.InstanceId),
 				aws_shared_model.AwsRelationshipSkipinsert,
 				aws_shared_model.AwsRelationshipSkipinsert,
 				bloopi_agent.ParentChildTypeRelation,
@@ -963,7 +983,7 @@ func getAllEKSClusters(session *session.Session, crawlTime time.Time) ([]*bloopi
 	return returnedElems, nil
 }
 
-func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+func getAllECRReposAndImages(session *session.Session, dataSourceID string, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	var returnedElems []*bloopi_agent.Element
 
 	svc := ecr.New(session)
@@ -976,11 +996,12 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 
 	for _, ecrRepo := range ecrRepos.Repositories {
 
-		agentElem, _ := utils.CreateElement(ecrRepo, *ecrRepo.RepositoryName, *ecrRepo.RepositoryUri, aws_shared_model.AwsTypeECRRepository, bloopi_agent.StatusNoStatus, "", crawlTime)
+		internalID := generateInternalID(dataSourceID, *ecrRepo.RepositoryUri)
+		agentElem, _ := utils.CreateElement(ecrRepo, *ecrRepo.RepositoryName, internalID, aws_shared_model.AwsTypeECRRepository, bloopi_agent.StatusNoStatus, "", crawlTime)
 
 		returnedElems = append(returnedElems, agentElem)
 
-		rel, errRel := utils.CreateRelationship(*ecrRepo.RegistryId, *ecrRepo.RepositoryUri, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *ecrRepo.RegistryId), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			returnedElems = append(returnedElems, rel)
 		}
@@ -1012,15 +1033,15 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 			}
 
 			for _, imageTag := range repoImage.ImageTags {
-				imageName := fmt.Sprintf("%s:%s", *ecrRepo.RepositoryUri, *imageTag)
+				imageInternalID := generateInternalID(dataSourceID, fmt.Sprintf("%s:%s", *ecrRepo.RepositoryUri, *imageTag))
 
-				agentElem, _ := utils.CreateElement(repoImage, imageName, imageName, aws_shared_model.AwsTypeECRRepositoryImage, bloopi_agent.StatusNoStatus, "", crawlTime)
+				agentElem, _ := utils.CreateElement(repoImage, imageInternalID, imageInternalID, aws_shared_model.AwsTypeECRRepositoryImage, bloopi_agent.StatusNoStatus, "", crawlTime)
 
 				returnedElems = append(returnedElems, agentElem)
 
 				relationshipECRRepoImageElem, errRelationshipECRRepoImageElem := utils.CreateRelationship(
-					*ecrRepo.RepositoryUri,
-					imageName,
+					internalID,
+					imageInternalID,
 					aws_shared_model.AwsRelationshipSkipinsert,
 					aws_shared_model.AwsRelationshipSkipinsert,
 					bloopi_agent.ParentChildTypeRelation,
@@ -1029,7 +1050,8 @@ func getAllECRReposAndImages(session *session.Session, crawlTime time.Time) ([]*
 					returnedElems = append(returnedElems, relationshipECRRepoImageElem)
 				}
 
-				rel, errRel := utils.CreateRelationship(imageName, *imageTag, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				// TODO: this probably does not result in any relationship. Check again.
+				rel, errRel := utils.CreateRelationship(imageInternalID, *imageTag, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
 					returnedElems = append(returnedElems, rel)
 				}
