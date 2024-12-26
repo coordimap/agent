@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup, crawlTime time.Time) {
+func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup, dataSourceID string, crawlTime time.Time) {
 	defer wg.Done()
 
 	var res []*bloopi_agent.Element
@@ -19,58 +19,58 @@ func worker(whatToCrawl string, owner []*string, regionSession *session.Session,
 
 	switch whatToCrawl {
 	case "vpcs":
-		res, _ = describeAllVPCs(regionSession, owner, crawlTime)
+		res, _ = describeAllVPCs(regionSession, owner, dataSourceID, crawlTime)
 
 	case "route_tables":
-		res, _ = describeAllRouteTables(regionSession, owner, crawlTime)
+		res, _ = describeAllRouteTables(regionSession, owner, dataSourceID, crawlTime)
 
 	case "dhcp_options":
-		res, _ = describeAllDHCPOptions(regionSession, owner, crawlTime)
+		res, _ = describeAllDHCPOptions(regionSession, owner, dataSourceID, crawlTime)
 
 	case "subnets":
-		res, _ = describeAllSubnets(regionSession, owner, crawlTime)
+		res, _ = describeAllSubnets(regionSession, owner, dataSourceID, crawlTime)
 
 	case "natgws":
-		res, _ = describeNATGateways(regionSession, crawlTime)
+		res, _ = describeNATGateways(regionSession, dataSourceID, crawlTime)
 
 	case "net_acls":
-		res, _ = describeNetworkACLs(regionSession, owner, crawlTime)
+		res, _ = describeNetworkACLs(regionSession, owner, dataSourceID, crawlTime)
 
 	case "azs":
-		res, _ = describeAllAvailabilityZones(regionSession, crawlTime)
+		res, _ = describeAllAvailabilityZones(regionSession, dataSourceID, crawlTime)
 
 	case "amis":
-		res, _ = describeAllAMIs(regionSession, owner, crawlTime)
+		res, _ = describeAllAMIs(regionSession, owner, dataSourceID, crawlTime)
 
 	case "ec2":
-		res, _ = describeAllInstances(regionSession, owner, crawlTime)
+		res, _ = describeAllInstances(regionSession, owner, dataSourceID, crawlTime)
 
 	case "sec_groups":
-		res, _ = describeAllSecurityGroups(regionSession, owner, crawlTime)
+		res, _ = describeAllSecurityGroups(regionSession, owner, dataSourceID, crawlTime)
 
 	case "vols":
-		res, _ = describeAllVolumes(regionSession, crawlTime)
+		res, _ = describeAllVolumes(regionSession, dataSourceID, crawlTime)
 
 	case "lbs":
-		res, _ = describeAllLoadBalancers(regionSession, crawlTime)
+		res, _ = describeAllLoadBalancers(regionSession, dataSourceID, crawlTime)
 
 	case "s3-buckets":
-		res, _ = getAllS3Buckets(regionSession, owner, crawlTime)
+		res, _ = getAllS3Buckets(regionSession, owner, dataSourceID, crawlTime)
 
 	case "lambdas":
-		res, _ = getAllLambdaFunctions(regionSession, crawlTime)
+		res, _ = getAllLambdaFunctions(regionSession, dataSourceID, crawlTime)
 
 	case "rds":
-		res, _ = getAllRDSInstances(regionSession, crawlTime)
+		res, _ = getAllRDSInstances(regionSession, dataSourceID, crawlTime)
 
 	case aws_shared_model.AwsTypeEKS:
-		res, _ = getAllEKSClusters(regionSession, crawlTime)
+		res, _ = getAllEKSClusters(regionSession, dataSourceID, crawlTime)
 
 	case aws_shared_model.AwsTypeECRRepository:
-		res, _ = getAllECRReposAndImages(regionSession, crawlTime)
+		res, _ = getAllECRReposAndImages(regionSession, dataSourceID, crawlTime)
 
 	case aws_shared_model.AwsTypeAutoscalingGroup:
-		res, _ = getAllAutoscalingGroups(regionSession, crawlTime)
+		res, _ = getAllAutoscalingGroups(regionSession, dataSourceID, crawlTime)
 
 	default:
 		fmt.Println("notnig")
