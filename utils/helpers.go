@@ -101,7 +101,7 @@ func CreateAWSElement(element interface{}, name, id, elemType, status, version s
 
 // CreateRelationship create a relationship element
 func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelationshipType string, relationType int, crawlTime time.Time) (*bloopi_agent.Element, error) {
-	if sourceID != "" || destinationID == "" {
+	if sourceID == "" || destinationID == "" {
 		return nil, errors.New("SourceID or DestinationID must both be non empty in oder to create a relationship")
 	}
 
