@@ -123,7 +123,7 @@ func (kubeCrawler *kubernetesCrawler) Crawl() {
 		log.Info().Msgf("Crawling Kubernetes cluster for %s", kubeCrawler.dataSource.DataSourceID)
 		if errCrawl != nil {
 			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
+			log.Info().Msg(errCrawl.Error())
 			continue
 		}
 		// ship the crawledData to the backend

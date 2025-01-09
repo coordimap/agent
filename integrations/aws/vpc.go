@@ -677,7 +677,7 @@ func getAllRDSInstances(session *session.Session, dataSourceID string, crawlTime
 
 		for _, dbSecGroup := range dbInstance.DBSecurityGroups {
 			// FIXME: this does not work. We need to get the secGroupID
-			rel, errRel := utils.CreateRelationship(*dbSecGroup.DBSecurityGroupName, *dbInstance.Endpoint.Address, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			rel, errRel := utils.CreateRelationship(generateInternalID(dataSourceID, *dbSecGroup.DBSecurityGroupName), internalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				returnedElems = append(returnedElems, rel)
 			}
