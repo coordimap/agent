@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	"github.com/rs/zerolog/log"
+	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
 	"google.golang.org/api/logging/v2"
 )
 
@@ -22,7 +22,6 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 		endTime.Format(time.RFC3339))
 
 	filter := fmt.Sprintf("resource.type=\"gce_subnetwork\" AND jsonPayload.connection.src_ip!=\"\" AND jsonPayload.connection.dest_ip!=\"\" AND %s", timeFilter)
-	log.Info().Str("filter", filter).Msg("the flow log filter")
 
 	entries, errEntries := crawler.logClient.Entries.List(&logging.ListLogEntriesRequest{
 		ResourceNames: []string{fmt.Sprintf("projects/%s", crawler.ConfiguredProjectID)},
@@ -36,7 +35,6 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 		var jsonPayload flowJSONStructure
 		errUnmarshal := json.Unmarshal(logEntry.JsonPayload, &jsonPayload)
 
-		log.Info().Str("jsonPayload", string(logEntry.JsonPayload)).Msg("jsonPayload")
 		if errUnmarshal != nil {
 			return nil, errUnmarshal
 		}
@@ -59,12 +57,15 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 		// check for gke src and dest
 		if jsonPayload.SrcGkeDetails.Cluster.ClusterName != "" && jsonPayload.DstGkeDetails.Cluster.ClusterName != "" {
-			// TODO: add pod relationships
-			if jsonPayload.SrcGkeDetails.Pod.Name == "" || jsonPayload.DstGkeDetails.Pod.Name == "" {
-				continue
+			if jsonPayload.SrcGkeDetails.Pod.Name != "" && jsonPayload.SrcGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Name != "" {
+				srcPodInternalName := cloudutils.CreateKubeInternalName(crawler.dataSource.DataSourceID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
+				dstPodInternalName := cloudutils.CreateKubeInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.DstGkeDetails.Pod.Namespace)
+
+				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
+				if errRel == nil {
+					allFoundRelationships = append(allFoundRelationships, rel)
+				}
 			}
-			// srcPodInternalName := ""
-			// dstPodInternalName := ""
 			// TODO: check for workload relationships in the pod
 			// TODO: check for service relationships
 		}
