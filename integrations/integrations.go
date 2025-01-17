@@ -3,12 +3,11 @@ package integrations
 import (
 	"cleye/integrations/aws"
 	awsflowlogs "cleye/integrations/aws_flow_logs"
-	"cleye/integrations/gcp"
-	"cleye/integrations/gcpflowlogs"
 	"cleye/integrations/kubernetes"
 	"cleye/integrations/mariadb"
 	"cleye/integrations/mongodb"
 	"cleye/integrations/postgres"
+	"cleye/internal/cloud/gcp"
 	"fmt"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -39,9 +38,6 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 
 	case INTEGRATION_GCP:
 		return gcp.NewGCPCrawler(dataSource, outChannel)
-
-	case INTEGRATION_GCP_FLOW_LOGS:
-		return gcpflowlogs.MakeGCPFlowLogsCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)

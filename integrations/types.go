@@ -13,14 +13,13 @@ const (
 	INTEGRATION_MARIADB       = "mariadb"
 	INTEGRATION_MYSQL         = "mysql"
 	INTEGRATION_GCP           = "gcp"
-	INTEGRATION_GCP_FLOW_LOGS = "gcp_flow_logs"
 )
 
 type BaseConfig struct {
-	CrawlInterval time.Duration
+	Output        chan []string
 	Name          string
 	Desc          string
-	Output        chan []string
+	CrawlInterval time.Duration
 }
 
 type Crawler interface {

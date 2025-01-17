@@ -1,4 +1,4 @@
-package gcpflowlogs
+package gcp
 
 import (
 	"time"
@@ -9,13 +9,32 @@ import (
 )
 
 const (
-	gcpFlowLogsConfigInGoogleCloud   = "in_cloud"
-	gcpFlowLogsConfigCredentialsFile = "credentials_file"
-	gcpFlowLogsConfigCrawlInterval   = "crawl_interval"
-	gcpFlowLogsProjectID             = "project_id"
+	gcpConfigInGoogleCloud   = "in_cloud"
+	gcpConfigCredentialsFile = "credentials_file"
+	gcpConfigCrawlInterval   = "crawl_interval"
+	gcpProjectID             = "project_id"
+	gcpConfigFlows           = "gcp_flows"
 )
 
-type gcpFlowLogsCrawler struct {
+// ServiceAccountKey represents the complete structure of a Google Cloud service account key JSON file
+type ServiceAccountKey struct {
+	// Required fields that are always present in service account keys
+	Type         string `json:"type"`           // Always "service_account"
+	ProjectID    string `json:"project_id"`     // The GCP project ID
+	PrivateKeyID string `json:"private_key_id"` // Unique identifier for the private key
+	PrivateKey   string `json:"private_key"`    // The PEM-encoded private key
+	ClientEmail  string `json:"client_email"`   // Service account email address
+	ClientID     string `json:"client_id"`      // Unique identifier for the service account
+
+	// Optional fields that might be present
+	AuthURI                 string `json:"auth_uri"`                    // OAuth2 auth URI (usually https://accounts.google.com/o/oauth2/auth)
+	TokenURI                string `json:"token_uri"`                   // OAuth2 token URI (usually https://oauth2.googleapis.com/token)
+	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"` // X509 cert URL for auth provider
+	ClientX509CertURL       string `json:"client_x509_cert_url"`        // X509 cert URL for this service account
+}
+
+type gcpCrawler struct {
+	logClient           *logging.Service
 	clientOpts          []option.ClientOption
 	InGCPEnvironment    bool
 	credentialsFile     string
@@ -23,17 +42,17 @@ type gcpFlowLogsCrawler struct {
 	dataSource          bloopi_agent.DataSource
 	outputChan          chan *bloopi_agent.CloudCrawlData
 	ConfiguredProjectID string
-	client              *logging.Service
 }
 
 type Crawler interface {
 	Crawl()
+	validateConfig() bool
 }
 
 type IpConnection struct {
-	Protocol int    `json:"protocol"`
-	SrcIP    string `json:"src_ip"`
 	DstIP    string `json:"dest_ip"`
+	SrcIP    string `json:"src_ip"`
+	Protocol int    `json:"protocol"`
 	SrcPort  int    `json:"src_port"`
 	DstPort  int    `json:"dest_port"`
 }
@@ -68,9 +87,9 @@ type ServiceDetails struct {
 }
 
 type GkeDetails struct {
-	Cluster ClusterDetails `json:"cluster"`
-	Pod     PodDetails     `json:"pod"`
-	Service ServiceDetails `json:"service"`
+	Cluster ClusterDetails   `json:"cluster"`
+	Pod     PodDetails       `json:"pod"`
+	Service []ServiceDetails `json:"service"`
 }
 
 type GoogleService struct {
@@ -92,19 +111,19 @@ type VpcDetails struct {
 }
 
 type GeographicalDetails struct {
-	Asn       int    `json:"asn"`
 	City      string `json:"city"`
 	Continent string `json:"continent"`
 	Country   string `json:"country"`
 	Region    string `json:"region"`
+	Asn       int    `json:"asn"`
 }
 
 type flowJSONStructure struct {
-	BytesSent        string              `json:"bytes_sent,-,omitempty"`
-	PacketsSent      string              `json:"packets_sent,-,omitempty"`
-	Connection       IpConnection        `json:"connection,omitempty"`
+	BytesSent        string              `json:"bytes_sent,omitempty"`
+	PacketsSent      string              `json:"packets_sent,omitempty"`
 	StartTime        string              `json:"start_time,omitempty"`
 	EndTime          string              `json:"end_time,omitempty"`
+	Connection       IpConnection        `json:"connection,omitempty"`
 	SrcGateway       GatewayDetails      `json:"src_gateway,omitempty"`
 	DstGateway       GatewayDetails      `json:"dest_gateway,omitempty"`
 	SrcGkeDetails    GkeDetails          `json:"src_gke_details,omitempty"`
@@ -113,8 +132,8 @@ type flowJSONStructure struct {
 	DstGoogleService GoogleService       `json:"dest_google_service,omitempty"`
 	SrcInstance      InstanceDetails     `json:"src_instance,omitempty"`
 	DstInstance      InstanceDetails     `json:"dest_instance,omitempty"`
-	SrcLocation      GeographicalDetails `json:"src_location,omitempty"`
-	DstLocation      GeographicalDetails `json:"dest_location,omitempty"`
 	SrcVpc           VpcDetails          `json:"src_vpc,omitempty"`
 	DstVpc           VpcDetails          `json:"dest_vpc,omitempty"`
+	SrcLocation      GeographicalDetails `json:"src_location,omitempty"`
+	DstLocation      GeographicalDetails `json:"dest_location,omitempty"`
 }
