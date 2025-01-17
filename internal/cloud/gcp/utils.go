@@ -6,10 +6,6 @@ import (
 	"os"
 )
 
-func createGCPInternalName(zone string, name string) string {
-	return fmt.Sprintf("%s-%s", zone, name)
-}
-
 func getZoneFromScopedZone(scopedZone string) string {
 	var zone string
 	fmt.Sscanf(scopedZone, "zones/%s", &zone)

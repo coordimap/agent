@@ -13,6 +13,7 @@ import (
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/option"
 )
 
@@ -25,7 +26,10 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 		InGCPEnvironment:    false,
 		credentialsFile:     "",
 		ConfiguredProjectID: "",
+		logClient:           nil,
 	}
+
+	flowConfigured := false
 
 	for _, config := range dataSource.Config.ValuePairs {
 		switch config.Key {
@@ -54,6 +58,9 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 			}
 			gcpCrawler.credentialsFile = config.Value
 			gcpCrawler.clientOpts = append(gcpCrawler.clientOpts, option.WithCredentialsFile(config.Value))
+
+		case gcpConfigFlows:
+			flowConfigured = true
 
 		case gcpProjectID:
 			if config.Value == "" {
@@ -89,7 +96,24 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 		return nil, fmt.Errorf("the configured ProjectID %s does not match the ProjectID %s from the authentication", gcpCrawler.ConfiguredProjectID, credsProjectID)
 	}
 
+	if flowConfigured {
+		client, errClient := logging.NewService(context.Background(), gcpCrawler.clientOpts...)
+		if errClient != nil {
+			return nil, errClient
+		}
+
+		gcpCrawler.logClient = client
+	}
+
 	return &gcpCrawler, nil
+}
+
+func (crawler *gcpCrawler) validateConfig() bool {
+	if crawler.ConfiguredProjectID != "" && crawler.dataSource.DataSourceID != "" {
+		return false
+	}
+
+	return true
 }
 
 func (gcpCrawler *gcpCrawler) Crawl() {
@@ -173,6 +197,13 @@ func (gcpCrawler *gcpCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	sqlElems, errSqlElems := gcpCrawler.getSqlInstances(crawlTime)
 	if errSqlElems == nil {
 		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, sqlElems...)
+	}
+
+	if gcpCrawler.logClient != nil {
+		flowRels, errFlowRels := gcpCrawler.getFlowLogsRelationships()
+		if errFlowRels == nil {
+			allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, flowRels...)
+		}
 	}
 
 	crawledData := bloopi_agent.CrawledData{
