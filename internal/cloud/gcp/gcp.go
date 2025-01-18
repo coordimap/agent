@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	cloudutils "cleye/internal/cloud/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -61,6 +62,15 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 
 		case gcpConfigFlows:
 			flowConfigured = true
+
+		case gcpConfigExternalMappings:
+			mappings, errMappings := cloudutils.SplitConfiguredMappings(config.Value)
+			if errMappings != nil {
+				log.Error().Str("ConfiguredMappings", config.Value).Msg("Could not generate and use mapping configs.")
+				continue
+			}
+
+			gcpCrawler.externalMappings = mappings
 
 		case gcpProjectID:
 			if config.Value == "" {
