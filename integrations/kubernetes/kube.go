@@ -142,6 +142,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	for _, node := range nodes {
+		if isNodeInCloud(node.Labels, node.Annotations, node.Status.Addresses) {
+			continue
+		}
+
 		nodeElement, errNodeElement := utils.CreateElement(node, node.Name, node.Name, kube_model.TypeNode, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errNodeElement != nil {
 			continue

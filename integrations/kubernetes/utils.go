@@ -2,8 +2,10 @@ package kubernetes
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/prometheus/client_golang/api"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -59,4 +61,26 @@ func connectoToK8sInCluster() (*kubernetes.Clientset, error) {
 
 func clearManagedFields(item *metav1.ObjectMeta) {
 	item.ManagedFields = []metav1.ManagedFieldsEntry{}
+}
+
+func isNodeInCloud(labels map[string]string, annotations map[string]string, addresses []v1.NodeAddress) bool {
+	for _, address := range addresses {
+		if strings.Contains(address.Address, "compute.internal") || strings.Contains(address.Address, "amazonaws") {
+			return true
+		}
+	}
+
+	for key, value := range labels {
+		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") || strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
+			return true
+		}
+	}
+
+	for key, value := range annotations {
+		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") || strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
+			return true
+		}
+	}
+
+	return false
 }
