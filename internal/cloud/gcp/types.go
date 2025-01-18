@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	gcpConfigInGoogleCloud   = "in_cloud"
-	gcpConfigCredentialsFile = "credentials_file"
-	gcpConfigCrawlInterval   = "crawl_interval"
-	gcpProjectID             = "project_id"
-	gcpConfigFlows           = "gcp_flows"
+	gcpConfigInGoogleCloud    = "in_cloud"
+	gcpConfigCredentialsFile  = "credentials_file"
+	gcpConfigCrawlInterval    = "crawl_interval"
+	gcpProjectID              = "project_id"
+	gcpConfigFlows            = "gcp_flows"
+	gcpConfigExternalMappings = "external_mappings"
 )
 
 // ServiceAccountKey represents the complete structure of a Google Cloud service account key JSON file
@@ -35,13 +36,14 @@ type ServiceAccountKey struct {
 
 type gcpCrawler struct {
 	logClient           *logging.Service
+	ConfiguredProjectID string
+	credentialsFile     string
+	externalMappings    map[string]string
 	clientOpts          []option.ClientOption
 	InGCPEnvironment    bool
-	credentialsFile     string
 	crawlInterval       time.Duration
 	dataSource          bloopi_agent.DataSource
 	outputChan          chan *bloopi_agent.CloudCrawlData
-	ConfiguredProjectID string
 }
 
 type Crawler interface {
