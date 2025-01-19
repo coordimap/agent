@@ -5,6 +5,7 @@ import (
 	"cleye/utils"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -137,9 +138,8 @@ func (gcpCrawler *gcpCrawler) GetVMInstances(client *compute.Service, crawlTime 
 			}
 
 			for _, disk := range instance.Disks {
-				var diskName string
-				fmt.Sscanf(disk.Source, "https://www.googleapis.com/compute/v1/projects/preisenergiecloud/zones/europe-west3-c/disks/%s", &diskName)
-				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, diskName)
+				split := strings.Split(disk.Source, "/")
+				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, split[len(split)-1])
 				diskRel, errDiskRel := utils.CreateRelationship(instanceInternalID, diskInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errDiskRel == nil {
 					allVMInstanceElems = append(allVMInstanceElems, diskRel)
