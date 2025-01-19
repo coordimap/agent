@@ -40,7 +40,3 @@ func getFilteredEC2(session *session.Session, tags map[string]string) ([]*ec2.In
 
 	return foundInstances, nil
 }
-
-func generateInternalID(dsID string, awsElementID string) string {
-	return fmt.Sprintf("%s@%s", dsID, awsElementID)
-}
