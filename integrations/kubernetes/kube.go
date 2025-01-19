@@ -155,11 +155,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 
 			switch cloudName {
 			case "aws":
-				// TODO: add the aws node internal name implementation
-				continue
+				nodeInternalName = cloudutils.CreateAWSInternalID(kubeCrawler.cloudDataSourceID, node.Name)
 
 			case "gcp":
-				nodeInternalName = cloudutils.CreateGCPInternalName(kubeCrawler.dataSource.DataSourceID, node.Labels["topology.kubernetes.io/region"], node.Name)
+				nodeInternalName = cloudutils.CreateGCPInternalName(kubeCrawler.cloudDataSourceID, node.Labels["topology.kubernetes.io/region"], node.Name)
 			}
 
 			kubeCrawler.internalNodeNames[node.Name] = nodeInternalName
