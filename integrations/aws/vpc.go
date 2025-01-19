@@ -1063,7 +1063,6 @@ func getAllECRReposAndImages(session *session.Session, dataSourceID string, craw
 			if repoImage.ImageTag == nil {
 				continue
 			}
-
 		}
 
 	}

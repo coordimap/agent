@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -61,6 +62,36 @@ func connectoToK8sInCluster() (*kubernetes.Clientset, error) {
 
 func clearManagedFields(item *metav1.ObjectMeta) {
 	item.ManagedFields = []metav1.ManagedFieldsEntry{}
+}
+
+func getNodeCloud(labels map[string]string, annotations map[string]string, addresses []v1.NodeAddress) (string, error) {
+	for _, address := range addresses {
+		if strings.Contains(address.Address, "compute.internal") || strings.Contains(address.Address, "amazonaws") {
+			return "aws", nil
+		}
+	}
+
+	for key, value := range labels {
+		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") {
+			return "aws", nil
+		}
+
+		if strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
+			return "gcp", nil
+		}
+	}
+
+	for key, value := range annotations {
+		if strings.Contains(key, "aws") || strings.Contains(value, "aws") {
+			return "aws", nil
+		}
+
+		if strings.Contains(key, "cloud.google.com") || strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
+			return "gcp", nil
+		}
+	}
+
+	return "", errors.New("no cloud found")
 }
 
 func isNodeInCloud(labels map[string]string, annotations map[string]string, addresses []v1.NodeAddress) bool {
