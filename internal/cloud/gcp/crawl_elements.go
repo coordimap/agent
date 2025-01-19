@@ -161,7 +161,8 @@ func (gcpCrawler *gcpCrawler) getNodeGroups(client *compute.Service, crawlTime t
 
 	for zone, list := range nodeGroups.Items {
 		for _, nodeGroup := range list.NodeGroups {
-			nodeGroupElem, errNodeGroupElem := utils.CreateElement(nodeGroup, nodeGroup.Name, fmt.Sprintf("%s-%s", nodeGroup.Zone, nodeGroup.Name), gcpModel.TypeNodeGroup, getComputeStatus(nodeGroup.Status), "", crawlTime)
+			nodeGroupInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, nodeGroup.Name)
+			nodeGroupElem, errNodeGroupElem := utils.CreateElement(nodeGroup, nodeGroup.Name, nodeGroupInternalName, gcpModel.TypeNodeGroup, getComputeStatus(nodeGroup.Status), "", crawlTime)
 			if errNodeGroupElem == nil {
 				allNodeGroups = append(allNodeGroups, nodeGroupElem)
 			}
@@ -172,7 +173,8 @@ func (gcpCrawler *gcpCrawler) getNodeGroups(client *compute.Service, crawlTime t
 			}
 
 			for _, nodeGroupNode := range nodeGroupNodes.Items {
-				fmt.Println(nodeGroupNode.Name)
+				nodeGroupNodeInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, nodeGroupNode.Name)
+				fmt.Println(nodeGroupNode.Name, nodeGroupNodeInternalName)
 			}
 		}
 	}
@@ -204,9 +206,8 @@ func (gcpCrawler *gcpCrawler) getInstanceGroups(client *compute.Service, crawlTi
 			}
 
 			for _, instanceGroupInstance := range instanceGroupInstanceList.Items {
-				var instanceName string
-				fmt.Sscanf(instanceGroupInstance.Instance, "https://www.googleapis.com/compute/v1/projects/preisenergiecloud/zones/europe-west3-a/instances/%s", &instanceName)
-				instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, instanceGroupInstance.Instance)
+				split := strings.Split(instanceGroupInstance.Instance, "/")
+				instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, split[len(split)-1])
 
 				rel, errRel := utils.CreateRelationship(instanceGroupInternalID, instanceInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
@@ -259,17 +260,13 @@ func (gcp *gcpCrawler) getNetworks(client *compute.Service, crawlTime time.Time)
 		}
 
 		for _, subNet := range network.Subnetworks {
-			var projectID, region, subnetName string
-			fmt.Sscanf(subNet, "https://www.googleapis.com/compute/v1/projects/%s/regions/%s/subnetworks/%s", projectID, region, subnetName)
-
-			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, region, subnetName)
+			split := strings.Split(subNet, "/")
+			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, split[len(split)-3], split[len(split)-1])
 
 			rel, errRel := utils.CreateRelationship(networkInternalID, subnetInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
 				allNetworkElems = append(allNetworkElems, rel)
 			}
-
-			fmt.Println(subNet)
 		}
 	}
 
@@ -332,7 +329,7 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 		}
 
 		for _, nodePool := range cluster.NodePools {
-			nodePoolInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, clusterInternalID, nodePool.Name)
+			nodePoolInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", nodePool.Name)
 			nodePoolElem, errNodePoolElem := utils.CreateElement(nodePool, nodePool.Name, nodePoolInternalID, gcpModel.TypeNodePool, getComputeStatus(nodePool.Status), "", crawlTime)
 			if errNodePoolElem != nil {
 				continue
@@ -341,22 +338,21 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 			allGKEClusterElems = append(allGKEClusterElems, nodePoolElem)
 
 			for _, instanceGroupUrl := range nodePool.InstanceGroupUrls {
-				var projectID, zone, instanceGroupName string
-				fmt.Sscanf(instanceGroupUrl, "https://www.googleapis.com/compute/v1/projects/%s/zones/%s/instanceGroupManagers/%s", &projectID, &zone, &instanceGroupName)
+				split := strings.Split(instanceGroupUrl, "/")
 
-				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, zone, instanceGroupName)
+				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, split[len(split)-3], split[len(split)-1])
 				rel, errRel := utils.CreateRelationship(nodePoolInternalID, instanceGroupInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
 					allGKEClusterElems = append(allGKEClusterElems, rel)
 				}
 			}
 
-			relNetwork, errRelNetwork := utils.CreateRelationship(cluster.Network, nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", cluster.Network), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRelNetwork == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relNetwork)
 			}
 
-			relSubnet, errRelSubnet := utils.CreateRelationship(cluster.Subnetwork, nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			relSubnet, errRelSubnet := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, cluster.Zone, cluster.Subnetwork), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRelSubnet == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relSubnet)
 			}
