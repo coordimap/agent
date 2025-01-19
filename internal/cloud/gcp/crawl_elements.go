@@ -130,7 +130,7 @@ func (gcpCrawler *gcpCrawler) GetVMInstances(client *compute.Service, crawlTime 
 	for scopedZone, list := range instances.Items {
 		for _, instance := range list.Instances {
 			zone := getZoneFromScopedZone(scopedZone)
-			instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, scopedZone, instance.Name)
+			instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, instance.Name)
 
 			instanceElem, errInstanceElem := utils.CreateElement(instance, instance.Name, instanceInternalID, gcpModel.TypeVMInstance, getComputeStatus(instance.Status), "", crawlTime)
 			if errInstanceElem == nil {
