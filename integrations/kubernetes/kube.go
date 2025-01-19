@@ -18,14 +18,15 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 
 	// Create initial kubernetesCrawler object
 	crawler := &kubernetesCrawler{
-		kubeClient:      nil,
-		crawlInterval:   defaultCrawlTime,
-		dataSource:      *dataSource,
-		outputChannel:   outChannel,
-		istioConfigured: false,
-		istioCrawler:    prometheusCrawler{},
-		clusterName:     "",
-		retinaCrawler:   nil,
+		kubeClient:        nil,
+		crawlInterval:     defaultCrawlTime,
+		dataSource:        *dataSource,
+		outputChannel:     outChannel,
+		istioConfigured:   false,
+		istioCrawler:      prometheusCrawler{},
+		clusterName:       "",
+		retinaCrawler:     nil,
+		internalNodeNames: map[string]string{},
 	}
 
 	promQueryTime := ""
@@ -66,6 +67,12 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 			crawler.kubeClient = clientSet
 
 			clientInitialzed = true
+
+		case kubeConfigCloudDataSourceID:
+			if dsConfig.Value == "" {
+				continue
+			}
+			crawler.cloudDataSourceID = dsConfig.Value
 
 		case kubeConfigIstioPrometheusHost:
 			istioCrawler, err := makePrometheusCrawler(value)
@@ -142,7 +149,20 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 	}
 
 	for _, node := range nodes {
-		if isNodeInCloud(node.Labels, node.Annotations, node.Status.Addresses) {
+		cloudName, errCloudName := getNodeCloud(node.Labels, node.Annotations, node.Status.Addresses)
+		if errCloudName == nil && kubeCrawler.cloudDataSourceID != "" {
+			nodeInternalName := ""
+
+			switch cloudName {
+			case "aws":
+				// TODO: add the aws node internal name implementation
+				continue
+
+			case "gcp":
+				nodeInternalName = cloudutils.CreateGCPInternalName(kubeCrawler.dataSource.DataSourceID, node.Labels["topology.kubernetes.io/region"], node.Name)
+			}
+
+			kubeCrawler.internalNodeNames[node.Name] = nodeInternalName
 			continue
 		}
 
@@ -368,9 +388,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				}
 
 				if pod.Spec.NodeName != "" {
-					rel, errRel := utils.CreateRelationship(pod.Spec.NodeName, podInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-					if errRel == nil {
-						allCrawledElements = append(allCrawledElements, rel)
+					if internalName, ok := kubeCrawler.internalNodeNames[pod.Spec.NodeName]; ok {
+						rel, errRel := utils.CreateRelationship(internalName, podInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
 					}
 				}
 
