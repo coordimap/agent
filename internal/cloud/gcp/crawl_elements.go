@@ -31,12 +31,18 @@ func (gcpCrawler *gcpCrawler) GetBuckets(crawlTime time.Time) ([]*bloopi_agent.E
 	}
 
 	for _, bucket := range buckets.Items {
-		elem, errElem := utils.CreateElement(bucket, bucket.Name, bucket.Id, gcpModel.TypeBucket, bloopi_agent.StatusNoStatus, "", crawlTime)
+		zone := strings.ToLower(bucket.Location)
+		zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", zone)
+		bucketInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, bucket.Name)
+		elem, errElem := utils.CreateElement(bucket, bucket.Name, bucketInternalName, gcpModel.TypeBucket, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errElem == nil {
 			allBucketElements = append(allBucketElements, elem)
 		}
 
-		// TODO: add relationship of bucket and the location
+		rel, errRel := utils.CreateRelationship(zoneInternalName, bucketInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		if errRel == nil {
+			allBucketElements = append(allBucketElements, rel)
+		}
 	}
 
 	return allBucketElements, nil
