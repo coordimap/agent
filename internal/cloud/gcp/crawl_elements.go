@@ -17,6 +17,46 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
+func (gcpCrawler *gcpCrawler) GetLocationsAndZones(client *compute.Service, crawlTime time.Time) ([]*bloopi_agent.Element, error) {
+	allElems := []*bloopi_agent.Element{}
+
+	regionsCall := client.Regions.List(gcpCrawler.ConfiguredProjectID)
+	regionList, err := regionsCall.Do()
+	if err != nil {
+		return allElems, fmt.Errorf("could not list regions becaue %v", err)
+	}
+
+	// Iterate through regions and their zones
+	for _, region := range regionList.Items {
+		regionInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", region.Name)
+		regionElem, errRegionElem := utils.CreateElement(region, region.Name, regionInternalName, gcpModel.TypeRegion, bloopi_agent.StatusNoStatus, "", crawlTime)
+		if errRegionElem == nil {
+			allElems = append(allElems, regionElem)
+		}
+
+		zonesCall := client.Zones.List(gcpCrawler.ConfiguredProjectID)
+		zoneList, err := zonesCall.Filter(fmt.Sprintf("name=%s*", region.Name)).Do()
+		if err != nil {
+			log.Printf("Error getting zones for region %s: %v", region.Name, err)
+			continue
+		}
+
+		for _, zone := range zoneList.Items {
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", zone.Name)
+			zoneElem, errZoneElem := utils.CreateElement(zone, zone.Name, zoneInternalName, gcpModel.TypeZone, bloopi_agent.StatusNoStatus, "", crawlTime)
+			if errZoneElem == nil {
+				allElems = append(allElems, zoneElem)
+			}
+
+			rel, errRel := utils.CreateRelationship(regionInternalName, zoneInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			if errRel == nil {
+				allElems = append(allElems, rel)
+			}
+		}
+	}
+	return allElems, nil
+}
+
 func (gcpCrawler *gcpCrawler) GetBuckets(crawlTime time.Time) ([]*bloopi_agent.Element, error) {
 	allBucketElements := []*bloopi_agent.Element{}
 
@@ -78,6 +118,11 @@ func (gcpCrawler *gcpCrawler) GetComputeElems(crawlTime time.Time) ([]*bloopi_ag
 	client, errClient := createComputeClient(gcpCrawler.clientOpts)
 	if errClient != nil {
 		return allComputeElems, fmt.Errorf("could not create a compute instance because %v", errClient)
+	}
+
+	regionsAndZones, errRegionsAndZones := gcpCrawler.GetLocationsAndZones(client, crawlTime)
+	if errRegionsAndZones == nil {
+		allComputeElems = append(allComputeElems, regionsAndZones...)
 	}
 
 	vmInstanceElems, errVMInstanceElems := gcpCrawler.GetVMInstances(client, crawlTime)
