@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	gcpModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/gcp"
 	kube_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
 	"github.com/rs/zerolog/log"
 )
@@ -158,7 +159,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				nodeInternalName = cloudutils.CreateAWSInternalID(kubeCrawler.cloudDataSourceID, node.Name)
 
 			case "gcp":
-				nodeInternalName = cloudutils.CreateGCPInternalName(kubeCrawler.cloudDataSourceID, node.Labels["topology.kubernetes.io/region"], node.Name)
+				nodeInternalName = cloudutils.CreateGCPInternalName(kubeCrawler.cloudDataSourceID, node.Labels["topology.kubernetes.io/region"], gcpModel.TypeVMInstance, node.Name)
 			}
 
 			kubeCrawler.internalNodeNames[node.Name] = nodeInternalName
@@ -399,7 +400,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 					for _, containerEnv := range podContainer.Env {
 						if containerEnv.ValueFrom != nil {
 							if containerEnv.ValueFrom.ConfigMapKeyRef != nil {
-								configMapInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeConfigMap, containerEnv.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+								configMapInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeConfigMap, containerEnv.ValueFrom.ConfigMapKeyRef.Name)
 								rel, errRel := utils.CreateRelationship(podInternalID, configMapInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 								if errRel == nil {
 									allCrawledElements = append(allCrawledElements, rel)
@@ -407,7 +408,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 							}
 
 							if containerEnv.ValueFrom.SecretKeyRef != nil {
-								podSecretInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeSecret, containerEnv.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+								podSecretInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeSecret, containerEnv.ValueFrom.SecretKeyRef.Name)
 								rel, errRel := utils.CreateRelationship(podInternalID, podSecretInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 								if errRel == nil {
 									allCrawledElements = append(allCrawledElements, rel)

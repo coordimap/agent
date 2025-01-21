@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	gcpModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/gcp"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
 	"google.golang.org/api/logging/v2"
 )
@@ -46,8 +47,8 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 		if jsonPayload.SrcInstance.VmName != "" && jsonPayload.DstInstance.VmName != "" {
 
-			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, jsonPayload.DstInstance.VmName)
-			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, jsonPayload.DstInstance.VmName)
+			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
+			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 
 			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
 			if errVmRel == nil {
