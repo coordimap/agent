@@ -149,3 +149,10 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 
 	return &cleanedDataSource
 }
+
+func AddRelationship(existingRelationships *[]*bloopi_agent.Element, source, destination string, relationType int, crawlTime time.Time) {
+	rel, errRel := CreateRelationship(source, destination, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, relationType, crawlTime)
+	if errRel == nil {
+		*existingRelationships = append(*existingRelationships, rel)
+	}
+}
