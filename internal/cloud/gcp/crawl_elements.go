@@ -405,16 +405,15 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 				continue
 			}
 
+			utils.AddRelationship(&allGKEClusterElems, clusterInternalID, nodePoolInternalID, bloopi_agent.ParentChildTypeRelation, crawlTime)
+
 			allGKEClusterElems = append(allGKEClusterElems, nodePoolElem)
 
 			for _, instanceGroupUrl := range nodePool.InstanceGroupUrls {
 				split := strings.Split(instanceGroupUrl, "/")
 
 				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, split[len(split)-3], gcpModel.TypeInstanceGroup, split[len(split)-1])
-				rel, errRel := utils.CreateRelationship(nodePoolInternalID, instanceGroupInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-				if errRel == nil {
-					allGKEClusterElems = append(allGKEClusterElems, rel)
-				}
+				utils.AddRelationship(&allGKEClusterElems, nodePoolInternalID, instanceGroupInternalID, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			}
 
 			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, cluster.Network), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
