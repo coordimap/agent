@@ -42,7 +42,7 @@ func (gcpCrawler *gcpCrawler) GetLocationsAndZones(client *compute.Service, craw
 		}
 
 		for _, zone := range zoneList.Items {
-			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeRegion, zone.Name)
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeZone, zone.Name)
 			zoneElem, errZoneElem := utils.CreateElement(zone, zone.Name, zoneInternalName, gcpModel.TypeZone, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errZoneElem == nil {
 				allElems = append(allElems, zoneElem)
@@ -193,7 +193,7 @@ func (gcpCrawler *gcpCrawler) GetVMInstances(client *compute.Service, crawlTime 
 
 			for _, disk := range instance.Disks {
 				split := strings.Split(disk.Source, "/")
-				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeZone, split[len(split)-1])
+				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeDisk, split[len(split)-1])
 				fmt.Println("vm-disk: ", diskInternalID, instanceInternalID)
 				diskRel, errDiskRel := utils.CreateRelationship(instanceInternalID, diskInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errDiskRel == nil {
