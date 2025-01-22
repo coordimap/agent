@@ -411,9 +411,35 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 
 			for _, instanceGroupUrl := range nodePool.InstanceGroupUrls {
 				split := strings.Split(instanceGroupUrl, "/")
+				instanceGroupName := split[len(split)-1]
+				zone := split[len(split)-3]
 
-				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, split[len(split)-3], gcpModel.TypeInstanceGroup, split[len(split)-1])
+				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, zone, gcpModel.TypeInstanceGroup, instanceGroupName)
 				utils.AddRelationship(&allGKEClusterElems, nodePoolInternalID, instanceGroupInternalID, bloopi_agent.ParentChildTypeRelation, crawlTime)
+
+				computeClient, errComputeClient := createComputeClient(gcp.clientOpts)
+				if errComputeClient != nil {
+					continue
+				}
+				instances, err := computeClient.InstanceGroups.ListInstances(
+					gcp.ConfiguredProjectID,
+					zone,
+					instanceGroupName,
+					&compute.InstanceGroupsListInstancesRequest{},
+				).Do()
+				if err != nil {
+					continue
+				}
+
+				// Print instance details
+				for _, instance := range instances.Items {
+					instanceSplit := strings.Split(instance.Instance, "/")
+					instanceZone := instanceSplit[len(instanceSplit)-3]
+					instanceName := instanceSplit[len(instanceSplit)-1]
+					instanceInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, instanceZone, gcpModel.TypeVMInstance, instanceName)
+
+					utils.AddRelationship(&allGKEClusterElems, clusterInternalID, instanceInternalName, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				}
 			}
 
 			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, cluster.Network), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
