@@ -15,7 +15,7 @@ import (
 
 func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, error) {
 	allFoundRelationships := []*bloopi_agent.Element{}
-	startTime := time.Now().UTC().Add(-5 * time.Second)
+	startTime := time.Now().UTC().Add(-4 * crawler.crawlInterval)
 	endTime := startTime.Add(crawler.crawlInterval - 5*time.Second)
 
 	timeFilter := fmt.Sprintf(`timestamp >= "%s" AND timestamp <= "%s"`,
