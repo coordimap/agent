@@ -15,6 +15,7 @@ const (
 	gcpProjectID              = "project_id"
 	gcpConfigFlows            = "gcp_flows"
 	gcpConfigExternalMappings = "external_mappings"
+	gcpConfigIncludeRegions   = "include_regions"
 )
 
 // ServiceAccountKey represents the complete structure of a Google Cloud service account key JSON file
@@ -44,6 +45,7 @@ type gcpCrawler struct {
 	crawlInterval       time.Duration
 	dataSource          bloopi_agent.DataSource
 	outputChan          chan *bloopi_agent.CloudCrawlData
+	includedRegions     []string
 }
 
 type Crawler interface {

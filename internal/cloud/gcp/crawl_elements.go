@@ -5,6 +5,7 @@ import (
 	"cleye/utils"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -28,6 +29,10 @@ func (gcpCrawler *gcpCrawler) GetLocationsAndZones(client *compute.Service, craw
 
 	// Iterate through regions and their zones
 	for _, region := range regionList.Items {
+		if !slices.Contains(gcpCrawler.includedRegions, region.Name) {
+			continue
+		}
+
 		regionInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeRegion, region.Name)
 		regionElem, errRegionElem := utils.CreateElement(region, region.Name, regionInternalName, gcpModel.TypeRegion, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errRegionElem == nil {
