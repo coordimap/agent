@@ -28,6 +28,7 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 		credentialsFile:     "",
 		ConfiguredProjectID: "",
 		logClient:           nil,
+		includedRegions:     []string{},
 	}
 
 	flowConfigured := false
@@ -71,6 +72,9 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 			}
 
 			gcpCrawler.externalMappings = mappings
+
+		case gcpConfigIncludeRegions:
+			gcpCrawler.includedRegions = append(gcpCrawler.includedRegions, strings.Split(config.Value, ",")...)
 
 		case gcpProjectID:
 			if config.Value == "" {
