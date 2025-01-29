@@ -36,16 +36,16 @@ type ServiceAccountKey struct {
 }
 
 type gcpCrawler struct {
+	outputChan          chan *bloopi_agent.CloudCrawlData
 	logClient           *logging.Service
+	clientOpts          []option.ClientOption
+	dataSource          bloopi_agent.DataSource
+	externalMappings    map[string]string
 	ConfiguredProjectID string
 	credentialsFile     string
-	externalMappings    map[string]string
-	clientOpts          []option.ClientOption
-	InGCPEnvironment    bool
-	crawlInterval       time.Duration
-	dataSource          bloopi_agent.DataSource
-	outputChan          chan *bloopi_agent.CloudCrawlData
 	includedRegions     []string
+	crawlInterval       time.Duration
+	InGCPEnvironment    bool
 }
 
 type Crawler interface {

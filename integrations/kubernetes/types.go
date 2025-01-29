@@ -24,13 +24,13 @@ type kubernetesCrawler struct {
 	retinaCrawler     *prometheusCrawler
 	kubeClient        *kubernetes.Clientset
 	outputChannel     chan *bloopi_agent.CloudCrawlData
+	dataSource        bloopi_agent.DataSource
+	istioCrawler      prometheusCrawler
+	internalNodeNames map[string]string
 	clusterName       string
 	cloudDataSourceID string
-	crawlInterval     time.Duration
-	internalNodeNames map[string]string
-	dataSource        bloopi_agent.DataSource
 	istioConfigured   bool
-	istioCrawler      prometheusCrawler
+	crawlInterval     time.Duration
 }
 
 type prometheusCrawler struct {

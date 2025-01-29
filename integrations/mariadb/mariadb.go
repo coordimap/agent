@@ -135,11 +135,11 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 
 	allCrawledElements = append(allCrawledElements, dbElem)
-	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(mariaCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(mariaCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 	if errExtIDDBNameRel == nil {
 		allCrawledElements = append(allCrawledElements, extIDDBNameRel)
 	}
-	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ErTypeRelation, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
 	}
@@ -164,7 +164,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 			for _, destination := range constraint.Destinations {
 				// add the referenced tableName in the current elem's relations
-				rel, errRel := utils.CreateRelationship(internalTableName, destination.Table, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(internalTableName, destination.Table, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
 				}
@@ -183,12 +183,12 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			allCrawledElements = append(allCrawledElements, indexElem)
 			tableData.Indexes = append(tableData.Indexes, indexInternalName)
 
-			relTableIndex, errRelTableIndex := utils.CreateRelationship(internalTableName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+			relTableIndex, errRelTableIndex := utils.CreateRelationship(internalTableName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
 			if errRelTableIndex == nil {
 				allCrawledElements = append(allCrawledElements, relTableIndex)
 			}
 
-			relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(mariaCrawler.DBName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+			relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(mariaCrawler.DBName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
 			if errRelDBNameIndex == nil {
 				allCrawledElements = append(allCrawledElements, relDBNameIndex)
 			}
