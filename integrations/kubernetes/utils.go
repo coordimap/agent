@@ -72,7 +72,7 @@ func getNodeCloud(labels map[string]string, annotations map[string]string, addre
 	}
 
 	for key, value := range labels {
-		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") {
+		if strings.Contains(key, "aws") || strings.Contains(value, "aws") {
 			return "aws", nil
 		}
 

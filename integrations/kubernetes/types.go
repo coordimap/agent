@@ -18,6 +18,7 @@ const (
 	kubeConfigClusterName          = "cluster_name"
 	kubeConfigRetinaPrometheusHost = "retina_prometheus"
 	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
+	kubeConfigExternalMappings     = "external_mappings"
 )
 
 type kubernetesCrawler struct {
@@ -27,10 +28,11 @@ type kubernetesCrawler struct {
 	dataSource        bloopi_agent.DataSource
 	istioCrawler      prometheusCrawler
 	internalNodeNames map[string]string
+	externalMappings  map[string]string
 	clusterName       string
 	cloudDataSourceID string
-	istioConfigured   bool
 	crawlInterval     time.Duration
+	istioConfigured   bool
 }
 
 type prometheusCrawler struct {

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//Element represents a single retrieved AWS element stored as JSON together with it's corresponding HASH and timestamp of retrieval
+// Element represents a single retrieved AWS element stored as JSON together with it's corresponding HASH and timestamp of retrieval
 type Element struct {
 	RetrievedAt time.Time       `json:"retrieved_at"`
 	Name        string          `json:"name"`
@@ -15,12 +15,12 @@ type Element struct {
 	Data        json.RawMessage `json:"data"`
 }
 
-//CrawledData all the crawled elements of the specific cloud
+// CrawledData all the crawled elements of the specific cloud
 type CrawledData struct {
 	Data []*Element `json:"data"`
 }
 
-//CloudInformation Structure that holds information about the cloud account
+// CloudInformation Structure that holds information about the cloud account
 type CloudInformation struct {
 	AccountID string `json:"account_id"`
 	Version   string `json:"version"`
@@ -28,16 +28,16 @@ type CloudInformation struct {
 	Name      string `json:"name"`
 }
 
-//CloudData contains all the crawled resources of the cloud Type
+// CloudData contains all the crawled resources of the cloud Type
 type CloudData struct {
-	Data      json.RawMessage `json:"crawled_data"`
 	Hash      string          `json:"hash"`
 	Timestamp time.Time       `josn:"timestamp"`
+	Data      json.RawMessage `json:"crawled_data"`
 }
 
-//CloudCrawlData the data structure that holds all the crawled information about the cloud
+// CloudCrawlData the data structure that holds all the crawled information about the cloud
 type CloudCrawlData struct {
+	Timestamp time.Time        `json:"timestamp"`
 	CloudInfo CloudInformation `json:"cloud_info"`
 	Data      CloudData        `json:"data"`
-	Timestamp time.Time        `json:"timestamp"`
 }

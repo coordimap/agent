@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -20,6 +21,18 @@ func GetMappingDataSourceID(configuredMappings map[string]string, mappingToSearc
 	val, ok := configuredMappings[mappingToSearchFor]
 
 	if !ok {
+		// Check if there is an asterisk (*) in any of the keys
+		for key, value := range configuredMappings {
+			newKey := strings.Replace(key, "*", ".*", 1)
+			regex, errRegex := regexp.Compile(newKey)
+			if errRegex != nil {
+				return "", fmt.Errorf("could not create regex because %w", errRegex)
+			}
+
+			if regex.MatchString(mappingToSearchFor) {
+				return value, nil
+			}
+		}
 		return "", errors.New("mapping not found")
 	}
 
