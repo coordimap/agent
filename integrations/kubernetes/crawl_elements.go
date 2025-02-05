@@ -267,7 +267,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			}
 		}
 
-		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -282,7 +282,7 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, partOfLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -297,12 +297,12 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, componentLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -317,18 +317,18 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 			createdElements = append(createdElements, nameLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
 
 		if componentLabelExists {
-			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -369,7 +369,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		sourceInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["source_namespace"]), kube_model.TypePod, string(metric["source_podname"]))
 		destinationInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, string(metric["destination_namespace"]), kube_model.TypePod, string(metric["destination_podname"]))
 
-		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
 		}
 	}

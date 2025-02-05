@@ -100,7 +100,7 @@ func CreateAWSElement(element interface{}, name, id, elemType, status, version s
 }
 
 // CreateRelationship create a relationship element
-func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelationshipType string, relationType int, crawlTime time.Time) (*bloopi_agent.Element, error) {
+func CreateRelationship(sourceID, destinationID, relationshipType string, relationType int, crawlTime time.Time) (*bloopi_agent.Element, error) {
 	if sourceID == "" || destinationID == "" {
 		return nil, errors.New("SourceID or DestinationID must both be non empty in oder to create a relationship")
 	}
@@ -116,7 +116,7 @@ func CreateRelationship(sourceID, destinationID, relationshipType, wrapperRelati
 		parentElem,
 		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
 		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
-		wrapperRelationshipType,
+		bloopi_agent.RelationshipType,
 		bloopi_agent.StatusNoStatus,
 		"",
 		crawlTime,
@@ -137,7 +137,7 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 	cleanedDataSource.DataSourceID = inputDS.DataSourceID
 
 	for _, dsConfigKeyValue := range inputDS.Config.ValuePairs {
-		if slices.Contains[[]string](skipFields, strings.ToLower(dsConfigKeyValue.Key)) {
+		if slices.Contains(skipFields, strings.ToLower(dsConfigKeyValue.Key)) {
 			continue
 		}
 
@@ -151,7 +151,7 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 }
 
 func AddRelationship(existingRelationships *[]*bloopi_agent.Element, source, destination string, relationType int, crawlTime time.Time) {
-	rel, errRel := CreateRelationship(source, destination, bloopi_agent.RelationshipType, bloopi_agent.RelationshipType, relationType, crawlTime)
+	rel, errRel := CreateRelationship(source, destination, bloopi_agent.RelationshipType, relationType, crawlTime)
 	if errRel == nil {
 		*existingRelationships = append(*existingRelationships, rel)
 	}
