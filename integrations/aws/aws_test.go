@@ -12,8 +12,8 @@ func TestAwsCrawl_GetCrawlInterval(t *testing.T) {
 		ds *bloopi_agent.DataSource
 	}
 	tests := []struct {
-		name    string
 		fields  fields
+		name    string
 		want    time.Duration
 		wantErr bool
 	}{

@@ -8,16 +8,16 @@ import (
 )
 
 type mariadbCrawler struct {
+	dbConn            *sql.DB
+	dataSource        *bloopi_agent.DataSource
+	outputChannel     chan *bloopi_agent.CloudCrawlData
 	Host              string
 	User              string
 	Pass              string
 	DBName            string
 	SSLMode           string
-	dbConn            *sql.DB
-	outputChannel     chan *bloopi_agent.CloudCrawlData
-	crawlInterval     time.Duration
-	dataSource        *bloopi_agent.DataSource
 	externalMappingID string
+	crawlInterval     time.Duration
 }
 
 type Crawler interface {

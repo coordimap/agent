@@ -8,16 +8,16 @@ import (
 )
 
 type postgresCrawler struct {
+	dataSource        *bloopi_agent.DataSource
+	outputChannel     chan *bloopi_agent.CloudCrawlData
+	dbConn            *sql.DB
 	Host              string
 	User              string
 	Pass              string
 	DBName            string
 	SSLMode           string
-	dbConn            *sql.DB
-	outputChannel     chan *bloopi_agent.CloudCrawlData
-	crawlInterval     time.Duration
-	dataSource        *bloopi_agent.DataSource
 	externalMappingID string
+	crawlInterval     time.Duration
 }
 
 type Crawler interface {
