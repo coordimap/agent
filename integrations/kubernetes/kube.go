@@ -174,7 +174,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			case "gcp":
 				gcpDataSourceID, errGcpDataSourceID := cloudutils.GetMappingDataSourceID(kubeCrawler.externalMappings, fmt.Sprintf("%s-%s", node.Labels["topology.kubernetes.io/region"], node.Name))
 				if errGcpDataSourceID == nil {
-					nodeInternalName = cloudutils.CreateGCPInternalName(gcpDataSourceID, node.Labels["topology.kubernetes.io/region"], gcpModel.TypeVMInstance, node.Name)
+					nodeInternalName = cloudutils.CreateGCPInternalName(gcpDataSourceID, node.Labels["topology.kubernetes.io/zone"], gcpModel.TypeVMInstance, node.Name)
 				}
 			}
 
