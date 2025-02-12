@@ -547,9 +547,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				}
 
 				if job.Spec.Template.Spec.NodeName != "" {
-					rel, errRel = utils.CreateRelationship(job.Spec.Template.Spec.NodeName, jobInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-					if errRel == nil {
-						allCrawledElements = append(allCrawledElements, rel)
+					if internalName, ok := kubeCrawler.internalNodeNames[job.Spec.Template.Spec.NodeName]; ok {
+						rel, errRel := utils.CreateRelationship(internalName, jobInternalID, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
 					}
 				}
 
@@ -579,9 +581,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				}
 
 				if cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName != "" {
-					rel, errRel = utils.CreateRelationship(cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName, cronJobInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-					if errRel == nil {
-						allCrawledElements = append(allCrawledElements, rel)
+					if internalName, ok := kubeCrawler.internalNodeNames[cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName]; ok {
+						rel, errRel := utils.CreateRelationship(internalName, cronJobInternalID, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
 					}
 				}
 
@@ -636,9 +640,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 				}
 
 				if statefulSet.Spec.Template.Spec.NodeName != "" {
-					rel, errRel := utils.CreateRelationship(statefulSet.Spec.Template.Spec.NodeName, statefulSetInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-					if errRel == nil {
-						allCrawledElements = append(allCrawledElements, rel)
+					if internalName, ok := kubeCrawler.internalNodeNames[statefulSet.Spec.Template.Spec.NodeName]; ok {
+						rel, errRel := utils.CreateRelationship(internalName, statefulSetInternalID, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
 					}
 				}
 
