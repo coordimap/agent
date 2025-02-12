@@ -488,6 +488,13 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Ele
 		if errRel == nil {
 			allCrawledSqlInstances = append(allCrawledSqlInstances, rel)
 		}
+
+		// add sql IP addresses in the internal cache
+		for _, ipv4 := range sqlInstance.IpAddresses {
+			if _, exists := gcp.internalIDMapper[ipv4.IpAddress]; !exists {
+				gcp.internalIDMapper[ipv4.IpAddress] = sqlInternalName
+			}
+		}
 	}
 
 	return allCrawledSqlInstances, nil

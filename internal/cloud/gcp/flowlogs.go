@@ -5,6 +5,7 @@ import (
 	"cleye/utils"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -87,6 +88,68 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 				}
 			}
 			// TODO: check for service relationships
+		}
+
+		// check for the SQL mapping
+		sqlPorts := []int{5432, 3306}
+		if (slices.Contains(sqlPorts, jsonPayload.Connection.SrcPort) || slices.Contains(sqlPorts, jsonPayload.Connection.DstPort)) && (jsonPayload.DstGkeDetails.Cluster.ClusterName == "" || jsonPayload.SrcGkeDetails.Cluster.ClusterName == "") {
+			sqlIP := jsonPayload.Connection.SrcIP
+			if slices.Contains(sqlPorts, jsonPayload.Connection.DstPort) {
+				sqlIP = jsonPayload.Connection.DstIP
+			}
+			sqlInternalName, existsSqlInternalIP := crawler.internalIDMapper[sqlIP]
+			if !existsSqlInternalIP {
+				continue
+			}
+
+			// relationship between the deployment and pod and the sql instance
+			gkeDetails := []GkeDetails{jsonPayload.SrcGkeDetails, jsonPayload.DstGkeDetails}
+			for index, gke := range gkeDetails {
+				if gke.Pod.Name == "" || gke.Pod.Workload.Type != "DEPLOYMENT" {
+					continue
+				}
+				dsID, errDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", gke.Cluster.ClusterLocation, gke.Cluster.ClusterName))
+				if errDSID != nil {
+					continue
+				}
+
+				podInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypePod, gke.Pod.Name)
+				deplomentInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypeDeployment, gke.Pod.Workload.Name)
+				if index == 0 {
+ 					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					if errRelPodSql == nil {
+						allFoundRelationships = append(allFoundRelationships, relPodSql)
+					}
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(deplomentInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					if errRelDeploymentSql == nil {
+						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
+					}
+				} else {
+					relPodSql, errRelPodSql := utils.CreateRelationship(sqlInternalName, podInternalName, bloopi_agent.RelationshipExternalDestinationSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					if errRelPodSql == nil {
+						allFoundRelationships = append(allFoundRelationships, relPodSql)
+					}
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(sqlInternalName, deplomentInternalName, bloopi_agent.RelationshipExternalDestinationSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					if errRelDeploymentSql == nil {
+						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
+					}
+				}
+			}
+
+			// relationship between the node and the sql instance
+			instancesDetails := []InstanceDetails{jsonPayload.SrcInstance, jsonPayload.DstInstance}
+			for index, instance := range instancesDetails {
+				if instance.VmName == "" {
+					continue
+				}
+
+				instanceInternalName := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, instance.Zone, gcpModel.TypeVMInstance, instance.VmName)
+				if index == 0 {
+					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, bloopi_agent.FlowTypeRelation, crawlTime)
+				} else if index == 1 {
+					utils.AddRelationship(&allFoundRelationships, instanceInternalName, sqlInternalName, bloopi_agent.FlowTypeRelation, crawlTime)
+				}
+			}
 		}
 	}
 

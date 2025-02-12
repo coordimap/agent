@@ -29,6 +29,7 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 		ConfiguredProjectID: "",
 		logClient:           nil,
 		includedRegions:     []string{},
+		internalIDMapper:    map[string]string{},
 	}
 
 	flowConfigured := false
