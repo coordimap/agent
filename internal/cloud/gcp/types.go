@@ -41,6 +41,7 @@ type gcpCrawler struct {
 	clientOpts          []option.ClientOption
 	dataSource          bloopi_agent.DataSource
 	externalMappings    map[string]string
+	internalIDMapper    map[string]string
 	ConfiguredProjectID string
 	credentialsFile     string
 	includedRegions     []string
