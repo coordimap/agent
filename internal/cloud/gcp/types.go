@@ -77,12 +77,12 @@ type ClusterDetails struct {
 type PodDetails struct {
 	Name      string          `json:"pod_name"`
 	Namespace string          `json:"pod_namespace"`
-	Workload  WorkloadDetails `json:"pod_workload"`
+	Workload  WorkloadDetails `json:"workload"`
 }
 
 type WorkloadDetails struct {
-	Name string `json:"workload_name"`
-	Type string `json:"workload_type"`
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 type ServiceDetails struct {
