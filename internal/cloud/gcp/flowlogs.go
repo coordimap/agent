@@ -58,16 +58,16 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 		// check for gke src and dest
 		if jsonPayload.SrcGkeDetails.Cluster.ClusterName != "" && jsonPayload.DstGkeDetails.Cluster.ClusterName != "" {
-			if jsonPayload.SrcGkeDetails.Pod.Name != "" && jsonPayload.SrcGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Name != "" {
-				srcDSID, errSrcDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.SrcGkeDetails.Cluster.ClusterLocation, jsonPayload.SrcGkeDetails.Cluster.ClusterName))
-				if errSrcDSID != nil {
-					continue
-				}
-				dstDSID, errDstDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.DstGkeDetails.Cluster.ClusterLocation, jsonPayload.DstGkeDetails.Cluster.ClusterName))
-				if errDstDSID != nil {
-					continue
-				}
+			srcDSID, errSrcDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.SrcGkeDetails.Cluster.ClusterLocation, jsonPayload.SrcGkeDetails.Cluster.ClusterName))
+			if errSrcDSID != nil {
+				continue
+			}
+			dstDSID, errDstDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.DstGkeDetails.Cluster.ClusterLocation, jsonPayload.DstGkeDetails.Cluster.ClusterName))
+			if errDstDSID != nil {
+				continue
+			}
 
+			if jsonPayload.SrcGkeDetails.Pod.Name != "" && jsonPayload.SrcGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Name != "" {
 				srcPodInternalName := cloudutils.CreateKubeInternalName(srcDSID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
 				dstPodInternalName := cloudutils.CreateKubeInternalName(dstDSID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
 
@@ -76,7 +76,16 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 					allFoundRelationships = append(allFoundRelationships, rel)
 				}
 			}
-			// TODO: check for workload relationships in the pod
+
+			if jsonPayload.SrcGkeDetails.Pod.Workload.Type == "DEPLOYMENT" && jsonPayload.DstGkeDetails.Pod.Workload.Type == "DEPLOYMENT" {
+				srcDeployment := cloudutils.CreateKubeInternalName(srcDSID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
+				dstDeployment := cloudutils.CreateKubeInternalName(dstDSID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
+
+				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, bloopi_agent.RelationshipExternalBothSidesType, bloopi_agent.FlowTypeRelation, crawlTime)
+				if errRel == nil {
+					allFoundRelationships = append(allFoundRelationships, rel)
+				}
+			}
 			// TODO: check for service relationships
 		}
 	}
