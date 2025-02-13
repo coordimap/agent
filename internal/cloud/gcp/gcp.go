@@ -30,6 +30,7 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 		logClient:           nil,
 		includedRegions:     []string{},
 		internalIDMapper:    map[string]string{},
+		externalMappings:    map[string]string{},
 	}
 
 	flowConfigured := false
