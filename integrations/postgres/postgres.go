@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	cloudutils "cleye/internal/cloud/utils"
 	"cleye/utils"
 	"database/sql"
 	"fmt"
@@ -32,8 +33,6 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		externalMappingID: "",
 	}
 
-	var mappingDSID, mappingInternalID string
-
 	// 2. populate postgresCrawler with the provided configuration
 	for _, dsConfig := range dataSource.Config.ValuePairs {
 		switch dsConfig.Key {
@@ -54,11 +53,8 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		case "db_host":
 			crawler.Host = dsConfig.Value
 
-		case "mapping_data_source_id":
-			mappingDSID = dsConfig.Value
-
 		case "mapping_internal_id":
-			mappingInternalID = dsConfig.Value
+			crawler.externalMappingID = dsConfig.Value
 
 		case "ssl_mode":
 			allowedValues := []string{"require", "disable"}
@@ -90,10 +86,6 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 				crawler.crawlInterval = DEFAULT_CRAWL_TIME
 			}
 		}
-	}
-
-	if mappingDSID != "" && mappingInternalID != "" {
-		crawler.externalMappingID = fmt.Sprintf("%s-%s", mappingDSID, mappingInternalID)
 	}
 
 	// 3. connect to the DB
@@ -176,14 +168,17 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		return nil, errDBElem
 	}
 
-	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(postCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
-	if errExtIDDBNameRel == nil {
-		allCrawledElements = append(allCrawledElements, extIDDBNameRel)
-	}
-
-	rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ErTypeRelation, crawlTime)
-	if errRel == nil {
-		allCrawledElements = append(allCrawledElements, rel)
+	externalSqlName, errExternalSqlName := cloudutils.CreateSQLInternalName(postCrawler.externalMappingID)
+	if errExternalSqlName == nil {
+		extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(externalSqlName, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+		if errExtIDDBNameRel == nil {
+			allCrawledElements = append(allCrawledElements, extIDDBNameRel)
+		}
+	} else {
+		rel, errRel := utils.CreateRelationship(postCrawler.Host, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ErTypeRelation, crawlTime)
+		if errRel == nil {
+			allCrawledElements = append(allCrawledElements, rel)
+		}
 	}
 
 	allCrawledElements = append(allCrawledElements, dbElem)
@@ -191,6 +186,7 @@ func (postCrawler *postgresCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	for _, schemaName := range schemaNames {
 		schemaInternalName := generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, "")
 		log.Debug().Msgf("Starting retrieval of Postgres DB schema tables for %s-%s %s", postCrawler.dataSource.Info.Type, postCrawler.dataSource.DataSourceID, schemaName)
+
 		tableNames, errGetTableNames := postCrawler.getSchemaTables(schemaName)
 		if errGetTableNames != nil {
 			log.Error().Msgf("Could not get the table names for the schema %s because %s", schemaName, errGetTableNames.Error())
