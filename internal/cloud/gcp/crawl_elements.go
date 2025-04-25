@@ -482,6 +482,10 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Ele
 			allCrawledSqlInstances = append(allCrawledSqlInstances, elem)
 		}
 
+		if sqlInstance.Settings == nil || sqlInstance.Settings.IpConfiguration == nil || sqlInstance.Settings.IpConfiguration.PrivateNetwork == "" {
+			continue
+		}
+
 		split := strings.Split(sqlInstance.Settings.IpConfiguration.PrivateNetwork, "/")
 		vpcInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, split[4])
 		rel, errRel := utils.CreateRelationship(vpcInternalID, sqlInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
