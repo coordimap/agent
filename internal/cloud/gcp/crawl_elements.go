@@ -477,7 +477,18 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Ele
 
 	for _, sqlInstance := range sqlInstancesList.Items {
 		sqlInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, sqlInstance.GceZone, gcpModel.TypeCloudSQL, sqlInstance.Name)
-		elem, errElem := utils.CreateElement(sqlInstance, sqlInstance.Name, sqlInternalName, gcpModel.TypeCloudSQL, getComputeStatus(sqlInstance.State), "", crawlTime)
+		status := getComputeStatus(sqlInstance.State)
+
+		if status == bloopi_agent.StatusGreen && status != getComputeStatus(sqlInstance.Settings.ActivationPolicy) {
+			status = getComputeStatus(sqlInstance.Settings.ActivationPolicy)
+		}
+
+		dbVer, errDbVer := ParseCloudSqlVersionToSemver(sqlInstance.DatabaseInstalledVersion)
+		if errDbVer != nil {
+			dbVer = ""
+		}
+
+		elem, errElem := utils.CreateElement(sqlInstance, sqlInstance.Name, sqlInternalName, gcpModel.TypeCloudSQL, status, dbVer, crawlTime)
 		if errElem == nil {
 			allCrawledSqlInstances = append(allCrawledSqlInstances, elem)
 		}
