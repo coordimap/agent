@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"fmt"
-	"strings"
 
 	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
 	post_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
@@ -105,19 +104,20 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 		// Get all columns of the constraint
 		sqlConstraintsColumns := `
-			select
+			select DISTINCT 
 				kcu.ordinal_position as position,
 				kcu.column_name as key_column,
-				'postgres.' || LOWER(REPLACE(tco.constraint_type, ' ', '_')) AS constraint_type
+				tco.constraint_type AS constraint_type
 			from information_schema.table_constraints tco
 			join information_schema.key_column_usage kcu
 				on kcu.constraint_name = tco.constraint_name
 				and kcu.constraint_schema = tco.constraint_schema
 				and kcu.constraint_name = tco.constraint_name
 			where kcu.table_schema = $1 and kcu.table_name = $2 and kcu.constraint_name = $3
-			order by kcu.table_schema,
-					kcu.table_name,
-					position
+			-- order by kcu.table_schema,
+			--		kcu.table_name,
+			--		position
+			;
 		`
 		rowsConstraintsColumns, errConstraitsColumns := postCrawler.dbConn.Query(sqlConstraintsColumns, schemaName, tableNameCleaned, constraintName)
 		if errConstraitsColumns != nil {
@@ -127,9 +127,11 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 		defer rowsConstraintsColumns.Close()
 
+		// Collect all source columns first
 		for rowsConstraintsColumns.Next() {
 			var sourceConstraintCol databasemodels.Column
 			if err := rowsConstraintsColumns.Scan(&sourceConstraintCol.Position, &sourceConstraintCol.Name, &constraintType); err != nil {
+				log.Err(err).Msg("Error while getting constraint columns")
 				continue
 			}
 
@@ -151,51 +153,52 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 			constraint.Sources = append(constraint.Sources, sourceConstraintCol)
 		}
+		rowsConstraintsColumns.Close() // Close rows explicitly as we might query again before the outer loop defer
 
-		if constraintType != post_model.POSTGRES_CONSTRAINT_FK {
-			constraints = append(constraints, constraint)
-			continue
-		}
-
-		// Get all table relations for each constraints
-		sqlFKConstraints := `
-			select
-				ctu.table_schema || '.' || ctu.table_name || '.' || c.column_name as foreign_table,
-				c.ordinal_position
-			from
-				information_schema.columns c,
-					information_schema.constraint_table_usage ctu,
-					information_schema.constraint_column_usage ccu
-			where
-					ctu.constraint_name = $1 and
-					ctu.table_schema = $2 and
-					ccu.constraint_name = ctu.constraint_name and
-					ccu.table_schema = ctu.table_schema and
-					c.table_schema = ctu.table_schema and
-					c.table_name = ccu.table_name and
-					ccu.column_name = c.column_name
-		`
-		rowsFKConstraint, errFKConstrains := postCrawler.dbConn.Query(sqlFKConstraints, constraintName, schemaName)
-		if errFKConstrains != nil {
-			continue
-		}
-
-		defer rowsFKConstraint.Close()
-
-		for rowsFKConstraint.Next() {
-			var fkColumn databasemodels.Column
-
-			if err := rowsFKConstraint.Scan(&fkColumn.Name, &fkColumn.Position); err != nil {
+		// If it's a Foreign Key, now query for the destination columns
+		if constraint.Type == post_model.POSTGRES_CONSTRAINT_FK {
+			sqlReferencedColumns := `
+				SELECT DISTINCT
+					kcu_ref.table_schema AS referenced_table_schema,
+					kcu_ref.table_name AS referenced_table_name,
+					kcu_ref.column_name AS referenced_column_name,
+					kcu_src.ordinal_position AS source_ordinal_position -- Use source position for ordering/matching
+				FROM
+					information_schema.referential_constraints AS rc
+				JOIN
+					information_schema.key_column_usage AS kcu_ref -- Referenced side (PK/Unique)
+					ON rc.unique_constraint_name = kcu_ref.constraint_name
+					AND rc.unique_constraint_schema = kcu_ref.constraint_schema
+				JOIN
+					information_schema.key_column_usage AS kcu_src -- Referencing side (FK)
+					ON rc.constraint_name = kcu_src.constraint_name
+					AND rc.constraint_schema = kcu_src.constraint_schema
+					-- AND kcu_ref.position_in_unique_constraint = kcu_src.ordinal_position -- Match columns for composite keys
+				WHERE
+					rc.constraint_schema = $1 -- Schema of the referencing table (schemaName)
+					AND kcu_src.table_name = $2 -- Name of the referencing table (tableNameCleaned)
+					AND rc.constraint_name = $3 -- Name of the FK constraint (constraintName)
+				ORDER BY
+					kcu_src.ordinal_position; -- Order by the position in the FK constraint
+			`
+			rowsFKConstraint, errFKConstrains := postCrawler.dbConn.Query(sqlReferencedColumns, schemaName, tableNameCleaned, constraintName)
+			if errFKConstrains != nil {
+				log.Warn().Msgf("Could not get foreign key destination columns for constraint %s: %v", constraintName, errFKConstrains)
 				continue
 			}
 
-			splitValues := strings.Split(fkColumn.Name, ".")
-
-			fkColumn.Table = generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, splitValues[0], splitValues[1])
-
-			constraint.Destinations = append(constraint.Destinations, fkColumn)
-			break
-
+			defer rowsFKConstraint.Close()
+			for rowsFKConstraint.Next() {
+				var destCol databasemodels.Column
+				var referencedSchema, referencedTable, referencedColumn string
+				if err := rowsFKConstraint.Scan(&referencedSchema, &referencedTable, &referencedColumn, &destCol.Position); err != nil {
+					log.Warn().Msgf("Could not scan foreign key destination column for constraint %s: %v", constraintName, err)
+					continue
+				}
+				destCol.Name = fmt.Sprintf("%s.%s.%s", referencedSchema, referencedTable, referencedColumn)
+				destCol.Table = generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, referencedSchema, referencedTable)
+				constraint.Destinations = append(constraint.Destinations, destCol)
+			}
 		}
 
 		constraints = append(constraints, constraint)
