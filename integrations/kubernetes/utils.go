@@ -94,24 +94,14 @@ func getNodeCloud(labels map[string]string, annotations map[string]string, addre
 	return "", errors.New("no cloud found")
 }
 
-func isNodeInCloud(labels map[string]string, annotations map[string]string, addresses []v1.NodeAddress) bool {
-	for _, address := range addresses {
-		if strings.Contains(address.Address, "compute.internal") || strings.Contains(address.Address, "amazonaws") {
-			return true
-		}
-	}
+const AppVersionLabel = "app.kubernetes.io/version"
 
-	for key, value := range labels {
-		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") || strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
-			return true
-		}
+// GetAppVersionFromLabels extracts the application version from the standard Kubernetes label.
+// It returns the version string and a boolean indicating if the label was found.
+func GetAppVersionFromLabels(labels map[string]string) (string, bool) {
+	if labels == nil {
+		return "", false
 	}
-
-	for key, value := range annotations {
-		if strings.Contains(key, "aws") || strings.Contains(value, "aws") || strings.Contains(key, "cloud.google.com") || strings.Contains(value, "google") || strings.Contains(key, "gke") || strings.Contains(value, "google") {
-			return true
-		}
-	}
-
-	return false
+	version, ok := labels[AppVersionLabel]
+	return version, ok
 }
