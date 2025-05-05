@@ -290,7 +290,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			for _, deployment := range deployments {
 				deploymentStatus := getDeploymentStatus(deployment.Status.Conditions)
 				deploymentInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeDeployment, deployment.Name)
-				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, deploymentInternalID, kube_model.TypeDeployment, deploymentStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(deployment.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(deployment, deployment.Name, deploymentInternalID, kube_model.TypeDeployment, deploymentStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -340,7 +341,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, service := range services {
 				serviceInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeService, service.Name)
-				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, serviceInternalID, kube_model.TypeService, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(service.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(service, service.Name, serviceInternalID, kube_model.TypeService, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -391,7 +393,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 			for _, pod := range pods {
 				podStatus := getPodStatus(pod.Status.Phase)
 				podInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypePod, pod.Name)
-				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, podInternalID, kube_model.TypePod, podStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(pod.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(pod, pod.Name, podInternalID, kube_model.TypePod, podStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -479,7 +482,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, secret := range secrets {
 				secretInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeSecret, secret.Name)
-				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, secretInternalID, kube_model.TypeSecret, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(secret.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, secretInternalID, kube_model.TypeSecret, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -504,7 +508,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, endpoint := range endpoints {
 				endpointInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeEndpoint, endpoint.Name)
-				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, endpointInternalID, kube_model.TypeEndpoint, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(endpoint.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(endpoint, endpoint.Name, endpointInternalID, kube_model.TypeEndpoint, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -532,7 +537,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, job := range jobs {
 				jobInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeJob, job.Name)
-				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, jobInternalID, kube_model.TypeJob, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(job.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(job, job.Name, jobInternalID, kube_model.TypeJob, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -600,7 +606,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, configMap := range configMaps {
 				configMapInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeConfigMap, configMap.Name)
-				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, configMapInternalID, kube_model.TypeConfigMap, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(configMap.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, configMapInternalID, kube_model.TypeConfigMap, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -669,7 +676,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, daemonSet := range daemonSets {
 				daemonSetInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeDaemonSet, daemonSet.Name)
-				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, daemonSetInternalID, kube_model.TypeDaemonSet, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(daemonSet.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(daemonSet, daemonSet.Name, daemonSetInternalID, kube_model.TypeDaemonSet, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -694,7 +702,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, pvc := range pvcs {
 				pvcInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypePVC, pvc.Name)
-				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, pvcInternalID, kube_model.TypePVC, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(pvc.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(pvc, pvc.Name, pvcInternalID, kube_model.TypePVC, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -719,7 +728,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, ingress := range ingressesExtensionsBeta1 {
 				ingressInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeIngressExtensionBeta1, ingress.Name)
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressExtensionBeta1, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(ingress.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressExtensionBeta1, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -753,7 +763,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, ingress := range ingressesNetworkingV1 {
 				ingressInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeIngressNetworkingV1, ingress.Name)
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(ingress.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -787,7 +798,8 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		} else {
 			for _, ingress := range ingressesNetworkingV1Beta1 {
 				ingressInternalID := cloudutils.CreateKubeInternalName(kubeCrawler.dataSource.DataSourceID, namespace.Name, kube_model.TypeIngressExtensionBeta1, ingress.Name)
-				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1Beta1, bloopi_agent.StatusNoStatus, "", crawlTime)
+				version, _ := GetAppVersionFromLabels(ingress.Labels)
+				nodeElement, errNodeElement := utils.CreateElement(ingress, ingress.Name, ingressInternalID, kube_model.TypeIngressNetworkingV1Beta1, bloopi_agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
