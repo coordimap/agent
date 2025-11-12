@@ -50,10 +50,9 @@ func MonitorNetworkTraffic(outputChannel chan ConnectionData) error {
 	}
 
 	// Attach the program.
-	l, err := link.AttachTCX(link.TCXOptions{
+	l, err := link.AttachXDP(link.XDPOptions{
 		Program:   objs.TcIngress,
 		Interface: iface.Index,
-		Attach:    link.AttachTCXIngress,
 	})
 	if err != nil {
 		return fmt.Errorf("could not attach TC program: %w", err)
