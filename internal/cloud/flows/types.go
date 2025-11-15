@@ -17,6 +17,7 @@ const (
 	FLOWS_CONFIG_DEPLOYED_AT              = "deployedAt"
 	FLOWS_CONFIG_INTERFACE_NAME           = "interface_name"
 	FLOWS_CONFIG_KUBE_MAPPING_INTERNAL_ID = "mapping_internal_id"
+	FLOWS_CONFIG_KUBERNETES_CLUSTER_NAME  = "kubernetes_cluster_name"
 )
 
 // Crawler is the interface for all the crawlers
@@ -26,14 +27,15 @@ type Crawler interface {
 }
 
 type flowsCrawler struct {
-	outputChannel     chan *bloopi_agent.CloudCrawlData
-	dataSource        *bloopi_agent.DataSource
-	kubeClientset     *kubernetes.Clientset
-	podCache          *PodCache
-	crawlInterval     time.Duration
-	externalMappingID string
-	deployedAt        string
-	interfaceName     string
+	outputChannel         chan *bloopi_agent.CloudCrawlData
+	dataSource            *bloopi_agent.DataSource
+	kubeClientset         *kubernetes.Clientset
+	podCache              *PodCache
+	crawlInterval         time.Duration
+	externalMappingID     string
+	deployedAt            string
+	interfaceName         string
+	kubernetesClusterName string
 }
 
 type ConnectionData struct {
