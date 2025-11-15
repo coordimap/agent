@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"net"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -28,12 +29,16 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		kubeClientset:     nil,
 		podCache:          NewPodCache(),
 		externalMappingID: "",
+		interfaceName:     "all",
 	}
 
 	for _, dsConfig := range dataSource.Config.ValuePairs {
 		switch dsConfig.Key {
 		case "mapping_internal_id":
 			crawler.externalMappingID = dsConfig.Value
+
+		case FLOWS_CONFIG_INTERFACE_NAME:
+			crawler.interfaceName = dsConfig.Value
 
 		case FLOWS_CONFIG_DEPLOYED_AT:
 			// deployedAt can only be "kubernetes" or "server" for now
@@ -96,21 +101,76 @@ func (crawler *flowsCrawler) Crawl() {
 		cancel()
 	}()
 
-	ifaceName := "wlp2s0"
-	probe, err := AttachProbe(ifaceName)
-	if err != nil {
-		log.Error().Msgf("Failed to attach eBPF probe: %s", err.Error())
+	var interfaceNames []string
+	if crawler.interfaceName == "all" {
+		ifaces, err := net.Interfaces()
+		if err != nil {
+			log.Error().Msgf("Failed to get network interfaces: %s", err.Error())
+			return
+		}
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagLoopback == 0 {
+				interfaceNames = append(interfaceNames, iface.Name)
+			}
+		}
+	} else if crawler.interfaceName != "" {
+		interfaceNames = append(interfaceNames, crawler.interfaceName)
+	} else {
+		// Default behavior: find the first non-loopback interface
+		ifaces, err := net.Interfaces()
+		if err != nil {
+			log.Error().Msgf("Failed to get network interfaces: %s", err.Error())
+			return
+		}
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagLoopback == 0 {
+				interfaceNames = append(interfaceNames, iface.Name)
+				log.Info().Msgf("No interface specified, using first non-loopback interface: %s", iface.Name)
+				break
+			}
+		}
+		if len(interfaceNames) == 0 {
+			log.Error().Msg("No non-loopback interfaces found")
+			return
+		}
+	}
+
+	var probes []*Probe
+	for _, ifaceName := range interfaceNames {
+		probe, err := AttachProbe(ifaceName)
+		if err != nil {
+			log.Error().Msgf("Failed to attach eBPF probe to %s: %s", ifaceName, err.Error())
+			continue
+		}
+		probes = append(probes, probe)
+		log.Info().Msgf("Attached eBPF probe to %s", ifaceName)
+	}
+
+	if len(probes) == 0 {
+		log.Error().Msg("Failed to attach any eBPF probes")
 		return
 	}
-	defer probe.Detach()
+
+	for _, probe := range probes {
+		defer probe.Detach()
+	}
 
 	table := NewConnectionTable()
+
+	mergedSamples := make(chan []byte)
+	for _, p := range probes {
+		go func(probe *Probe) {
+			for sample := range probe.Samples {
+				mergedSamples <- sample
+			}
+		}(p)
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			os.Exit(0)
-		case event := <-probe.Samples:
+		case event := <-mergedSamples:
 			packet, err := UnmarshalPacket(event)
 			if err != nil {
 				log.Error().Msgf("Failed to unmarshal packet: %s", err.Error())

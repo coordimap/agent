@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	FLOWS_CONFIG_CRAWL_INTERVAL = "crawl_interval"
-	FLOWS_CONFIG_DEPLOYED_AT    = "deployedAt"
+	FLOWS_CONFIG_CRAWL_INTERVAL           = "crawl_interval"
+	FLOWS_CONFIG_DEPLOYED_AT              = "deployedAt"
+	FLOWS_CONFIG_INTERFACE_NAME           = "interface_name"
+	FLOWS_CONFIG_KUBE_MAPPING_INTERNAL_ID = "mapping_internal_id"
 )
 
 // Crawler is the interface for all the crawlers
@@ -31,6 +33,7 @@ type flowsCrawler struct {
 	crawlInterval     time.Duration
 	externalMappingID string
 	deployedAt        string
+	interfaceName     string
 }
 
 type ConnectionData struct {
