@@ -40,6 +40,9 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		case FLOWS_CONFIG_INTERFACE_NAME:
 			crawler.interfaceName = dsConfig.Value
 
+		case FLOWS_CONFIG_KUBERNETES_CLUSTER_NAME:
+			crawler.kubernetesClusterName = dsConfig.Value
+
 		case FLOWS_CONFIG_DEPLOYED_AT:
 			// deployedAt can only be "kubernetes" or "server" for now
 			allowedValues := []string{"kubernetes", "server"}
@@ -75,6 +78,10 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 	}
 
 	if crawler.deployedAt == "kubernetes" {
+		if crawler.kubernetesClusterName == "" {
+			return nil, fmt.Errorf("kubernetes_cluster_name must be set when deployedAt is 'kubernetes'")
+		}
+
 		log.Info().Msg("Flows crawler deployedAt is set to 'kubernetes', initializing kube clientset")
 		config, err := rest.InClusterConfig()
 		if err != nil {
