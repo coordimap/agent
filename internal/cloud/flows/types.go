@@ -1,12 +1,20 @@
 package flows
 
 import (
+	"encoding/binary"
+	"hash/fnv"
 	"net"
+	"net/netip"
 	"sync"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	FLOWS_CONFIG_CRAWL_INTERVAL = "crawl_interval"
+	FLOWS_CONFIG_DEPLOYED_AT    = "deployedAt"
 )
 
 // Crawler is the interface for all the crawlers
@@ -22,6 +30,7 @@ type flowsCrawler struct {
 	podCache          *PodCache
 	crawlInterval     time.Duration
 	externalMappingID string
+	deployedAt        string
 }
 
 type ConnectionData struct {
@@ -61,4 +70,57 @@ func (c *PodCache) Set(ip string, info PodInfo) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache[ip] = info
+}
+
+type Hash uint64
+
+type Timestamp uint64
+
+type Packet struct {
+	SrcIP     netip.Addr
+	DstIP     netip.Addr
+	SrcPort   uint16
+	DstPort   uint16
+	Syn       bool
+	Ack       bool
+	Protocol  uint8
+	Timestamp Timestamp
+}
+
+func (p *Packet) Hash() Hash {
+	f := func(v []byte) uint64 {
+		h := fnv.New64a()
+		h.Write(v)
+		return h.Sum64()
+	}
+
+	src := binary.BigEndian.AppendUint16(p.SrcIP.AsSlice(), p.SrcPort)
+	dst := binary.BigEndian.AppendUint16(p.DstIP.AsSlice(), p.DstPort)
+
+	return Hash(f(src) + f(dst))
+}
+
+type ConnectionTable struct {
+	table map[Hash]Timestamp
+}
+
+func NewConnectionTable() *ConnectionTable {
+	return &ConnectionTable{
+		table: make(map[Hash]Timestamp),
+	}
+}
+
+func (c *ConnectionTable) Match(p Packet) (time.Duration, bool) {
+	hash := p.Hash()
+
+	timestamp, ok := c.table[hash]
+	if ok && p.Ack {
+		d := time.Duration(p.Timestamp-timestamp) * time.Nanosecond
+		return d, true
+	}
+	if p.Syn {
+		c.table[hash] = p.Timestamp
+	}
+
+	return 0, false
 }

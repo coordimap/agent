@@ -1,108 +1,87 @@
 package flows
 
 import (
-	"bytes"
-	"encoding/binary"
-	"errors"
-	"fmt"
+	"log/slog"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/ringbuf"
-	"github.com/cilium/ebpf/rlimit"
-	"github.com/rs/zerolog/log"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang -cflags "-O2 -g -Wall -Werror" bpf tc.c -- -I./headers
+type Probe struct {
+	Samples <-chan []byte
 
-// event represents the data received from the eBPF program.
-// It must match the C struct in tc.c.
-type event struct {
-	Saddr     uint32
-	Daddr     uint32
-	Sport     uint16
-	Dport     uint16
-	Proto     uint8
-	Timestamp uint64
+	bpfObjects  bpfObjects
+	ingressLink link.Link
+	egressLink  link.Link
+	ringbuf     *ringbuf.Reader
 }
 
-func MonitorNetworkTraffic(outputChannel chan ConnectionData) error {
-	// Allow the current process to lock memory for eBPF resources.
-	if err := rlimit.RemoveMemlock(); err != nil {
-		return fmt.Errorf("failed to remove memlock: %w", err)
-	}
-
-	// Load pre-compiled programs and maps into the kernel.
-	objs := bpfObjects{}
-	if err := loadBpfObjects(&objs, nil); err != nil {
-		return fmt.Errorf("loading objects: %w", err)
-	}
-	defer objs.Close()
-
-	// Attach the TC program to the eth0 interface.
-	ifaceName := "eth0"
+func AttachProbe(ifaceName string) (*Probe, error) {
 	iface, err := net.InterfaceByName(ifaceName)
 	if err != nil {
-		return fmt.Errorf("lookup network iface %q: %w", ifaceName, err)
+		return nil, err
+	}
+	objs := bpfObjects{}
+	if err := loadBpfObjects(&objs, nil); err != nil {
+		return nil, err
 	}
 
-	// Attach the program.
-	l, err := link.AttachXDP(link.XDPOptions{
-		Program:   objs.TcIngress,
+	ingressLink, err := link.AttachTCX(link.TCXOptions{
 		Interface: iface.Index,
+		Program:   objs.Tcplat,
+		Attach:    ebpf.AttachTCXIngress,
 	})
 	if err != nil {
-		return fmt.Errorf("could not attach TC program: %w", err)
+		objs.Close()
+		return nil, err
 	}
-	defer l.Close()
 
-	log.Info().Msgf("Attached TC program to iface %q (index %d)", iface.Name, iface.Index)
-
-	// Open a ringbuf reader from userspace RING_BUFFER map described in the
-	// eBPF C program.
-	rd, err := ringbuf.NewReader(objs.Rb)
+	egressLink, err := link.AttachTCX(link.TCXOptions{
+		Interface: iface.Index,
+		Program:   objs.Tcplat,
+		Attach:    ebpf.AttachTCXEgress,
+	})
 	if err != nil {
-		return fmt.Errorf("opening ringbuf reader: %w", err)
+		objs.Close()
+		ingressLink.Close()
+		return nil, err
 	}
-	defer rd.Close()
 
-	// Close the reader when the process exits, so we can exit cleanly.
-	stopper := make(chan os.Signal, 1)
-	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
+	reader, err := ringbuf.NewReader(objs.bpfMaps.Pipe)
+	if err != nil {
+		objs.Close()
+		ingressLink.Close()
+		egressLink.Close()
+		return nil, err
+	}
+
+	samples := make(chan []byte)
 	go func() {
-		<-stopper
-		rd.Close()
+		for {
+			event, err := reader.Read()
+			if err != nil {
+				slog.Error("Failed to read from ring buffer", slog.Any("err", err))
+				close(samples)
+				return
+			}
+			samples <- event.RawSample
+		}
 	}()
 
-	log.Info().Msg("Waiting for events...")
+	return &Probe{
+		Samples:     samples,
+		bpfObjects:  objs,
+		ingressLink: ingressLink,
+		egressLink:  egressLink,
+		ringbuf:     reader,
+	}, nil
+}
 
-	var e event
-	for {
-		record, err := rd.Read()
-		if err != nil {
-			if errors.Is(err, ringbuf.ErrClosed) {
-				log.Info().Msg("Received signal, exiting...")
-				return nil
-			}
-			log.Warn().Msgf("reading from reader: %s", err)
-			continue
-		}
-
-		// Parse the ringbuf event entry into a bpfEvent structure.
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.BigEndian, &e); err != nil {
-			log.Warn().Msgf("parsing ringbuf event: %s", err)
-			continue
-		}
-
-		outputChannel <- ConnectionData{
-			SrcIP:   net.IP{byte(e.Saddr >> 24), byte(e.Saddr >> 16), byte(e.Saddr >> 8), byte(e.Saddr)},
-			DstIP:   net.IP{byte(e.Daddr >> 24), byte(e.Daddr >> 16), byte(e.Daddr >> 8), byte(e.Daddr)},
-			SrcPort: e.Sport,
-			DstPort: e.Dport,
-			Proto:   e.Proto,
-		}
-	}
+func (p *Probe) Detach() {
+	p.bpfObjects.Close()
+	p.ingressLink.Close()
+	p.egressLink.Close()
+	p.ringbuf.Close()
 }

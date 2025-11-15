@@ -3,7 +3,15 @@ package flows
 import (
 	cloudutils "cleye/internal/cloud/utils"
 	"cleye/utils"
+	"context"
+	"encoding/binary"
+	"fmt"
+	"net/netip"
+	"os"
+	"os/signal"
+	"slices"
 	"strconv"
+	"syscall"
 	"time"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
@@ -14,20 +22,10 @@ import (
 )
 
 func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
 	crawler := &flowsCrawler{
 		outputChannel:     outChannel,
 		dataSource:        dataSource,
-		kubeClientset:     clientset,
+		kubeClientset:     nil,
 		podCache:          NewPodCache(),
 		externalMappingID: "",
 	}
@@ -37,7 +35,18 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		case "mapping_internal_id":
 			crawler.externalMappingID = dsConfig.Value
 
-		case "crawl_interval":
+		case FLOWS_CONFIG_DEPLOYED_AT:
+			// deployedAt can only be "kubernetes" or "server" for now
+			allowedValues := []string{"kubernetes", "server"}
+
+			if slices.Contains(allowedValues, dsConfig.Value) {
+				crawler.deployedAt = dsConfig.Value
+			} else {
+				log.Warn().Msgf("Invalid value for deployedAt: %s. Allowed values are: %v. Using default 'server'", dsConfig.Value, allowedValues)
+				crawler.deployedAt = "server"
+			}
+
+		case FLOWS_CONFIG_CRAWL_INTERVAL:
 			const DEFAULT_CRAWL_TIME = 30 * time.Second
 			amountStr := string(dsConfig.Value[:len(dsConfig.Value)-1])
 			durationStr := string(dsConfig.Value[len(dsConfig.Value)-1])
@@ -60,23 +69,73 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		}
 	}
 
+	if crawler.deployedAt == "kubernetes" {
+		log.Info().Msg("Flows crawler deployedAt is set to 'kubernetes', initializing kube clientset")
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			return nil, err
+		}
+
+		crawler.kubeClientset = clientset
+	}
+
 	return crawler, nil
 }
 
 func (crawler *flowsCrawler) Crawl() {
-	connectionChannel := make(chan ConnectionData, 1000)
-	go MonitorNetworkTraffic(connectionChannel)
+	ctx, cancel := context.WithCancel(context.Background())
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-stop
+		cancel()
+	}()
 
-	for conn := range connectionChannel {
-		srcPod := getPodInfo(crawler.kubeClientset, crawler.podCache, conn.SrcIP.String())
-		dstPod := getPodInfo(crawler.kubeClientset, crawler.podCache, conn.DstIP.String())
+	ifaceName := "wlp2s0"
+	probe, err := AttachProbe(ifaceName)
+	if err != nil {
+		log.Error().Msgf("Failed to attach eBPF probe: %s", err.Error())
+		return
+	}
+	defer probe.Detach()
 
-		// Create the elements and send them to the output channel
-		crawler.createAndSendElements(srcPod, dstPod, conn)
+	table := NewConnectionTable()
+
+	for {
+		select {
+		case <-ctx.Done():
+			os.Exit(0)
+		case event := <-probe.Samples:
+			packet, err := UnmarshalPacket(event)
+			if err != nil {
+				log.Error().Msgf("Failed to unmarshal packet: %s", err.Error())
+				continue
+			}
+
+			duration, matched := table.Match(packet)
+			if !matched {
+				continue
+			}
+
+			if crawler.deployedAt == "kubernetes" {
+				log.Debug().Msgf("Captured flow: %s:%d -> %s:%d (proto %d) duration %s", packet.SrcIP.String(), packet.SrcPort, packet.DstIP.String(), packet.DstPort, packet.Protocol, duration.String())
+
+				srcPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.SrcIP.String())
+				dstPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.DstIP.String())
+				crawler.createAndSendElements(srcPod, dstPod)
+			} else {
+				log.Info().Msgf("Captured server flow: %s:%d -> %s:%d (proto %d) duration %s", packet.SrcIP.String(), packet.SrcPort, packet.DstIP.String(), packet.DstPort, packet.Protocol, duration.String())
+			}
+		}
 	}
 }
 
-func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo, conn ConnectionData) {
+func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 	crawledElements := []*bloopi_agent.Element{}
 	crawlTime := time.Now().UTC()
 
@@ -119,4 +178,30 @@ func (crawler *flowsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	// This function will be called by the ticker, but the main logic is now in Crawl()
 	// We can leave this empty or add some periodic tasks if needed.
 	return nil, nil
+}
+
+func UnmarshalPacket(data []byte) (Packet, error) {
+	if len(data) != 48 {
+		return Packet{}, fmt.Errorf("slice is not 48 bytes")
+	}
+	srcIP, ok := netip.AddrFromSlice(data[0:16])
+	if !ok {
+		panic("invalid source IP")
+	}
+	dstIP, ok := netip.AddrFromSlice(data[16:32])
+	if !ok {
+		panic("invalid destination IP")
+	}
+
+	return Packet{
+		SrcIP:    srcIP,
+		DstIP:    dstIP,
+		SrcPort:  binary.BigEndian.Uint16(data[32:34]),
+		DstPort:  binary.BigEndian.Uint16(data[34:36]),
+		Syn:      data[36] == 1,
+		Ack:      data[37] == 1,
+		Protocol: data[38],
+		// 1-byte hole
+		Timestamp: Timestamp(binary.LittleEndian.Uint64(data[40:48])),
+	}, nil
 }
