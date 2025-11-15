@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"cleye/internal/cloud/utils"
+
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"k8s.io/client-go/kubernetes"
 )
@@ -17,7 +19,7 @@ const (
 	FLOWS_CONFIG_DEPLOYED_AT              = "deployedAt"
 	FLOWS_CONFIG_INTERFACE_NAME           = "interface_name"
 	FLOWS_CONFIG_KUBE_MAPPING_INTERNAL_ID = "mapping_internal_id"
-	FLOWS_CONFIG_KUBERNETES_CLUSTER_NAME  = "kubernetes_cluster_name"
+	FLOWS_CONFIG_EXTERNAL_MAPPINGS        = "external_mappings"
 )
 
 // Crawler is the interface for all the crawlers
@@ -27,15 +29,15 @@ type Crawler interface {
 }
 
 type flowsCrawler struct {
-	outputChannel         chan *bloopi_agent.CloudCrawlData
-	dataSource            *bloopi_agent.DataSource
-	kubeClientset         *kubernetes.Clientset
-	podCache              *PodCache
-	crawlInterval         time.Duration
-	externalMappingID     string
-	deployedAt            string
-	interfaceName         string
-	kubernetesClusterName string
+	outputChannel     chan *bloopi_agent.CloudCrawlData
+	dataSource        *bloopi_agent.DataSource
+	kubeClientset     *kubernetes.Clientset
+	podCache          *PodCache
+	crawlInterval     time.Duration
+	externalMappingID string
+	deployedAt        string
+	interfaceName     string
+	mappings          utils.Mappings
 }
 
 type ConnectionData struct {

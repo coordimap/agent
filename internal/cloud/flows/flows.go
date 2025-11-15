@@ -30,6 +30,7 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		podCache:          NewPodCache(),
 		externalMappingID: "",
 		interfaceName:     "all",
+		mappings:          nil,
 	}
 
 	for _, dsConfig := range dataSource.Config.ValuePairs {
@@ -40,8 +41,12 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		case FLOWS_CONFIG_INTERFACE_NAME:
 			crawler.interfaceName = dsConfig.Value
 
-		case FLOWS_CONFIG_KUBERNETES_CLUSTER_NAME:
-			crawler.kubernetesClusterName = dsConfig.Value
+		case FLOWS_CONFIG_EXTERNAL_MAPPINGS:
+			mappings, err := cloudutils.NewMappings(dsConfig.Value)
+			if err != nil {
+				return nil, err
+			}
+			crawler.mappings = mappings
 
 		case FLOWS_CONFIG_DEPLOYED_AT:
 			// deployedAt can only be "kubernetes" or "server" for now
@@ -78,8 +83,8 @@ func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 	}
 
 	if crawler.deployedAt == "kubernetes" {
-		if crawler.kubernetesClusterName == "" {
-			return nil, fmt.Errorf("kubernetes_cluster_name must be set when deployedAt is 'kubernetes'")
+		if crawler.mappings == nil {
+			return nil, fmt.Errorf("external_mappings must be set when deployedAt is 'kubernetes'")
 		}
 
 		log.Info().Msg("Flows crawler deployedAt is set to 'kubernetes', initializing kube clientset")
@@ -205,9 +210,14 @@ func (crawler *flowsCrawler) Crawl() {
 func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 	crawledElements := []*bloopi_agent.Element{}
 	crawlTime := time.Now().UTC()
+	dataSourceID, errGetDataSourceIDFromMapping := crawler.mappings.GetDataSourceID("*")
+	if errGetDataSourceIDFromMapping != nil {
+		log.Err(errGetDataSourceIDFromMapping).Msg("No data source id")
+		return
+	}
 
-	srcInternalID := cloudutils.CreateKubeInternalName(crawler.dataSource.DataSourceID, srcPod.Namespace, kube_model.TypePod, srcPod.Name)
-	dstInternalID := cloudutils.CreateKubeInternalName(crawler.dataSource.DataSourceID, dstPod.Namespace, kube_model.TypePod, dstPod.Name)
+	srcInternalID := cloudutils.CreateKubeInternalName(dataSourceID, srcPod.Namespace, kube_model.TypePod, srcPod.Name)
+	dstInternalID := cloudutils.CreateKubeInternalName(dataSourceID, dstPod.Namespace, kube_model.TypePod, dstPod.Name)
 
 	srcElement, errSrc := utils.CreateElement(srcPod, srcPod.Name, srcInternalID, kube_model.TypePod, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errSrc != nil {

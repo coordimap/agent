@@ -61,22 +61,22 @@ func SplitConfiguredMappings(configuredMappings string) (map[string]string, erro
 	return mappings, nil
 }
 
-// MappingsInterface defines the interface for managing mappings.
-type MappingsInterface interface {
+// Mappings defines the interface for managing mappings.
+type Mappings interface {
 	GetInternalName(mappingToSearchFor string) (string, error)
 	GetDataSourceID(mappingToSearchFor string) (string, error)
 	AddMapping(dataSourceID string, internalName string) error
 	AddConfiguredMapping(configuredMappings string) error
 }
 
-// Mappings holds the configured mappings
-type Mappings struct {
+// mappings holds the configured mappings
+type mappings struct {
 	mappings map[string]string
 }
 
 // NewMappings creates a new Mappings object from a raw configuration string
-func NewMappings(configuredMappings string) (MappingsInterface, error) {
-	m := &Mappings{mappings: make(map[string]string)}
+func NewMappings(configuredMappings string) (Mappings, error) {
+	m := &mappings{mappings: make(map[string]string)}
 	if err := m.AddConfiguredMapping(configuredMappings); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func NewMappings(configuredMappings string) (MappingsInterface, error) {
 }
 
 // GetInternalName returns the internal name for a given mapping
-func (m *Mappings) GetInternalName(mappingToSearchFor string) (string, error) {
+func (m *mappings) GetInternalName(mappingToSearchFor string) (string, error) {
 	val, ok := m.mappings[mappingToSearchFor]
 	if !ok {
 		return "", errors.New("mapping not found")
@@ -93,7 +93,7 @@ func (m *Mappings) GetInternalName(mappingToSearchFor string) (string, error) {
 }
 
 // GetDataSourceID returns the data source ID for a given mapping
-func (m *Mappings) GetDataSourceID(mappingToSearchFor string) (string, error) {
+func (m *mappings) GetDataSourceID(mappingToSearchFor string) (string, error) {
 	val, ok := m.mappings[mappingToSearchFor]
 	if !ok {
 		// Check if there is an asterisk (*) in any of the keys
@@ -114,7 +114,7 @@ func (m *Mappings) GetDataSourceID(mappingToSearchFor string) (string, error) {
 }
 
 // AddMapping adds a new mapping if it doesn't already exist.
-func (m *Mappings) AddMapping(dataSourceID string, internalName string) error {
+func (m *mappings) AddMapping(dataSourceID string, internalName string) error {
 	if _, ok := m.mappings[dataSourceID]; ok {
 		return fmt.Errorf("mapping for key '%s' already exists", dataSourceID)
 	}
@@ -123,7 +123,7 @@ func (m *Mappings) AddMapping(dataSourceID string, internalName string) error {
 }
 
 // AddConfiguredMapping adds new mappings from a raw configuration string.
-func (m *Mappings) AddConfiguredMapping(configuredMappings string) error {
+func (m *mappings) AddConfiguredMapping(configuredMappings string) error {
 	splitString := strings.Split(configuredMappings, " ")
 
 	for _, mapping := range splitString {
