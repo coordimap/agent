@@ -18,7 +18,6 @@ const (
 	FLOWS_CONFIG_CRAWL_INTERVAL           = "crawl_interval"
 	FLOWS_CONFIG_DEPLOYED_AT              = "deployedAt"
 	FLOWS_CONFIG_INTERFACE_NAME           = "interface_name"
-	FLOWS_CONFIG_KUBE_MAPPING_INTERNAL_ID = "mapping_internal_id"
 	FLOWS_CONFIG_EXTERNAL_MAPPINGS        = "external_mappings"
 )
 
@@ -34,7 +33,6 @@ type flowsCrawler struct {
 	kubeClientset     *kubernetes.Clientset
 	podCache          *PodCache
 	crawlInterval     time.Duration
-	externalMappingID string
 	deployedAt        string
 	interfaceName     string
 	mappings          utils.Mappings

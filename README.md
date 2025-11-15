@@ -10,27 +10,27 @@ To get started with Cleye, you\'ll need to have Go installed on your system. You
 
 Cleye has the following dependencies:
 
-*   [cloud.google.com/go/compute/metadata](http://cloud.google.com/go/compute/metadata)
-*   [dev.azure.com/bloopi/bloopi/_git/shared_models.git](http://dev.azure.com/bloopi/bloopi/_git/shared_models.git)
-*   [github.com/aws/aws-sdk-go](http://github.com/aws/aws-sdk-go)
-*   [github.com/gertd/go-pluralize](http://github.com/gertd/go-pluralize)
-*   [github.com/go-redis/redis/v8](http://github.com/go-redis/redis/v8)
-*   [github.com/go-sql-driver/mysql](http://github.com/go-sql-driver/mysql)
-*   [github.com/gorilla/mux](http://github.com/gorilla/mux)
-*   [github.com/lib/pq](http://github.com/lib/pq)
-*   [github.com/parnurzeal/gorequest](http://github.com/parnurzeal/gorequest)
-*   [github.com/prometheus/client_golang](http://github.com/prometheus/client_golang)
-*   [github.com/prometheus/common](http://github.com/prometheus/common)
-*   [github.com/rs/zerolog](http://github.com/rs/zerolog)
-*   [github.com/spf13/viper](http://github.com/spf13/viper)
-*   [go.mongodb.org/mongo-driver](http://go.mongodb.org/mongo-driver)
-*   [golang.org/x/oauth2](http://golang.org/x/oauth2)
-*   [google.golang.org/api](http://google.golang.org/api)
-*   [gopkg.in/alecthomas/kingpin.v2](http://gopkg.in/alecthomas/kingpin.v2)
-*   [gopkg.in/yaml.v3](http://gopkg.in/yaml.v3)
-*   [k8s.io/api](http://k8s.io/api)
-*   [k8s.io/apimachinery](http://k8s.io/apimachinery)
-*   [k8s.io/client-go](http://k8s.io/client-go)
+- [cloud.google.com/go/compute/metadata](http://cloud.google.com/go/compute/metadata)
+- [dev.azure.com/bloopi/bloopi/\_git/shared_models.git](http://dev.azure.com/bloopi/bloopi/_git/shared_models.git)
+- [github.com/aws/aws-sdk-go](http://github.com/aws/aws-sdk-go)
+- [github.com/gertd/go-pluralize](http://github.com/gertd/go-pluralize)
+- [github.com/go-redis/redis/v8](http://github.com/go-redis/redis/v8)
+- [github.com/go-sql-driver/mysql](http://github.com/go-sql-driver/mysql)
+- [github.com/gorilla/mux](http://github.com/gorilla/mux)
+- [github.com/lib/pq](http://github.com/lib/pq)
+- [github.com/parnurzeal/gorequest](http://github.com/parnurzeal/gorequest)
+- [github.com/prometheus/client_golang](http://github.com/prometheus/client_golang)
+- [github.com/prometheus/common](http://github.com/prometheus/common)
+- [github.com/rs/zerolog](http://github.com/rs/zerolog)
+- [github.com/spf13/viper](http://github.com/spf13/viper)
+- [go.mongodb.org/mongo-driver](http://go.mongodb.org/mongo-driver)
+- [golang.org/x/oauth2](http://golang.org/x/oauth2)
+- [google.golang.org/api](http://google.golang.org/api)
+- [gopkg.in/alecthomas/kingpin.v2](http://gopkg.in/alecthomas/kingpin.v2)
+- [gopkg.in/yaml.v3](http://gopkg.in/yaml.v3)
+- [k8s.io/api](http://k8s.io/api)
+- [k8s.io/apimachinery](http://k8s.io/apimachinery)
+- [k8s.io/client-go](http://k8s.io/client-go)
 
 These dependencies will be automatically downloaded when you build the project.
 
@@ -58,9 +58,9 @@ Cleye includes an eBPF-based flow crawler that can be used to monitor network tr
 
 To use the eBPF flow crawler, you will need to have the following additional dependencies installed on your system:
 
-*   `clang`
-*   `llvm`
-*   `bpftool`
+- `clang`
+- `llvm`
+- `bpftool`
 
 ### eBPF Build Step
 
@@ -82,6 +82,12 @@ To enable the eBPF flow crawler, you will need to add the following configuratio
   config:
     - name: crawl_interval
       value: 30s
+    - name: deployedAt
+      value: "kubernetes" # can be "kubernetes" or "server"
+    - name: interface_name
+      value: "all" # can be "all" or a specific interface like "eth0"
+    - name: external_mappings
+      value: "your-external-mappings" # required when deployedAt is "kubernetes"
 ```
 
 ## Configuration
@@ -227,22 +233,22 @@ Here are the supported data sources and their sample configurations:
   name: "flowlog-name"
   desc: "Description of the flow logs."
   config:
-  - name: log_format
-    value: "all"
-  - name: log_type
-    value: "S3"
-  - name: account_id
-    value: "your_aws_account_id"
-  - name: bucket_name
-    value: "your_s3_bucket_name"
-  - name: region
-    value: "your_aws_region"
-  - name: access_key_id
-    value: "${AWS_ACCESS_KEY_ID}"
-  - name: secret_access_key
-    value: "${AWS_SECRET_ACCESS_KEY}"
-  - name: crawl_interval
-    value: 30s
+    - name: log_format
+      value: "all"
+    - name: log_type
+      value: "S3"
+    - name: account_id
+      value: "your_aws_account_id"
+    - name: bucket_name
+      value: "your_s3_bucket_name"
+    - name: region
+      value: "your_aws_region"
+    - name: access_key_id
+      value: "${AWS_ACCESS_KEY_ID}"
+    - name: secret_access_key
+      value: "${AWS_SECRET_ACCESS_KEY}"
+    - name: crawl_interval
+      value: 30s
 ```
 
 ### MongoDB
@@ -252,16 +258,16 @@ Here are the supported data sources and their sample configurations:
   name: "mongo-instance-name"
   desc: "Description of the mongo instance."
   config:
-  - name: db_name
-    value: "*" # or a specific database name
-  - name: db_host
-    value: "your_mongo_host"
-  - name: db_user
-    value: "your_mongo_user"
-  - name: db_pass
-    value: "your_mongo_password"
-  - name: crawl_interval
-    value: 30s
+    - name: db_name
+      value: "*" # or a specific database name
+    - name: db_host
+      value: "your_mongo_host"
+    - name: db_user
+      value: "your_mongo_user"
+    - name: db_pass
+      value: "your_mongo_password"
+    - name: crawl_interval
+      value: 30s
 ```
 
 ## Contribute

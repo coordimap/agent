@@ -24,19 +24,16 @@ import (
 
 func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	crawler := &flowsCrawler{
-		outputChannel:     outChannel,
-		dataSource:        dataSource,
-		kubeClientset:     nil,
-		podCache:          NewPodCache(),
-		externalMappingID: "",
-		interfaceName:     "all",
-		mappings:          nil,
+		outputChannel: outChannel,
+		dataSource:    dataSource,
+		kubeClientset: nil,
+		podCache:      NewPodCache(),
+		interfaceName: "all",
+		mappings:      nil,
 	}
 
 	for _, dsConfig := range dataSource.Config.ValuePairs {
 		switch dsConfig.Key {
-		case "mapping_internal_id":
-			crawler.externalMappingID = dsConfig.Value
 
 		case FLOWS_CONFIG_INTERFACE_NAME:
 			crawler.interfaceName = dsConfig.Value
