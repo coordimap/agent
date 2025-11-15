@@ -9,10 +9,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func getPodInfo(clientset *kubernetes.Clientset, cache *PodCache, ipAddress string) PodInfo {
+func getPodInfo(clientset *kubernetes.Clientset, cache *PodCache, ipAddress string) (PodInfo, error) {
 	// Check cache first
 	if info, found := cache.Get(ipAddress); found {
-		return info
+		return info, nil
 	}
 
 	// Get pod info from Kubernetes API
@@ -33,7 +33,7 @@ func getPodInfo(clientset *kubernetes.Clientset, cache *PodCache, ipAddress stri
 			IP:        ipAddress,
 		}
 		cache.Set(ipAddress, info)
-		return info
+		return info, fmt.Errorf("Could not find pod with IP: %s", ipAddress)
 	}
 
 	pod := pods.Items[0]
@@ -97,5 +97,5 @@ func getPodInfo(clientset *kubernetes.Clientset, cache *PodCache, ipAddress stri
 	}
 
 	cache.Set(ipAddress, info)
-	return info
+	return info, nil
 }

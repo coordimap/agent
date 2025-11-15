@@ -197,8 +197,12 @@ func (crawler *flowsCrawler) Crawl() {
 			if crawler.deployedAt == "kubernetes" {
 				log.Debug().Msgf("Captured flow: %s:%d -> %s:%d (proto %d) duration %s", packet.SrcIP.String(), packet.SrcPort, packet.DstIP.String(), packet.DstPort, packet.Protocol, duration.String())
 
-				srcPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.SrcIP.String())
-				dstPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.DstIP.String())
+				srcPod, errSrcPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.SrcIP.String())
+				dstPod, errDstPod := getPodInfo(crawler.kubeClientset, crawler.podCache, packet.DstIP.String())
+				if errSrcPod != nil || errDstPod != nil {
+					continue
+				}
+
 				crawler.createAndSendElements(srcPod, dstPod)
 			} else {
 				log.Info().Msgf("Captured server flow: %s:%d -> %s:%d (proto %d) duration %s", packet.SrcIP.String(), packet.SrcPort, packet.DstIP.String(), packet.DstPort, packet.Protocol, duration.String())
@@ -231,7 +235,7 @@ func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 		return
 	}
 
-	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, "connects_to", bloopi_agent.FlowTypeRelation, crawlTime)
+	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
 	if errRel != nil {
 		log.Warn().Msgf("Error creating relationship: %s", errRel.Error())
 		return
