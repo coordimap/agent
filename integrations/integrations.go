@@ -7,6 +7,7 @@ import (
 	"cleye/integrations/mariadb"
 	"cleye/integrations/mongodb"
 	"cleye/integrations/postgres"
+	"cleye/internal/cloud/flows"
 	"cleye/internal/cloud/gcp"
 	"fmt"
 
@@ -38,6 +39,9 @@ func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outCh
 
 	case INTEGRATION_GCP:
 		return gcp.NewGCPCrawler(dataSource, outChannel)
+
+	case INTEGRATION_EBPF_FLOWS:
+		return flows.NewFlowsCrawler(dataSource, outChannel)
 
 	default:
 		return nil, fmt.Errorf("unknown integration %s", name)

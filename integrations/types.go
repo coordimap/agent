@@ -13,6 +13,7 @@ const (
 	INTEGRATION_MARIADB       = "mariadb"
 	INTEGRATION_MYSQL         = "mysql"
 	INTEGRATION_GCP           = "gcp"
+	INTEGRATION_EBPF_FLOWS    = "flows"
 )
 
 type BaseConfig struct {
