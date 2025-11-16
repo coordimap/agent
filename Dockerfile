@@ -13,7 +13,7 @@ WORKDIR /src
 ARG GIT_TOKEN
 RUN git config --global url."https://${GIT_TOKEN}@dev.azure.com/bloopi/bloopi/_git/shared_models.git".insteadOf "https://dev.azure.com/bloopi/bloopi/_git/shared_models.git"
 
-RUN echo ${GIT_TOKEN}
+RUN echo $GIT_TOKEN
 
 # Generate eBPF Go files. This requires kernel headers (BTF).
 # First, generate vmlinux.h from the running kernel's BTF info.
