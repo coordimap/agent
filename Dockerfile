@@ -9,11 +9,12 @@ RUN apk add --no-cache git clang llvm bpftool libbpf-dev
 ADD . /src
 WORKDIR /src
 
+
 # Configure git for private repositories
 ARG GIT_TOKEN
-RUN git config --global url."https://${GIT_TOKEN}@dev.azure.com/bloopi/bloopi/_git/shared_models.git".insteadOf "https://dev.azure.com/bloopi/bloopi/_git/shared_models.git"
+ENV GOPRIVATE=dev.azure.com
+RUN git config --global url."https://${GIT_TOKEN}@dev.azure.com/bloopi/bloopi/_git/shared_models".insteadOf "https://dev.azure.com/bloopi/bloopi/_git/shared_models"
 
-RUN echo $GIT_TOKEN
 
 # Generate eBPF Go files. This requires kernel headers (BTF).
 # First, generate vmlinux.h from the running kernel's BTF info.
@@ -26,7 +27,7 @@ RUN mkdir -p internal/cloud/flows/headers && \
 RUN go generate ./...
 
 # Build the final Go binary
-RUN CGO_ENABLED=1 go build -a -o cli/agent/agent cli/agent/main.go
+RUN CGO_ENABLED=0 go build -a -o cli/agent/agent cli/agent/main.go
 
 # --- Final Stage ---
 FROM alpine:latest

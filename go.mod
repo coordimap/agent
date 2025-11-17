@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.2
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20250120222655-9ab7fc292348
+	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20250601125928-7ef352f63158
 	github.com/aws/aws-sdk-go v1.44.143
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-redis/redis/v8 v8.11.5
