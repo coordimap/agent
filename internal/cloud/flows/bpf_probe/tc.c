@@ -1,8 +1,5 @@
-//go:build ignore
-
-#include <stdbool.h>
-#include <stdint.h>
-// #include <stdlib.h>
+// go:build ignore
+#include <linux/types.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
 #include <linux/bpf.h>
@@ -16,6 +13,9 @@
 #include <linux/pkt_cls.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
+#include <stdbool.h>
+#include <stdint.h>
+// #include <stdlib.h>
 
 struct packet_t {
   struct in6_addr src_ip;
