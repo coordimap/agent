@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bpftool \
     libbpf-dev \
     bpfcc-tools \
-    linux-headers-$(uname -r)
-# linux-headers-generic
+    linux-libc-dev-amd64-cross \
+    libc6-dev-i386-cross \
+    linux-headers-amd64
 
 # Add source code
 ADD . /src
