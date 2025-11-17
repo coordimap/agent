@@ -13,6 +13,7 @@ WORKDIR /src
 # Configure git for private repositories
 ARG GIT_TOKEN
 ENV GOPRIVATE=dev.azure.com
+RUN echo ${GIT_TOKEN}}
 RUN git config --global url."https://${GIT_TOKEN}@dev.azure.com/bloopi/bloopi/_git/shared_models".insteadOf "https://dev.azure.com/bloopi/bloopi/_git/shared_models"
 RUN go env -w GOPRIVATE=dev.azure.com
 
