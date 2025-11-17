@@ -1,9 +1,18 @@
-FROM golang:1.23-alpine AS build-env
+FROM golang:1.25-trixie AS build-env
 
 # Add dependencies for building and for eBPF code generation
 # llvm is a dependency for clang
 # libbpf-dev provides the C headers for libbpf
-RUN apk add --no-cache git clang llvm bpftool libbpf-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    clang \
+    llvm \
+    libelf-dev \
+    bpftool \
+    libbpf-dev \
+    bpfcc-tools \
+    linux-headers-$(uname -r)
+# linux-headers-generic
 
 # Add source code
 ADD . /src
@@ -30,6 +39,8 @@ RUN go generate ./...
 
 # Build the final Go binary
 RUN CGO_ENABLED=0 go build -a -o cli/agent/agent cli/agent/main.go
+
+# CMD [ "bash" ]
 
 # --- Final Stage ---
 FROM alpine:latest
