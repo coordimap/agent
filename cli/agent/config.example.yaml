@@ -1,0 +1,107 @@
+coordimap:
+  # The API Key used to authenticate the agent with the Coordimap platform.
+  # You can provide the key directly as a string, or reference an environment variable
+  # using the ${VAR_NAME} syntax.
+  api_key: ${COORDIMAP_API_KEY}
+
+  # A list of data sources that the agent will collect data from.
+  # You can configure multiple data sources of different types here.
+  # Uncomment the sections below to enable specific data sources.
+  data_sources:
+    # # --- AWS Data Source ---
+    # # Collects inventory and configuration data from an AWS account.
+    # - type: aws
+    #   name: aws-production
+    #   desc: "Production AWS Account"
+    #   config:
+    #     # Enable or disable policy configuration collection (values: "true", "false")
+    #     - name: policy_config
+    #       value: "true"
+    #     
+    #     # AWS Credentials. 
+    #     # It is recommended to use environment variables or IAM roles if running on EC2/EKS.
+    #     - name: access_key_id 
+    #       value: ${AWS_ACCESS_KEY_ID}
+    #     - name: secret_access_key
+    #       value: ${AWS_SECRET_ACCESS_KEY}
+    #     
+    #     # The interval at which the agent crawls this data source.
+    #     # Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+    #     - name: crawl_interval
+    #       value: 30s
+
+    # # --- PostgreSQL Data Source ---
+    # # Collects schema and metadata from a PostgreSQL database.
+    # - type: postgres
+    #   name: postgres-primary
+    #   desc: "Primary PostgreSQL Database"
+    #   config:
+    #     - name: db_name
+    #       value: mydatabase
+    #     - name: db_host
+    #       value: localhost
+    #     - name: db_user
+    #       value: postgres
+    #     - name: db_pass
+    #       value: password # Or ${POSTGRES_PASSWORD}
+    #     - name: crawl_interval
+    #       value: 30s
+
+    # # --- Kubernetes Data Source ---
+    # # Collects resource definitions and status from a Kubernetes cluster.
+    # - type: kubernetes
+    #   name: k8s-cluster-1
+    #   desc: "Main Kubernetes Cluster"
+    #   config:
+    #     # Set to "true" if the agent is running inside the cluster (In-Cluster Config).
+    #     # Set to "false" if using a kubeconfig file.
+    #     - name: in_cluster
+    #       value: "false"
+    #     
+    #     # Path to the kubeconfig file (only used if in_cluster is "false").
+    #     - name: config_file
+    #       value: /etc/coordimap-agent/kubeconfig
+    #     
+    #     - name: crawl_interval
+    #       value: 30s
+
+    # # --- AWS Flow Logs Data Source ---
+    # # Collects and parses VPC Flow Logs stored in S3.
+    # - type: aws_flow_logs
+    #   name: flowlogs-vpc-1
+    #   desc: "VPC Flow Logs from S3"
+    #   config:
+    #     - name: log_format
+    #       value: all
+    #     - name: log_type
+    #       value: S3
+    #     - name: account_id
+    #       value: "123456789012"
+    #     - name: bucket_name
+    #       value: my-flowlogs-bucket
+    #     - name: region
+    #       value: eu-central-1
+    #     - name: access_key_id 
+    #       value: ${AWS_ACCESS_KEY_ID}
+    #     - name: secret_access_key
+    #       value: ${AWS_SECRET_ACCESS_KEY}
+    #     - name: crawl_interval
+    #       value: 30s
+
+    # # --- MongoDB Data Source ---
+    # # Collects metadata from a MongoDB instance.
+    # - type: mongodb
+    #   name: mongo-production
+    #   desc: "Production MongoDB"
+    #   config:
+    #     # Use "*" to collect from all databases, or specify a name.
+    #     - name: db_name
+    #       value: "*"
+    #     - name: db_host
+    #       value: localhost
+    #     - name: db_user
+    #       value: mongo_user
+    #     - name: db_pass
+    #       value: mongo_pass
+    #     - name: crawl_interval
+    #       value: 30s
