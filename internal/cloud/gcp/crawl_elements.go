@@ -2,7 +2,7 @@ package gcp
 
 import (
 	cloudutils "cleye/internal/cloud/utils"
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"context"
 	"fmt"
 	"slices"

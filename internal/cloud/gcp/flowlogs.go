@@ -2,7 +2,7 @@ package gcp
 
 import (
 	cloudutils "cleye/internal/cloud/utils"
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -116,7 +116,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 				podInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypePod, gke.Pod.Name)
 				deplomentInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypeDeployment, gke.Pod.Workload.Name)
 				if index == 0 {
- 					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relPodSql)
 					}

@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"fmt"
 	"os"
 

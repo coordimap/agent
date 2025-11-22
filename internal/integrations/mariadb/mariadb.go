@@ -1,7 +1,7 @@
 package mariadb
 
 import (
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"fmt"
 	"slices"
 	"strconv"

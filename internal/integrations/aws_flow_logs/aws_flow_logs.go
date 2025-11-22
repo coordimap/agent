@@ -2,7 +2,7 @@ package awsflowlogs
 
 import (
 	"bufio"
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"compress/gzip"
 	"fmt"
 	"strconv"

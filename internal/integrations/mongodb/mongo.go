@@ -1,7 +1,7 @@
 package mongodb
 
 import (
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"context"
 	"fmt"
 	"strconv"

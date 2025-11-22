@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cleye/integrations/clouds"
+	"cleye/internal/integrations/clouds"
 	"context"
 	"encoding/json"
 	"fmt"

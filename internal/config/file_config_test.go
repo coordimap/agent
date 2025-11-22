@@ -1,7 +1,7 @@
 package configuration_test
 
 import (
-	"cleye/configuration"
+	"cleye/internal/config"
 	"testing"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"

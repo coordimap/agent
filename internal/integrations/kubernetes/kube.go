@@ -2,7 +2,7 @@ package kubernetes
 
 import (
 	cloudutils "cleye/internal/cloud/utils"
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"fmt"
 	"strconv"
 	"strings"
@@ -245,7 +245,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		allCrawledElements := []*bloopi_agent.Element{}
 		allCrawledElements = append(allCrawledElements, globalCrawledElements...)
 
-		nodeElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespaceInternalID, kube_model.TypeNamespace, bloopi_agent.StatusNoStatus, "", crawlTime)
+		namespaceElement, errNodeElement := utils.CreateElement(namespace, namespace.Name, namespaceInternalID, kube_model.TypeNamespace, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errNodeElement != nil {
 			continue
 		}
@@ -254,7 +254,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*bloopi_agent.CloudCrawlData, err
 		createdElementsFromLabels = append(createdElementsFromLabels, createdElems...)
 		allCrawledElements = append(allCrawledElements, elems...)
 
-		allCrawledElements = append(allCrawledElements, nodeElement)
+		allCrawledElements = append(allCrawledElements, namespaceElement)
 
 		// add the relevant namespace - storageClass relationship
 		for _, storageClass := range storageClasses {

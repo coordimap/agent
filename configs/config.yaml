@@ -5,21 +5,21 @@ coordimap:
     - access_key_id
     - db_pass
   data_sources:
-    - type: gcp
-      id: gcp_id_123
-      config:
-        - name: in_cloud
-          value: "false"
-        - name: credentials_file
-          value: "/sources/pe/ny/terraform/gcp/keys/preisenergiecloud-terraform-eg.json"
-        - name: project_id
-          value: "PreisenergieCloud"
-        - name: crawl_interval
-          value: 30s
-        - name: gcp_flows
-          value: "true"
-        - name: external_mappings
-          value: europe-west3-pe-gke-cluster@kubeID123
+    # - type: gcp
+    #   id: gcp_id_123
+    #   config:
+    #     - name: in_cloud
+    #       value: "false"
+    #     - name: credentials_file
+    #       value: "/sources/pe/ny/terraform/gcp/keys/preisenergiecloud-terraform-eg.json"
+    #     - name: project_id
+    #       value: "PreisenergieCloud"
+    #     - name: crawl_interval
+    #       value: 30s
+    #     - name: gcp_flows
+    #       value: "true"
+    #     - name: external_mappings
+    #       value: europe-west3-pe-gke-cluster@kubeID123
     # - type: gcp_flow_logs
     #   id: gcp_id_123
     #   config:
@@ -157,3 +157,14 @@ coordimap:
     #     value: mF56n99dyPKBC42
     #   - name: crawl_interval
     #     value: 30s
+    - type: flows
+      id: "ebpf_flows"
+      config:
+        - name: crawl_interval
+          value: 30s
+        - name: deployedAt
+          value: kubernetes
+        - name: external_mappings
+          value: "my-k8s-cluster@123aasd"
+        - name: interface_name
+          value: "eth0"

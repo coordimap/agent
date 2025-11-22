@@ -1,7 +1,7 @@
 package configuration_test
 
 import (
-	"cleye/configuration"
+	"cleye/internal/config"
 	"reflect"
 	"testing"
 )

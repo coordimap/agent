@@ -1,9 +1,9 @@
 package main
 
 import (
-	"cleye/configuration"
-	"cleye/integrations"
-	"cleye/utils"
+	configuration "cleye/internal/config"
+	"cleye/internal/integrations"
+	"cleye/pkg/utils"
 	"fmt"
 	"time"
 

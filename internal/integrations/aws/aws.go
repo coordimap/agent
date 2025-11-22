@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"cleye/utils"
+	"cleye/pkg/utils"
 	"errors"
 	"fmt"
 	"strconv"
