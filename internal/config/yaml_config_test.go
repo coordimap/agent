@@ -71,7 +71,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 			name: "valid config",
 			want: &configuration.CoordimapConfig{
 				Coordimap: configuration.Coordimap{
-					API_KEY: "123",
+					APIKey: "123",
 					DataSources: []configuration.BloopiConfigDataSource{
 						{
 							Type: "aws",

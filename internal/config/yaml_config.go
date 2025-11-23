@@ -19,7 +19,7 @@ func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
 		return "", fmt.Errorf("configuration is nil")
 	}
 
-	value, err := utils.LoadValueFromEnvConfig(coordimapConfig.parsedConfig.API_KEY)
+	value, err := utils.LoadValueFromEnvConfig(coordimapConfig.parsedConfig.APIKey)
 	if err != nil {
 		return "", err
 	}
@@ -88,6 +88,7 @@ func NewYamlFileConfig(filePath string) (Config, error) {
 	}, nil
 }
 
+// NewYamlStringConfig reads in the yaml string provided and generates the correct config structure
 func NewYamlStringConfig(yamlContent string) (*CoordimapConfig, error) {
 	config := CoordimapConfig{}
 
@@ -96,7 +97,7 @@ func NewYamlStringConfig(yamlContent string) (*CoordimapConfig, error) {
 	}
 
 	// Basic validation
-	if config.Coordimap.API_KEY == "" {
+	if config.Coordimap.APIKey == "" {
 		// Check if it's an env var placeholder, if not, it's missing
 		// Actually, even if it is a placeholder, it should be present in the struct.
 		// If the string is empty, it means the key is missing from YAML.
