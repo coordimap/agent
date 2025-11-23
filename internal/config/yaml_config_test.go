@@ -1,32 +1,57 @@
 package configuration_test
 
 import (
-	"cleye/internal/config"
+	configuration "cleye/internal/config"
+	"os"
 	"reflect"
 	"testing"
 )
 
 func TestNewYamlFileConfig(t *testing.T) {
+	// Create a temporary file for testing
+	tmpfile, err := os.CreateTemp("", "config_test_*.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	content := []byte(`
+coordimap:
+  api_key: test_key
+  data_sources: []
+`)
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
 	type args struct {
 		filePath string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *configuration.CoordimapConfig
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "valid file",
+			args:    args{filePath: tmpfile.Name()},
+			wantErr: false,
+		},
+		{
+			name:    "non-existent file",
+			args:    args{filePath: "non_existent_file.yaml"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := configuration.NewYamlFileConfig(tt.args.filePath)
+			_, err := configuration.NewYamlFileConfig(tt.args.filePath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewYamlFileConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewYamlFileConfig() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -43,7 +68,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "string 1",
+			name: "valid config",
 			want: &configuration.CoordimapConfig{
 				Coordimap: configuration.Coordimap{
 					API_KEY: "123",
@@ -86,7 +111,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 				},
 			},
 			wantErr: false,
-			args: args{yamlContent: `bloopi:
+			args: args{yamlContent: `coordimap:
   api_key: 123
   data_sources:
     - type: aws
@@ -108,6 +133,13 @@ func TestNewYamlStringConfig(t *testing.T) {
         - name: db_pass
           value: pass1`},
 		},
+		{
+			name:    "missing api key",
+			want:    nil,
+			wantErr: true,
+			args: args{yamlContent: `coordimap:
+  data_sources: []`},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,7 +148,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 				t.Errorf("NewYamlStringConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewYamlStringConfig() = %v, want %v", got, tt.want)
 			}
 		})

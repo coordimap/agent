@@ -2,17 +2,12 @@ package configuration
 
 import (
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	"github.com/spf13/viper"
 )
 
 type Config interface {
 	GetAllDataSources() map[string][]*bloopi_agent.DataSource
 	GetCoordimapKey() (string, error)
 	GetSkipFields() []string
-}
-
-type OldBloopiConfig struct {
-	viper *viper.Viper
 }
 
 type BloopiConfigNameValueConfig struct {

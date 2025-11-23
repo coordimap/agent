@@ -10,14 +10,13 @@ import (
 )
 
 type yamlConfig struct {
-	parsedConfig    *Coordimap
-	parsedCorrectly bool
-	yamlConfigPath  string
+	parsedConfig   *Coordimap
+	yamlConfigPath string
 }
 
 func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
-	if !coordimapConfig.parsedCorrectly {
-		return "", fmt.Errorf("could not parse successfully the file at: %s", coordimapConfig.yamlConfigPath)
+	if coordimapConfig.parsedConfig == nil {
+		return "", fmt.Errorf("configuration is nil")
 	}
 
 	value, err := utils.LoadValueFromEnvConfig(coordimapConfig.parsedConfig.API_KEY)
@@ -29,7 +28,7 @@ func (coordimapConfig *yamlConfig) GetCoordimapKey() (string, error) {
 }
 
 func (coordimapConfig *yamlConfig) GetSkipFields() []string {
-	if !coordimapConfig.parsedCorrectly {
+	if coordimapConfig.parsedConfig == nil {
 		return []string{}
 	}
 
@@ -37,7 +36,7 @@ func (coordimapConfig *yamlConfig) GetSkipFields() []string {
 }
 
 func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agent.DataSource {
-	if !coordimapConfig.parsedCorrectly {
+	if coordimapConfig.parsedConfig == nil {
 		return map[string][]*bloopi_agent.DataSource{}
 	}
 
@@ -74,24 +73,18 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agen
 // NewYamlFileConfig reads in the yaml file provided in the path and generates the correct config structure
 func NewYamlFileConfig(filePath string) (Config, error) {
 	yamlFile, err := os.ReadFile(filePath)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	parsedYaml, errParsedYaml := NewYamlStringConfig(string(yamlFile))
 	if errParsedYaml != nil {
-		return &yamlConfig{
-			parsedConfig:    nil,
-			parsedCorrectly: false,
-			yamlConfigPath:  filePath,
-		}, err
+		return nil, fmt.Errorf("failed to parse config file: %w", errParsedYaml)
 	}
 
 	return &yamlConfig{
-		parsedConfig:    &parsedYaml.Coordimap,
-		parsedCorrectly: true,
-		yamlConfigPath:  filePath,
+		parsedConfig:   &parsedYaml.Coordimap,
+		yamlConfigPath: filePath,
 	}, nil
 }
 
@@ -99,7 +92,15 @@ func NewYamlStringConfig(yamlContent string) (*CoordimapConfig, error) {
 	config := CoordimapConfig{}
 
 	if errorUnmarshal := yaml.Unmarshal([]byte(yamlContent), &config); errorUnmarshal != nil {
-		return nil, errorUnmarshal
+		return nil, fmt.Errorf("failed to unmarshal yaml: %w", errorUnmarshal)
+	}
+
+	// Basic validation
+	if config.Coordimap.API_KEY == "" {
+		// Check if it's an env var placeholder, if not, it's missing
+		// Actually, even if it is a placeholder, it should be present in the struct.
+		// If the string is empty, it means the key is missing from YAML.
+		return nil, fmt.Errorf("missing required field: coordimap.api_key")
 	}
 
 	return &config, nil
