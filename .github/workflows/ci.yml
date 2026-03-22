@@ -140,17 +140,14 @@ jobs:
           # Remove 'v' prefix for appVersion if needed, but let's keep it as the tag
           
           # Update appVersion in Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" Chart.yaml
-          
-          # Update version in Chart.yaml (Optional: you might want to bump the chart version as well, this assumes we bump them together or just the appVersion)
-          # We'll just update appVersion and the values.yaml tag
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" charts/agent/Chart.yaml
           
           # Update image tag in values.yaml
-          sed -i "s/tag:.*/tag: \"${VERSION}\"/" values.yaml
+          sed -i "s/tag:.*/tag: \"${VERSION}\"/" charts/agent/values.yaml
           
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Chart.yaml values.yaml
+          git add charts/agent/Chart.yaml charts/agent/values.yaml
           git commit -m "Bump agent version to ${VERSION}"
           git push origin main
