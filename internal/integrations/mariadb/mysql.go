@@ -41,6 +41,9 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 				return &crawler, err
 			}
 
+		case "scope_id":
+			crawler.scopeID = dsConfig.Value
+
 		case "db_host":
 			crawler.Host = dsConfig.Value
 
@@ -76,6 +79,10 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		}
 	}
 
+	if crawler.scopeID == "" {
+		return nil, fmt.Errorf("MySQL crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
+	}
+
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.User, crawler.Pass, crawler.Host, "3306", crawler.DBName)
 	if errDBConn != nil {
@@ -83,18 +90,6 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
-
-	if crawler.scopeID == "" {
-		var serverUUID string
-		errRow := crawler.dbConn.QueryRow("SHOW VARIABLES LIKE 'server_uuid'").Scan(new(string), &serverUUID)
-		if errRow == nil && serverUUID != "" {
-			crawler.scopeID = serverUUID
-		}
-	}
-
-	if crawler.scopeID == "" {
-		crawler.scopeID = crawler.dataSource.DataSourceID
-	}
 
 	return &crawler, nil
 }

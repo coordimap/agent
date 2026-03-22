@@ -16,10 +16,10 @@ const (
 	kubeConfigCrawlInterval        = "crawl_interval"
 	kubeConfigIstioPrometheusHost  = "prometheus_host"
 	kubeConfigClusterName          = "cluster_name"
-	kubeConfigClusterUID           = "cluster_uid"
 	kubeConfigRetinaPrometheusHost = "retina_prometheus"
 	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
 	kubeConfigExternalMappings     = "external_mappings"
+	kubeConfigScopeID              = "scope_id"
 )
 
 type kubernetesCrawler struct {

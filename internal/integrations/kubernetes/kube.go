@@ -106,7 +106,7 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 		case kubeConfigClusterName:
 			crawler.clusterName = value
 
-		case kubeConfigClusterUID:
+		case kubeConfigScopeID:
 			if value == "" {
 				continue
 			}
@@ -135,16 +135,8 @@ func MakeKubernetesCrawler(dataSource *bloopi_agent.DataSource, outChannel chan 
 			}
 		}
 	}
-
 	if crawler.clusterUID == "" {
-		switch {
-		case crawler.clusterName != "":
-			crawler.clusterUID = crawler.clusterName
-			log.Warn().Msg("kubernetes config 'cluster_uid' is missing, falling back to 'cluster_name' for internal names")
-		default:
-			crawler.clusterUID = crawler.dataSource.DataSourceID
-			log.Warn().Msg("kubernetes config 'cluster_uid' is missing, falling back to 'data_source_id' for internal names")
-		}
+		return nil, fmt.Errorf("Kubernetes crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
 	}
 
 	crawler.istioCrawler.promQueryTime = promQueryTime

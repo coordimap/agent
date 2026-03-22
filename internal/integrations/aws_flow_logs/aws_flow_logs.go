@@ -94,7 +94,7 @@ func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi
 func (crawler *awsFlowLogsCrawler) Crawl() {
 	crawlTicker := time.NewTicker(crawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", crawler.dataSource.DataSourceID)
+	log.Info().Msgf("Starting ticker for: %s", crawler.scopeID)
 	for range crawlTicker.C {
 		go func() {
 			crawledData, errCrawl := crawler.crawl()
@@ -104,7 +104,7 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 				return
 			}
 			// ship the crawledData to the backend
-			log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.dataSource.DataSourceID)
+			log.Info().Msgf("Crawled %d AWS Flow Logs elements for connection %s", len(crawledData.CrawledData.Data), crawler.scopeID)
 			crawler.outputChannel <- crawledData
 		}()
 	}
@@ -259,6 +259,6 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 		Timestamp:       crawlTime,
 		DataSource:      *crawler.dataSource,
 		CrawledData:     crawledData,
-		CrawlInternalID: crawler.dataSource.DataSourceID,
+		CrawlInternalID: crawler.scopeID,
 	}, nil
 }

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	"google.golang.org/api/cloudresourcemanager/v1"
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
@@ -79,6 +78,9 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 
 		case gcpConfigIncludeRegions:
 			gcpCrawler.includedRegions = append(gcpCrawler.includedRegions, strings.Split(config.Value, ",")...)
+		case "scope_id":
+			gcpCrawler.scopeID = config.Value
+
 
 		case gcpProjectID:
 			if config.Value == "" {
@@ -113,22 +115,10 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 	if gcpCrawler.ConfiguredProjectID != credsProjectID {
 		return nil, fmt.Errorf("the configured ProjectID %s does not match the ProjectID %s from the authentication", gcpCrawler.ConfiguredProjectID, credsProjectID)
 	}
-
-	crmService, errCrm := cloudresourcemanager.NewService(context.Background(), gcpCrawler.clientOpts...)
-	if errCrm == nil {
-		projectReq := crmService.Projects.Get(gcpCrawler.ConfiguredProjectID)
-		project, errProj := projectReq.Do()
-		if errProj == nil && project.ProjectNumber > 0 {
-			gcpCrawler.scopeID = fmt.Sprintf("%d", project.ProjectNumber)
-		}
+	if gcpCrawler.scopeID == "" {
+		return nil, fmt.Errorf("GCP crawler config error: scope_id must be provided for data source %s", gcpCrawler.dataSource.DataSourceID)
 	}
 
-	if gcpCrawler.scopeID == "" {
-		gcpCrawler.scopeID = gcpCrawler.ConfiguredProjectID
-	}
-	if gcpCrawler.scopeID == "" {
-		gcpCrawler.scopeID = gcpCrawler.dataSource.DataSourceID
-	}
 
 	if flowConfigured {
 		client, errClient := logging.NewService(context.Background(), gcpCrawler.clientOpts...)

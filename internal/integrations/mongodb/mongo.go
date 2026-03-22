@@ -93,31 +93,8 @@ func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	}
 
 	crawler.dbConn = db
-
 	if crawler.scopeID == "" {
-		var statusResult bson.M
-		errCmd := crawler.dbConn.Database("admin").RunCommand(context.Background(), bson.D{{Key: "replSetGetStatus", Value: 1}}).Decode(&statusResult)
-		if errCmd == nil {
-			if set, ok := statusResult["set"].(string); ok && set != "" {
-				crawler.scopeID = set
-			}
-		}
-	}
-
-	if crawler.scopeID == "" {
-		var masterResult bson.M
-		errCmd := crawler.dbConn.Database("admin").RunCommand(context.Background(), bson.D{{Key: "isMaster", Value: 1}}).Decode(&masterResult)
-		if errCmd == nil {
-			if setName, ok := masterResult["setName"].(string); ok && setName != "" {
-				crawler.scopeID = setName
-			} else if me, ok := masterResult["me"].(string); ok && me != "" {
-				crawler.scopeID = me
-			}
-		}
-	}
-
-	if crawler.scopeID == "" {
-		crawler.scopeID = crawler.dataSource.DataSourceID
+		return nil, fmt.Errorf("MongoDB crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
 	}
 
 	return &crawler, nil

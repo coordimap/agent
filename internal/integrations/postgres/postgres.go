@@ -95,17 +95,8 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
-
 	if crawler.scopeID == "" {
-		var systemID string
-		errRow := crawler.dbConn.QueryRow("SELECT system_identifier FROM pg_control_system()").Scan(&systemID)
-		if errRow == nil && systemID != "" {
-			crawler.scopeID = systemID
-		}
-	}
-
-	if crawler.scopeID == "" {
-		crawler.scopeID = crawler.dataSource.DataSourceID
+		return nil, fmt.Errorf("PostgreSQL crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
 	}
 
 	return &crawler, nil

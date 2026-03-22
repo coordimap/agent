@@ -26,17 +26,24 @@ type AwsCrawl struct {
 }
 
 // MakeAWS creates an AWS cloud struct
-func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) *AwsCrawl {
+func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (*AwsCrawl, error) {
 	secretAccessKey := ""
 	accessKeyID := ""
 
+	scopeID := ""
 	for _, dsConfigValuePair := range dsConfig.Config.ValuePairs {
 		switch dsConfigValuePair.Key {
 		case "access_key_id":
 			accessKeyID, _ = utils.LoadValueFromEnvConfig(dsConfigValuePair.Value)
 		case "secret_access_key":
 			secretAccessKey, _ = utils.LoadValueFromEnvConfig(dsConfigValuePair.Value)
+		case "scope_id":
+			scopeID = dsConfigValuePair.Value
 		}
+	}
+	
+	if scopeID == "" {
+		return nil, fmt.Errorf("AWS crawler config error: scope_id must be provided for data source %s", dsConfig.DataSourceID)
 	}
 
 	return &AwsCrawl{
@@ -44,8 +51,8 @@ func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.Cl
 		outChannel:      outChannel,
 		secretAccessKey: secretAccessKey,
 		accessKeyID:     accessKeyID,
-	}
-
+		scopeID:         scopeID,
+	}, nil
 }
 
 func (awsCrawl *AwsCrawl) Crawl() {

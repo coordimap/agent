@@ -47,7 +47,7 @@ func validateKubernetesScopeMappings(allDataSources map[string][]*bloopi_agent.D
 
 	kubeDataSourceIDToClusterUID := map[string]string{}
 	for _, dataSource := range kubernetesDataSources {
-		clusterUID := getDataSourceConfigValue(dataSource, "cluster_uid")
+		clusterUID := getDataSourceConfigValue(dataSource, "scope_id")
 		if clusterUID == "" {
 			continue
 		}

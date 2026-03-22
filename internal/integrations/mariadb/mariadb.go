@@ -44,6 +44,9 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 				return &crawler, err
 			}
 
+		case "scope_id":
+			crawler.scopeID = dsConfig.Value
+
 		case "db_host":
 			crawler.Host = dsConfig.Value
 
@@ -85,6 +88,10 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 		}
 	}
 
+	if crawler.scopeID == "" {
+		return nil, fmt.Errorf("MariaDB crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
+	}
+
 	if mappingDSID != "" && mappingInternalID != "" {
 		crawler.externalMappingID = fmt.Sprintf("%s-%s", mappingDSID, mappingInternalID)
 	}
@@ -96,18 +103,6 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
-
-	if crawler.scopeID == "" {
-		var serverUUID string
-		errRow := crawler.dbConn.QueryRow("SHOW VARIABLES LIKE 'server_uuid'").Scan(new(string), &serverUUID)
-		if errRow == nil && serverUUID != "" {
-			crawler.scopeID = serverUUID
-		}
-	}
-
-	if crawler.scopeID == "" {
-		crawler.scopeID = crawler.dataSource.DataSourceID
-	}
 
 	return &crawler, nil
 }

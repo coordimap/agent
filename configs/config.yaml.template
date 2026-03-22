@@ -5,6 +5,8 @@ coordimap:
       name: aws1
       desc: desc1
       config:
+      - name: scope_id
+        value: \"your-aws-account-id\"
       - name: policy_config
         value: "true"
       - name: access_key_id 
@@ -17,6 +19,8 @@ coordimap:
       name: post1
       desc: desc1
       config:
+        - name: scope_id
+          value: \"your-postgres-system-identifier\"
         - name: db_name
           value: dbname1
         - name: db_host
@@ -31,6 +35,8 @@ coordimap:
       name: kube1
       desc: desc1
       config:
+      - name: scope_id
+        value: \"your_k8s_cluster_uid\"
       - name: in_cluster
         value: "false"
       - name: config_file
@@ -41,6 +47,8 @@ coordimap:
       name: flowlog1
       desc: desc1
       config:
+      - name: scope_id
+        value: \"your-aws-account-id\"
       - name: log_format
         value: all
       - name: log_type
@@ -61,6 +69,8 @@ coordimap:
       name: mongo-atlas
       desc: desc1
       config:
+      - name: scope_id
+        value: \"your-replica-set-id\"
       - name: db_name
         value: "*"
       - name: db_host

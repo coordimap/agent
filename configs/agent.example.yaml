@@ -14,6 +14,8 @@ coordimap:
     #   name: aws-production
     #   desc: "Production AWS Account"
     #   config:
+    #     - name: scope_id
+    #       value: your-aws-account-id
     #     # Enable or disable policy configuration collection (values: "true", "false")
     #     - name: policy_config
     #       value: "true"
@@ -36,6 +38,8 @@ coordimap:
     #   name: gcp-production
     #   desc: "Production GCP Project"
     #   config:
+    #     - name: scope_id
+    #       value: your-gcp-project-number
     #     # Set to "true" when the agent runs on Google Cloud and should use
     #     # the instance metadata service for authentication.
     #     - name: in_cloud
@@ -63,6 +67,8 @@ coordimap:
     #   name: postgres-primary
     #   desc: "Primary PostgreSQL Database"
     #   config:
+    #     - name: scope_id
+    #       value: your-postgres-system-identifier
     #     - name: db_name
     #       value: mydatabase
     #     - name: db_host
@@ -85,6 +91,8 @@ coordimap:
     #   name: mysql-primary
     #   desc: "Primary MySQL Database"
     #   config:
+    #     - name: scope_id
+    #       value: your-mysql-server-uuid
     #     - name: db_name
     #       value: mydatabase
     #     - name: db_host
@@ -104,6 +112,8 @@ coordimap:
     #   name: mariadb-primary
     #   desc: "Primary MariaDB Database"
     #   config:
+    #     - name: scope_id
+    #       value: your-mariadb-server-uuid
     #     - name: db_name
     #       value: mydatabase
     #     - name: db_host
@@ -128,6 +138,8 @@ coordimap:
     #   name: k8s-cluster-1
     #   desc: "Main Kubernetes Cluster"
     #   config:
+    #     - name: scope_id
+    #       value: your_k8s_cluster_uid
     #     # Set to "true" if the agent is running inside the cluster (In-Cluster Config).
     #     # Set to "false" if using a kubeconfig file.
     #     - name: in_cluster
@@ -142,8 +154,6 @@ coordimap:
     #     # kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
     #     - name: cluster_name
     #       value: main-cluster
-    #     - name: cluster_uid
-    #       value: 6f5f56e3-0123-4567-89ab-6c8f1e2a0cde
     #     # Optional cloud data source id for node-to-cloud mappings.
     #     - name: cloud_data_source_id
     #       value: gcp-production
@@ -166,6 +176,8 @@ coordimap:
     #   name: flowlogs-vpc-1
     #   desc: "VPC Flow Logs from S3"
     #   config:
+    #     - name: scope_id
+    #       value: your-aws-account-id
     #     - name: log_format
     #       value: all
     #     - name: log_type
@@ -207,6 +219,8 @@ coordimap:
     #   name: mongo-production
     #   desc: "Production MongoDB"
     #   config:
+    #     - name: scope_id
+    #       value: your-replica-set-id
     #     # Use "*" to collect from all databases, or specify a name.
     #     - name: db_name
     #       value: "*"

@@ -116,6 +116,8 @@ Here are the supported data sources and their sample configurations:
 - type: gcp
   id: gcp_id_123
   config:
+    - name: scope_id
+      value: \"your-gcp-project-number\"
     - name: in_cloud
       value: "false"
     - name: credentials_file
@@ -138,6 +140,8 @@ Here are the supported data sources and their sample configurations:
 - type: gcp_flow_logs
   id: gcp_id_123
   config:
+    - name: scope_id
+      value: \"your-gcp-project-number\"
     - name: in_cloud
       value: "false"
     - name: credentials_file
@@ -154,6 +158,8 @@ Here are the supported data sources and their sample configurations:
 - type: aws
   id: awstestid
   config:
+    - name: scope_id
+      value: \"your-aws-account-id\"
     - name: policy_config
       value: "true"
     - name: access_key_id
@@ -172,6 +178,8 @@ Here are the supported data sources and their sample configurations:
   name: "database-name"
   desc: "Description of the database."
   config:
+    - name: scope_id
+      value: \"your-postgres-system-identifier\"
     - name: db_name
       value: "your_db_name"
     - name: db_host
@@ -194,6 +202,8 @@ Here are the supported data sources and their sample configurations:
 - type: mariadb
   id: "data_source_123"
   config:
+    - name: scope_id
+      value: \"your-mariadb-server-uuid\"
     - name: db_name
       value: "your_db_name"
     - name: db_host
@@ -212,12 +222,12 @@ Here are the supported data sources and their sample configurations:
 - type: kubernetes
   id: "kube_cluster_id"
   config:
+    - name: scope_id
+      value: "your_k8s_cluster_uid"
     - name: in_cluster
       value: "false"
     - name: cluster_name
       value: "your_cluster_name"
-    - name: cluster_uid
-      value: "your_k8s_cluster_uid"
     - name: cloud_data_source_id
       value: "your_cloud_data_source_id"
     - name: config_file
@@ -230,15 +240,15 @@ Here are the supported data sources and their sample configurations:
 
 ### Generate Kubernetes Cluster UID
 
-The Kubernetes internal names are scoped by `cluster_uid` (not by data source id). You can retrieve the cluster UID from the `kube-system` namespace:
+The Kubernetes internal names are scoped by `scope_id` (not by data source id). You should use the cluster UID as the `scope_id`, which you can retrieve from the `kube-system` namespace:
 
 ```bash
 kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
 ```
 
-Use this UID in:
+Use this UID as the `scope_id` in:
 
-- the Kubernetes data source as `cluster_uid`
+- the Kubernetes data source configuration
 - mappings that need to reference Kubernetes internal names (for example, GCP flow logs `external_mappings`)
 
 ### AWS Flow Logs
@@ -248,6 +258,8 @@ Use this UID in:
   name: "flowlog-name"
   desc: "Description of the flow logs."
   config:
+    - name: scope_id
+      value: \"your-aws-account-id\"
     - name: log_format
       value: "all"
     - name: log_type
@@ -273,6 +285,8 @@ Use this UID in:
   name: "mongo-instance-name"
   desc: "Description of the mongo instance."
   config:
+    - name: scope_id
+      value: \"your-replica-set-id\"
     - name: db_name
       value: "*" # or a specific database name
     - name: db_host
@@ -289,32 +303,19 @@ Use this UID in:
 
 `coordimap-agent` uses an internal asset identity model that should be scoped by the upstream system identity, not by the connector `data_source_id`. The `data_source_id` identifies the crawl configuration, while the `scope_id` identifies the real ownership boundary the assets belong to.
 
-| Data source | Recommended `scope_id` | Where it comes from | Typical asset path | Fallback order | Risk if fallback is used |
-| --- | --- | --- | --- | --- | --- |
-| Kubernetes | `cluster_uid` | Kubernetes API cluster identity | `namespace/type/name`, `type/name` for cluster-wide assets | `cluster_name` -> `data_source_id` | `cluster_name`: medium, `data_source_id`: high |
-| GCP | `project_number` | GCP project metadata / API | `zone/vm_instance/name`, `region/bucket/name`, `region/sql/name` | `project_id` -> `data_source_id` | `project_id`: low-medium, `data_source_id`: high |
-| AWS | `account_id` | AWS STS caller identity | `region/ec2/instance-id`, `region/rds/db-arn`, `global/s3/bucket-name` | `data_source_id` | `data_source_id`: high |
-| PostgreSQL | `system_identifier` | PostgreSQL server or cluster identity | `database/schema/table`, `database/schema/index` | explicit stable `scope_id` -> `data_source_id` | explicit `scope_id`: medium, `data_source_id`: high |
-| MySQL / MariaDB | `server_uuid` | MySQL or MariaDB server identity | `database/schema/table`, `database/schema/index` | explicit stable `scope_id` -> `data_source_id` | explicit `scope_id`: medium, `data_source_id`: high |
-| MongoDB | replica set or cluster ID | replica set or cluster identity | `database/collection`, `database/collection/index` | replica set name -> explicit stable `scope_id` -> `data_source_id` | replica set name: medium, explicit `scope_id`: medium, `data_source_id`: high |
-| OTel | reuse upstream `scope_id` | OTel resource attributes from the source system | `coordimap.scope_id`, `k8s.cluster.uid`, `cloud.account.id`, `cloud.project.number`, `db.postgresql.system_identifier` | derived value from datasource config | high |
-
-### Fallback Policy
-
-- Prefer provider-native immutable IDs whenever they are available.
-- Use provider-native stable names only when an immutable ID is not exposed.
-- Use explicitly configured stable identities before falling back to `data_source_id`.
-- Treat `data_source_id` as a last resort because it ties asset continuity to connector configuration.
-
-### Continuity Risk Levels
-
-- Low: provider-native immutable IDs.
-- Medium: human-readable but stable upstream names.
-- High: connector-scoped identifiers such as `data_source_id`.
+| Data source | Recommended `scope_id` | Where it comes from | Typical asset path |
+| --- | --- | --- | --- |
+| Kubernetes | `cluster_uid` | Kubernetes API cluster identity | `namespace/type/name`, `type/name` for cluster-wide assets |
+| GCP | `project_number` | GCP project metadata / API | `zone/vm_instance/name`, `region/bucket/name`, `region/sql/name` |
+| AWS | `account_id` | AWS STS caller identity | `region/ec2/instance-id`, `region/rds/db-arn`, `global/s3/bucket-name` |
+| PostgreSQL | `system_identifier` | PostgreSQL server or cluster identity | `database/schema/table`, `database/schema/index` |
+| MySQL / MariaDB | `server_uuid` | MySQL or MariaDB server identity | `database/schema/table`, `database/schema/index` |
+| MongoDB | replica set or cluster ID | replica set or cluster identity | `database/collection`, `database/collection/index` |
+| OTel | reuse upstream `scope_id` | OTel resource attributes from the source system | `coordimap.scope_id`, `k8s.cluster.uid`, `cloud.account.id`, `cloud.project.number`, `db.postgresql.system_identifier` |
 
 ## How To Find Your `scope_id`
 
-Whenever possible, use a stable upstream identity as the `scope_id` instead of the connector `data_source_id`. This keeps internal asset IDs stable even if the data source configuration changes.
+You must provide a `scope_id` for each data source in your configuration. This keeps internal asset IDs stable across configurations and data source recreation. Use the following guidelines to find the appropriate `scope_id` for your data sources.
 
 ### Kubernetes
 
@@ -346,7 +347,6 @@ gcloud projects describe PROJECT_ID --format='value(projectId)'
 ```
 
 Recommended `scope_id`: `project_number`
-Fallback: `project_id`
 
 ### AWS
 
@@ -401,7 +401,6 @@ rs.status()
 ```
 
 Recommended `scope_id`: replica set / cluster ID
-Fallback: replica set name
 
 Notes:
 
@@ -426,16 +425,6 @@ Notes:
 - OTel should emit the same scope used by the infrastructure crawler.
 - This allows the backend to generate matching internal IDs and create relationships reliably.
 
-### Fallback Order
-
-When a native source identity is not available, use this order:
-
-1. Provider-native immutable ID
-2. Provider-native stable name
-3. Explicitly configured stable `scope_id`
-4. `data_source_id` as a last resort
-
-Using `data_source_id` as the scope ties internal asset continuity to connector configuration and should be avoided when a more stable upstream identity exists.
 
 ## Contribute
 

@@ -17,7 +17,7 @@ import (
 func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
 	switch name {
 	case INTEGRATION_AWS:
-		return aws.MakeAWS(dataSource, outChannel), nil
+		return aws.MakeAWS(dataSource, outChannel)
 
 	case INTEGRATION_POSTGRES:
 		return postgres.NewPostgresCrawler(dataSource, outChannel)

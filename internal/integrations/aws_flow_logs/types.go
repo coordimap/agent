@@ -64,6 +64,7 @@ type awsFlowLogsCrawler struct {
 	awsSession         *s3.S3
 	foundRelationships map[string]awsflowlogs.AWSFlowLog
 	lastHandledKey     string
+	scopeID            string
 	mutex              sync.Mutex
 	stateFilename      string
 }
