@@ -87,7 +87,7 @@ To enable the eBPF flow crawler, you will need to add the following configuratio
     - name: interface_name
       value: "all" # can be "all" or a specific interface like "eth0"
     - name: external_mappings
-      value: "your-external-mappings" # required when deployedAt is "kubernetes"
+      value: "*@your_k8s_cluster_uid" # required when deployedAt is "kubernetes"
 ```
 
 ## Configuration
@@ -127,7 +127,7 @@ Here are the supported data sources and their sample configurations:
     - name: gcp_flows
       value: "true"
     - name: external_mappings
-      value: "your-external-mappings"
+      value: "europe-west3-your-gke-cluster@your_k8s_cluster_uid"
     - name: include_regions
       value: "your-gcp-region"
 ```
@@ -216,6 +216,8 @@ Here are the supported data sources and their sample configurations:
       value: "false"
     - name: cluster_name
       value: "your_cluster_name"
+    - name: cluster_uid
+      value: "your_k8s_cluster_uid"
     - name: cloud_data_source_id
       value: "your_cloud_data_source_id"
     - name: config_file
@@ -223,8 +225,21 @@ Here are the supported data sources and their sample configurations:
     - name: crawl_interval
       value: 30s
     - name: external_mappings
-      value: "your-external-mappings"
+      value: "node-1@aws_data_source_id us-central1-a-node-2@gcp_data_source_id"
 ```
+
+### Generate Kubernetes Cluster UID
+
+The Kubernetes internal names are scoped by `cluster_uid` (not by data source id). You can retrieve the cluster UID from the `kube-system` namespace:
+
+```bash
+kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
+```
+
+Use this UID in:
+
+- the Kubernetes data source as `cluster_uid`
+- mappings that need to reference Kubernetes internal names (for example, GCP flow logs `external_mappings`)
 
 ### AWS Flow Logs
 

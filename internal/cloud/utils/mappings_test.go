@@ -67,6 +67,26 @@ func TestMappings(t *testing.T) {
 		}
 	})
 
+	t.Run("GetValue", func(t *testing.T) {
+		m, _ := NewMappings("cluster-a@uid-a cluster-*@uid-wildcard")
+
+		got, err := m.GetValue("cluster-a")
+		if err != nil {
+			t.Errorf("GetValue() error = %v", err)
+		}
+		if got != "uid-a" {
+			t.Errorf("GetValue() = %v, want %v", got, "uid-a")
+		}
+
+		got, err = m.GetValue("cluster-prod")
+		if err != nil {
+			t.Errorf("GetValue() wildcard error = %v", err)
+		}
+		if got != "uid-wildcard" {
+			t.Errorf("GetValue() wildcard = %v, want %v", got, "uid-wildcard")
+		}
+	})
+
 	t.Run("AddMapping", func(t *testing.T) {
 		m, _ := NewMappings("")
 		err := m.AddMapping("key1", "val1")

@@ -211,14 +211,14 @@ func (crawler *flowsCrawler) Crawl() {
 func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 	crawledElements := []*bloopi_agent.Element{}
 	crawlTime := time.Now().UTC()
-	dataSourceID, errGetDataSourceIDFromMapping := crawler.mappings.GetDataSourceID("*")
-	if errGetDataSourceIDFromMapping != nil {
-		log.Err(errGetDataSourceIDFromMapping).Msg("No data source id")
+	clusterUID, errGetClusterUIDFromMapping := crawler.mappings.GetValue("*")
+	if errGetClusterUIDFromMapping != nil {
+		log.Err(errGetClusterUIDFromMapping).Msg("No kubernetes cluster uid")
 		return
 	}
 
-	srcInternalID := cloudutils.CreateKubeInternalName(dataSourceID, srcPod.Namespace, kube_model.TypePod, srcPod.Name)
-	dstInternalID := cloudutils.CreateKubeInternalName(dataSourceID, dstPod.Namespace, kube_model.TypePod, dstPod.Name)
+	srcInternalID := cloudutils.CreateKubeInternalName(clusterUID, srcPod.Namespace, kube_model.TypePod, srcPod.Name)
+	dstInternalID := cloudutils.CreateKubeInternalName(clusterUID, dstPod.Namespace, kube_model.TypePod, dstPod.Name)
 
 	srcElement, errSrc := utils.CreateElement(srcPod, srcPod.Name, srcInternalID, kube_model.TypePod, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errSrc != nil {

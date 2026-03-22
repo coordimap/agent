@@ -1,6 +1,7 @@
 .vscode/
 cli/agent/cleye
 flowLogsState.json
+configs/config.yaml
 internal/cloud/flows/bpf_bpfeb.o
 internal/cloud/flows/bpf_bpfel.o
 internal/cloud/flows/bpf_bpfeb.go

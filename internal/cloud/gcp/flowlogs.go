@@ -59,18 +59,18 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 		// check for gke src and dest
 		if jsonPayload.SrcGkeDetails.Cluster.ClusterName != "" && jsonPayload.DstGkeDetails.Cluster.ClusterName != "" {
-			srcDSID, errSrcDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.SrcGkeDetails.Cluster.ClusterLocation, jsonPayload.SrcGkeDetails.Cluster.ClusterName))
-			if errSrcDSID != nil {
+			srcClusterUID, errSrcClusterUID := cloudutils.GetMappingValue(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.SrcGkeDetails.Cluster.ClusterLocation, jsonPayload.SrcGkeDetails.Cluster.ClusterName))
+			if errSrcClusterUID != nil {
 				continue
 			}
-			dstDSID, errDstDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.DstGkeDetails.Cluster.ClusterLocation, jsonPayload.DstGkeDetails.Cluster.ClusterName))
-			if errDstDSID != nil {
+			dstClusterUID, errDstClusterUID := cloudutils.GetMappingValue(crawler.externalMappings, fmt.Sprintf("%s-%s", jsonPayload.DstGkeDetails.Cluster.ClusterLocation, jsonPayload.DstGkeDetails.Cluster.ClusterName))
+			if errDstClusterUID != nil {
 				continue
 			}
 
 			if jsonPayload.SrcGkeDetails.Pod.Name != "" && jsonPayload.SrcGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Name != "" {
-				srcPodInternalName := cloudutils.CreateKubeInternalName(srcDSID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
-				dstPodInternalName := cloudutils.CreateKubeInternalName(dstDSID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
+				srcPodInternalName := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
+				dstPodInternalName := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
 
 				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, bloopi_agent.RelationshipExternalBothSidesType, bloopi_agent.FlowTypeRelation, crawlTime)
 				if errRel == nil {
@@ -79,8 +79,8 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 			}
 
 			if jsonPayload.SrcGkeDetails.Pod.Workload.Type == "DEPLOYMENT" && jsonPayload.DstGkeDetails.Pod.Workload.Type == "DEPLOYMENT" {
-				srcDeployment := cloudutils.CreateKubeInternalName(srcDSID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
-				dstDeployment := cloudutils.CreateKubeInternalName(dstDSID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
+				srcDeployment := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
+				dstDeployment := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
 
 				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, bloopi_agent.RelationshipExternalBothSidesType, bloopi_agent.FlowTypeRelation, crawlTime)
 				if errRel == nil {
@@ -108,13 +108,13 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 				if gke.Pod.Name == "" || gke.Pod.Workload.Type != "DEPLOYMENT" {
 					continue
 				}
-				dsID, errDSID := cloudutils.GetMappingDataSourceID(crawler.externalMappings, fmt.Sprintf("%s-%s", gke.Cluster.ClusterLocation, gke.Cluster.ClusterName))
-				if errDSID != nil {
+				clusterUID, errClusterUID := cloudutils.GetMappingValue(crawler.externalMappings, fmt.Sprintf("%s-%s", gke.Cluster.ClusterLocation, gke.Cluster.ClusterName))
+				if errClusterUID != nil {
 					continue
 				}
 
-				podInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypePod, gke.Pod.Name)
-				deplomentInternalName := cloudutils.CreateKubeInternalName(dsID, gke.Pod.Namespace, kubernetes.TypeDeployment, gke.Pod.Workload.Name)
+				podInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kubernetes.TypePod, gke.Pod.Name)
+				deplomentInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kubernetes.TypeDeployment, gke.Pod.Workload.Name)
 				if index == 0 {
 					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {

@@ -7,41 +7,49 @@ import (
 	"strings"
 )
 
-func GetMappingInternalName(configuredMappings map[string]string, mappingToSearchFor string) (string, error) {
+func findMappingValue(configuredMappings map[string]string, mappingToSearchFor string) (string, error) {
 	val, ok := configuredMappings[mappingToSearchFor]
 
-	if !ok {
-		return "", errors.New("mapping not found")
+	if ok {
+		return val, nil
+	}
+
+	for key, value := range configuredMappings {
+		newKey := strings.Replace(key, "*", ".*", 1)
+		regex, errRegex := regexp.Compile(newKey)
+		if errRegex != nil {
+			return "", fmt.Errorf("could not create regex because %w", errRegex)
+		}
+
+		if regex.MatchString(mappingToSearchFor) {
+			return value, nil
+		}
+	}
+
+	return "", errors.New("mapping not found")
+}
+
+func GetMappingValue(configuredMappings map[string]string, mappingToSearchFor string) (string, error) {
+	return findMappingValue(configuredMappings, mappingToSearchFor)
+}
+
+func GetMappingInternalName(configuredMappings map[string]string, mappingToSearchFor string) (string, error) {
+	val, err := findMappingValue(configuredMappings, mappingToSearchFor)
+	if err != nil {
+		return "", err
 	}
 
 	return fmt.Sprintf("%s-%s", val, mappingToSearchFor), nil
 }
 
 func GetMappingDataSourceID(configuredMappings map[string]string, mappingToSearchFor string) (string, error) {
-	val, ok := configuredMappings[mappingToSearchFor]
-
-	if !ok {
-		// Check if there is an asterisk (*) in any of the keys
-		for key, value := range configuredMappings {
-			newKey := strings.Replace(key, "*", ".*", 1)
-			regex, errRegex := regexp.Compile(newKey)
-			if errRegex != nil {
-				return "", fmt.Errorf("could not create regex because %w", errRegex)
-			}
-
-			if regex.MatchString(mappingToSearchFor) {
-				return value, nil
-			}
-		}
-		return "", errors.New("mapping not found")
-	}
-
-	return val, nil
+	return findMappingValue(configuredMappings, mappingToSearchFor)
 }
 
 /**
 * SplitConfiguredMappings
-* configuredMappings is the string that is taken from the config YAML, it is of the form <internal id>@<data_source_id>. The internal id is to be formed based on the instructions in the docs.
+* configuredMappings is the string that is taken from the config YAML, it is of the form <mapping_key>@<mapping_value>.
+* Depending on the integration, mapping_value can be a data_source_id, a cluster_uid, or another scoped identifier.
  */
 func SplitConfiguredMappings(configuredMappings string) (map[string]string, error) {
 	mappings := map[string]string{}
@@ -64,6 +72,7 @@ func SplitConfiguredMappings(configuredMappings string) (map[string]string, erro
 // Mappings defines the interface for managing mappings.
 type Mappings interface {
 	GetInternalName(mappingToSearchFor string) (string, error)
+	GetValue(mappingToSearchFor string) (string, error)
 	GetDataSourceID(mappingToSearchFor string) (string, error)
 	AddMapping(dataSourceID string, internalName string) error
 	AddConfiguredMapping(configuredMappings string) error
@@ -85,32 +94,21 @@ func NewMappings(configuredMappings string) (Mappings, error) {
 
 // GetInternalName returns the internal name for a given mapping
 func (m *mappings) GetInternalName(mappingToSearchFor string) (string, error) {
-	val, ok := m.mappings[mappingToSearchFor]
-	if !ok {
-		return "", errors.New("mapping not found")
+	val, err := m.GetValue(mappingToSearchFor)
+	if err != nil {
+		return "", err
 	}
+
 	return fmt.Sprintf("%s-%s", val, mappingToSearchFor), nil
+}
+
+func (m *mappings) GetValue(mappingToSearchFor string) (string, error) {
+	return findMappingValue(m.mappings, mappingToSearchFor)
 }
 
 // GetDataSourceID returns the data source ID for a given mapping
 func (m *mappings) GetDataSourceID(mappingToSearchFor string) (string, error) {
-	val, ok := m.mappings[mappingToSearchFor]
-	if !ok {
-		// Check if there is an asterisk (*) in any of the keys
-		for key, value := range m.mappings {
-			newKey := strings.Replace(key, "*", ".*", 1)
-			regex, errRegex := regexp.Compile(newKey)
-			if errRegex != nil {
-				return "", fmt.Errorf("could not create regex because %w", errRegex)
-			}
-
-			if regex.MatchString(mappingToSearchFor) {
-				return value, nil
-			}
-		}
-		return "", errors.New("mapping not found")
-	}
-	return val, nil
+	return m.GetValue(mappingToSearchFor)
 }
 
 // AddMapping adds a new mapping if it doesn't already exist.

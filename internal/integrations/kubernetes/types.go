@@ -16,6 +16,7 @@ const (
 	kubeConfigCrawlInterval        = "crawl_interval"
 	kubeConfigIstioPrometheusHost  = "prometheus_host"
 	kubeConfigClusterName          = "cluster_name"
+	kubeConfigClusterUID           = "cluster_uid"
 	kubeConfigRetinaPrometheusHost = "retina_prometheus"
 	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
 	kubeConfigExternalMappings     = "external_mappings"
@@ -30,6 +31,7 @@ type kubernetesCrawler struct {
 	internalNodeNames map[string]string
 	externalMappings  map[string]string
 	clusterName       string
+	clusterUID        string
 	cloudDataSourceID string
 	crawlInterval     time.Duration
 	istioConfigured   bool
