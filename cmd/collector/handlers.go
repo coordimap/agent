@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cleye/internal/integrations/clouds"
+	"coordimap-agent/internal/integrations/clouds"
 	"context"
 	"encoding/json"
 	"fmt"

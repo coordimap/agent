@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"fmt"
 	"os"
 

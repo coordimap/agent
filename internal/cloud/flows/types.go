@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"cleye/internal/cloud/utils"
+	"coordimap-agent/internal/cloud/utils"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
 	"k8s.io/client-go/kubernetes"

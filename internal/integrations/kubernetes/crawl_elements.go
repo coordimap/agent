@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"slices"

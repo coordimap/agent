@@ -1,7 +1,7 @@
 package mariadb
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"fmt"
 	"slices"
 	"strconv"
@@ -97,16 +97,28 @@ func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	}
 	crawler.dbConn = db
 
+	if crawler.scopeID == "" {
+		var serverUUID string
+		errRow := crawler.dbConn.QueryRow("SHOW VARIABLES LIKE 'server_uuid'").Scan(new(string), &serverUUID)
+		if errRow == nil && serverUUID != "" {
+			crawler.scopeID = serverUUID
+		}
+	}
+
+	if crawler.scopeID == "" {
+		crawler.scopeID = crawler.dataSource.DataSourceID
+	}
+
 	return &crawler, nil
 }
 
 func (mariaCrawler *mariadbCrawler) Crawl() {
 	crawlTicker := time.NewTicker(mariaCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", mariaCrawler.dataSource.DataSourceID)
+	log.Info().Msgf("Starting ticker for: %s", mariaCrawler.scopeID)
 	for range crawlTicker.C {
 		_, errCrawl := mariaCrawler.crawl()
-		log.Info().Msgf("Crawling MariaDB for %s", mariaCrawler.dataSource.DataSourceID)
+		log.Info().Msgf("Crawling MariaDB for %s", mariaCrawler.scopeID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msg(errCrawl.Error())
@@ -127,7 +139,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	}
 
 	schemaName := mariaCrawler.DBName
-	dbInternalName := generateInternalName(mariaCrawler.dataSource.DataSourceID, mariaCrawler.DBName, "")
+	dbInternalName := generateInternalName(mariaCrawler.scopeID, mariaCrawler.DBName, "")
 	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, mariadb.MARIADB_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", mariaCrawler.DBName, errDBElem.Error())
@@ -148,7 +160,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 	tableNames, _ := mariaCrawler.GetTableNames(mariaCrawler.DBName)
 
 	for _, tableName := range tableNames {
-		internalTableName := generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
+		internalTableName := generateInternalName(mariaCrawler.scopeID, schemaName, tableName)
 		// get table data
 		tableData, errTableData := mariaCrawler.GetTableData(schemaName, tableName)
 		if errTableData != nil {
@@ -174,7 +186,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		// get table indexes
 		tableIndexes, _ := mariaCrawler.getTableIndexes(schemaName, tableName)
 		for _, tableIndex := range tableIndexes {
-			indexInternalName := generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableIndex.Name)
+			indexInternalName := generateInternalName(mariaCrawler.scopeID, schemaName, tableIndex.Name)
 			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errIndexElem != nil {
 				log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())

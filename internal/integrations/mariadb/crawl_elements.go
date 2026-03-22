@@ -75,7 +75,7 @@ func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string
 			return columns, err
 		}
 
-		column.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
+		column.Table = generateInternalName(mariaCrawler.scopeID, schemaName, tableName)
 
 		columns = append(columns, column)
 	}
@@ -195,7 +195,7 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 				continue
 			}
 
-			columnFrom.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, columnFrom.Table)
+			columnFrom.Table = generateInternalName(mariaCrawler.scopeID, schemaName, columnFrom.Table)
 
 			if constraintType != "UNKNOWN" {
 				constraint.Type = constraintType
@@ -203,7 +203,7 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 
 			switch constraint.Type {
 			case mariadb.MARIADB_CONSTRAINT_FK:
-				columnTo.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, columnTo.Table)
+				columnTo.Table = generateInternalName(mariaCrawler.scopeID, schemaName, columnTo.Table)
 				constraint.Destinations = append(constraint.Destinations, columnTo)
 			}
 		}
@@ -240,7 +240,7 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 		index := databasemodels.Index{
 			Name:    indexName,
 			Columns: []databasemodels.Column{},
-			Table:   generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName),
+			Table:   generateInternalName(mariaCrawler.scopeID, schemaName, tableName),
 			Schema:  schemaName,
 		}
 
@@ -267,7 +267,7 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 				continue
 			}
 
-			indexColumn.Table = generateInternalName(mariaCrawler.dataSource.DataSourceID, schemaName, tableName)
+			indexColumn.Table = generateInternalName(mariaCrawler.scopeID, schemaName, tableName)
 
 			index.Columns = append(index.Columns, indexColumn)
 		}

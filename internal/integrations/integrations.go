@@ -1,14 +1,14 @@
 package integrations
 
 import (
-	"cleye/internal/cloud/flows"
-	"cleye/internal/cloud/gcp"
-	"cleye/internal/integrations/aws"
-	awsflowlogs "cleye/internal/integrations/aws_flow_logs"
-	"cleye/internal/integrations/kubernetes"
-	"cleye/internal/integrations/mariadb"
-	"cleye/internal/integrations/mongodb"
-	"cleye/internal/integrations/postgres"
+	"coordimap-agent/internal/cloud/flows"
+	"coordimap-agent/internal/cloud/gcp"
+	"coordimap-agent/internal/integrations/aws"
+	awsflowlogs "coordimap-agent/internal/integrations/aws_flow_logs"
+	"coordimap-agent/internal/integrations/kubernetes"
+	"coordimap-agent/internal/integrations/mariadb"
+	"coordimap-agent/internal/integrations/mongodb"
+	"coordimap-agent/internal/integrations/postgres"
 	"fmt"
 
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"

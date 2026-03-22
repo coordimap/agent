@@ -1,8 +1,8 @@
 package gcp
 
 import (
-	cloudutils "cleye/internal/cloud/utils"
-	"cleye/pkg/utils"
+	cloudutils "coordimap-agent/internal/cloud/utils"
+	"coordimap-agent/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -48,8 +48,8 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 		if jsonPayload.SrcInstance.VmName != "" && jsonPayload.DstInstance.VmName != "" {
 
-			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
-			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
+			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
+			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 
 			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
 			if errVmRel == nil {
@@ -143,7 +143,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 					continue
 				}
 
-				instanceInternalName := cloudutils.CreateGCPInternalName(crawler.dataSource.DataSourceID, instance.Zone, gcpModel.TypeVMInstance, instance.VmName)
+				instanceInternalName := cloudutils.CreateGCPInternalName(crawler.scopeID, instance.Zone, gcpModel.TypeVMInstance, instance.VmName)
 				if index == 0 {
 					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, bloopi_agent.FlowTypeRelation, crawlTime)
 				} else if index == 1 {

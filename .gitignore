@@ -1,5 +1,5 @@
 .vscode/
-cli/agent/cleye
+cli/agent/coordimap-agent
 flowLogsState.json
 configs/config.yaml
 internal/cloud/flows/bpf_bpfeb.o

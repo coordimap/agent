@@ -1,8 +1,8 @@
 package gcp
 
 import (
-	cloudutils "cleye/internal/cloud/utils"
-	"cleye/pkg/utils"
+	cloudutils "coordimap-agent/internal/cloud/utils"
+	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"slices"
@@ -33,7 +33,7 @@ func (gcpCrawler *gcpCrawler) GetLocationsAndZones(client *compute.Service, craw
 			continue
 		}
 
-		regionInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeRegion, region.Name)
+		regionInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeRegion, region.Name)
 		regionElem, errRegionElem := utils.CreateElement(region, region.Name, regionInternalName, gcpModel.TypeRegion, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errRegionElem == nil {
 			allElems = append(allElems, regionElem)
@@ -47,7 +47,7 @@ func (gcpCrawler *gcpCrawler) GetLocationsAndZones(client *compute.Service, craw
 		}
 
 		for _, zone := range zoneList.Items {
-			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeZone, zone.Name)
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeZone, zone.Name)
 			zoneElem, errZoneElem := utils.CreateElement(zone, zone.Name, zoneInternalName, gcpModel.TypeZone, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errZoneElem == nil {
 				allElems = append(allElems, zoneElem)
@@ -77,8 +77,8 @@ func (gcpCrawler *gcpCrawler) GetBuckets(crawlTime time.Time) ([]*bloopi_agent.E
 
 	for _, bucket := range buckets.Items {
 		zone := strings.ToLower(bucket.Location)
-		zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeRegion, zone)
-		bucketInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeBucket, bucket.Name)
+		zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeRegion, zone)
+		bucketInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeBucket, bucket.Name)
 		elem, errElem := utils.CreateElement(bucket, bucket.Name, bucketInternalName, gcpModel.TypeBucket, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errElem == nil {
 			allBucketElements = append(allBucketElements, elem)
@@ -186,8 +186,8 @@ func (gcpCrawler *gcpCrawler) GetVMInstances(client *compute.Service, crawlTime 
 	for scopedZone, list := range instances.Items {
 		for _, instance := range list.Instances {
 			zone := getZoneFromScopedZone(scopedZone)
-			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeZone, zone)
-			instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeVMInstance, instance.Name)
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeZone, zone)
+			instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeVMInstance, instance.Name)
 
 			utils.AddRelationship(&allVMInstanceElems, zoneInternalName, instanceInternalID, bloopi_agent.ParentChildTypeRelation, crawlTime)
 
@@ -198,7 +198,7 @@ func (gcpCrawler *gcpCrawler) GetVMInstances(client *compute.Service, crawlTime 
 
 			for _, disk := range instance.Disks {
 				split := strings.Split(disk.Source, "/")
-				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeDisk, split[len(split)-1])
+				diskInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeDisk, split[len(split)-1])
 
 				diskRel, errDiskRel := utils.CreateRelationship(instanceInternalID, diskInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errDiskRel == nil {
@@ -221,8 +221,8 @@ func (gcpCrawler *gcpCrawler) getNodeGroups(client *compute.Service, crawlTime t
 
 	for zone, list := range nodeGroups.Items {
 		for _, nodeGroup := range list.NodeGroups {
-			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeZone, zone)
-			nodeGroupInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeNodeGroup, nodeGroup.Name)
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeZone, zone)
+			nodeGroupInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeNodeGroup, nodeGroup.Name)
 			nodeGroupElem, errNodeGroupElem := utils.CreateElement(nodeGroup, nodeGroup.Name, nodeGroupInternalName, gcpModel.TypeNodeGroup, getComputeStatus(nodeGroup.Status), "", crawlTime)
 			if errNodeGroupElem == nil {
 				allNodeGroups = append(allNodeGroups, nodeGroupElem)
@@ -236,7 +236,7 @@ func (gcpCrawler *gcpCrawler) getNodeGroups(client *compute.Service, crawlTime t
 			}
 
 			for _, nodeGroupNode := range nodeGroupNodes.Items {
-				nodeGroupNodeInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeNodeGroup, nodeGroupNode.Name)
+				nodeGroupNodeInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeNodeGroup, nodeGroupNode.Name)
 				fmt.Println(nodeGroupNode.Name, nodeGroupNodeInternalName)
 			}
 		}
@@ -256,8 +256,8 @@ func (gcpCrawler *gcpCrawler) getInstanceGroups(client *compute.Service, crawlTi
 	for scopedZone, list := range instanceGroups.Items {
 		for _, instanceGroup := range list.InstanceGroups {
 			zone := getZoneFromScopedZone(scopedZone)
-			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, "", gcpModel.TypeZone, zone)
-			instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeInstanceGroup, instanceGroup.Name)
+			zoneInternalName := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeZone, zone)
+			instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeInstanceGroup, instanceGroup.Name)
 
 			instanceGroupElem, errInstanceGroupElem := utils.CreateElement(instanceGroup, instanceGroup.Name, instanceGroupInternalID, gcpModel.TypeInstanceGroup, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errInstanceGroupElem == nil {
@@ -273,7 +273,7 @@ func (gcpCrawler *gcpCrawler) getInstanceGroups(client *compute.Service, crawlTi
 
 			for _, instanceGroupInstance := range instanceGroupInstanceList.Items {
 				split := strings.Split(instanceGroupInstance.Instance, "/")
-				instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.dataSource.DataSourceID, zone, gcpModel.TypeVMInstance, split[len(split)-1])
+				instanceInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeVMInstance, split[len(split)-1])
 
 				rel, errRel := utils.CreateRelationship(instanceGroupInternalID, instanceInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				if errRel == nil {
@@ -296,10 +296,10 @@ func (gcp *gcpCrawler) getDisks(client *compute.Service, crawlTime time.Time) ([
 
 	for scopedZone, diskList := range disksAggregatedList.Items {
 		zone := getZoneFromScopedZone(scopedZone)
-		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeZone, zone)
+		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeZone, zone)
 
 		for _, disk := range diskList.Disks {
-			diskInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, zone, gcpModel.TypeDisk, disk.Name)
+			diskInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, zone, gcpModel.TypeDisk, disk.Name)
 			diskElem, errDiskElem := utils.CreateElement(disk, disk.Name, diskInternalID, gcpModel.TypeDisk, getComputeStatus(disk.Status), "", crawlTime)
 			if errDiskElem == nil {
 				allDisks = append(allDisks, diskElem)
@@ -321,7 +321,7 @@ func (gcp *gcpCrawler) getNetworks(client *compute.Service, crawlTime time.Time)
 	}
 
 	for _, network := range networks.Items {
-		networkInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, network.Name)
+		networkInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNetwork, network.Name)
 
 		networkElem, errNetworkElem := utils.CreateElement(network, network.Name, networkInternalID, gcpModel.TypeNetwork, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errNetworkElem == nil {
@@ -330,7 +330,7 @@ func (gcp *gcpCrawler) getNetworks(client *compute.Service, crawlTime time.Time)
 
 		for _, subNet := range network.Subnetworks {
 			split := strings.Split(subNet, "/")
-			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, split[len(split)-3], gcpModel.TypeSubnetwork, split[len(split)-1])
+			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, split[len(split)-3], gcpModel.TypeSubnetwork, split[len(split)-1])
 
 			rel, errRel := utils.CreateRelationship(networkInternalID, subnetInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRel == nil {
@@ -352,10 +352,10 @@ func (gcp *gcpCrawler) getSubNetworks(client *compute.Service, crawlTime time.Ti
 
 	for scopedZone, list := range subnetworks.Items {
 		zone := getZoneFromScopedZone(scopedZone)
-		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeRegion, zone)
+		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeRegion, zone)
 
 		for _, subnet := range list.Subnetworks {
-			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, zone, gcpModel.TypeSubnetwork, subnet.Name)
+			subnetInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, zone, gcpModel.TypeSubnetwork, subnet.Name)
 			subnetElem, errSubnetElem := utils.CreateElement(subnet, subnet.Name, subnetInternalID, gcpModel.TypeSubnetwork, getComputeStatus(subnet.State), "", crawlTime)
 			if errSubnetElem == nil {
 				allSubnets = append(allSubnets, subnetElem)
@@ -382,8 +382,8 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 	}
 
 	for _, cluster := range clusters.Clusters {
-		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeRegion, cluster.Zone)
-		clusterInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, cluster.Location, gcpModel.TypeGKE, cluster.Name)
+		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeRegion, cluster.Zone)
+		clusterInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, cluster.Location, gcpModel.TypeGKE, cluster.Name)
 		clusterElem, errClusterElem := utils.CreateElement(cluster, cluster.Name, clusterInternalID, gcpModel.TypeGKE, getComputeStatus(cluster.Status), cluster.CurrentMasterVersion, crawlTime)
 		if errClusterElem != nil {
 			continue
@@ -404,7 +404,7 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 		}
 
 		for _, nodePool := range cluster.NodePools {
-			nodePoolInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNodePool, nodePool.Name)
+			nodePoolInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNodePool, nodePool.Name)
 			nodePoolElem, errNodePoolElem := utils.CreateElement(nodePool, nodePool.Name, nodePoolInternalID, gcpModel.TypeNodePool, getComputeStatus(nodePool.Status), "", crawlTime)
 			if errNodePoolElem != nil {
 				continue
@@ -419,7 +419,7 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 				instanceGroupName := split[len(split)-1]
 				zone := split[len(split)-3]
 
-				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, zone, gcpModel.TypeInstanceGroup, instanceGroupName)
+				instanceGroupInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, zone, gcpModel.TypeInstanceGroup, instanceGroupName)
 				utils.AddRelationship(&allGKEClusterElems, nodePoolInternalID, instanceGroupInternalID, bloopi_agent.ParentChildTypeRelation, crawlTime)
 
 				computeClient, errComputeClient := createComputeClient(gcp.clientOpts)
@@ -441,18 +441,18 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*bloopi_agent.Elem
 					instanceSplit := strings.Split(instance.Instance, "/")
 					instanceZone := instanceSplit[len(instanceSplit)-3]
 					instanceName := instanceSplit[len(instanceSplit)-1]
-					instanceInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, instanceZone, gcpModel.TypeVMInstance, instanceName)
+					instanceInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, instanceZone, gcpModel.TypeVMInstance, instanceName)
 
 					utils.AddRelationship(&allGKEClusterElems, clusterInternalID, instanceInternalName, bloopi_agent.ParentChildTypeRelation, crawlTime)
 				}
 			}
 
-			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, cluster.Network), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNetwork, cluster.Network), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRelNetwork == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relNetwork)
 			}
 
-			relSubnet, errRelSubnet := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, cluster.Zone, gcpModel.TypeSubnetwork, cluster.Subnetwork), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+			relSubnet, errRelSubnet := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.scopeID, cluster.Zone, gcpModel.TypeSubnetwork, cluster.Subnetwork), nodePoolInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 			if errRelSubnet == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relSubnet)
 			}
@@ -476,7 +476,7 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Ele
 	}
 
 	for _, sqlInstance := range sqlInstancesList.Items {
-		sqlInternalName := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, sqlInstance.GceZone, gcpModel.TypeCloudSQL, sqlInstance.Name)
+		sqlInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, sqlInstance.GceZone, gcpModel.TypeCloudSQL, sqlInstance.Name)
 		status := getComputeStatus(sqlInstance.State)
 
 		if status == bloopi_agent.StatusGreen && status != getComputeStatus(sqlInstance.Settings.ActivationPolicy) {
@@ -498,7 +498,7 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*bloopi_agent.Ele
 		}
 
 		split := strings.Split(sqlInstance.Settings.IpConfiguration.PrivateNetwork, "/")
-		vpcInternalID := cloudutils.CreateGCPInternalName(gcp.dataSource.DataSourceID, "", gcpModel.TypeNetwork, split[4])
+		vpcInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNetwork, split[4])
 		rel, errRel := utils.CreateRelationship(vpcInternalID, sqlInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
 		if errRel == nil {
 			allCrawledSqlInstances = append(allCrawledSqlInstances, rel)

@@ -1,7 +1,7 @@
 package mariadb
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"fmt"
 	"slices"
 	"strconv"
@@ -21,6 +21,7 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 		Pass:          "",
 		DBName:        "postgres",
 		dataSource:    dataSource,
+		scopeID:       "",
 	}
 
 	// 2. populate postgresCrawler with the provided configuration
@@ -78,10 +79,22 @@ func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloop
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.User, crawler.Pass, crawler.Host, "3306", crawler.DBName)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the MySQL of the config %s", crawler.dataSource.DataSourceID)
+		log.Error().Msgf("Cannot connect to the MySQL of the config %s", crawler.scopeID)
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
+
+	if crawler.scopeID == "" {
+		var serverUUID string
+		errRow := crawler.dbConn.QueryRow("SHOW VARIABLES LIKE 'server_uuid'").Scan(new(string), &serverUUID)
+		if errRow == nil && serverUUID != "" {
+			crawler.scopeID = serverUUID
+		}
+	}
+
+	if crawler.scopeID == "" {
+		crawler.scopeID = crawler.dataSource.DataSourceID
+	}
 
 	return &crawler, nil
 }

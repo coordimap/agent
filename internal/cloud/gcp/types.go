@@ -46,6 +46,7 @@ type gcpCrawler struct {
 	credentialsFile     string
 	includedRegions     []string
 	crawlInterval       time.Duration
+	scopeID             string
 	InGCPEnvironment    bool
 }
 

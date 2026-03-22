@@ -1,4 +1,4 @@
-module cleye
+module coordimap-agent
 
 go 1.23
 

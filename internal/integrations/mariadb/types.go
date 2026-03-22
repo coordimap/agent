@@ -18,6 +18,7 @@ type mariadbCrawler struct {
 	SSLMode           string
 	externalMappingID string
 	crawlInterval     time.Duration
+	scopeID           string
 }
 
 type Crawler interface {

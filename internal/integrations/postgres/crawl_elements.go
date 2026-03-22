@@ -135,7 +135,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 				continue
 			}
 
-			sourceConstraintCol.Table = generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, tableName)
+			sourceConstraintCol.Table = generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, tableName)
 
 			switch constraintType {
 			case "PRIMARY KEY":
@@ -196,7 +196,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 					continue
 				}
 				destCol.Name = fmt.Sprintf("%s.%s.%s", referencedSchema, referencedTable, referencedColumn)
-				destCol.Table = generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, referencedSchema, referencedTable)
+				destCol.Table = generateInternalName(postCrawler.scopeID, postCrawler.DBName, referencedSchema, referencedTable)
 				constraint.Destinations = append(constraint.Destinations, destCol)
 			}
 		}
@@ -224,7 +224,7 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 			return columns, err
 		}
 
-		column.Table = generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, tableName)
+		column.Table = generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, tableName)
 
 		columns = append(columns, column)
 	}
@@ -245,8 +245,8 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 
 	for rows.Next() {
 		index := databasemodels.Index{
-			Table:  generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, tableName),
-			Schema: generateInternalName(postCrawler.dataSource.DataSourceID, postCrawler.DBName, schemaName, ""),
+			Table:  generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, tableName),
+			Schema: generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, ""),
 		}
 		var indexName string
 		if err := rows.Scan(&indexName); err != nil {

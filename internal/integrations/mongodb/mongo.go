@@ -1,7 +1,7 @@
 package mongodb
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"strconv"
@@ -79,7 +79,7 @@ func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass)
 	if errDBConn != nil {
-		log.Error().Msgf("Cannot connect to the MongoDB of the config %s", crawler.dataSource.DataSourceID)
+		log.Error().Msgf("Cannot connect to the MongoDB of the config %s", crawler.scopeID)
 		return &crawler, errDBConn
 	}
 
@@ -93,6 +93,32 @@ func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *blo
 	}
 
 	crawler.dbConn = db
+
+	if crawler.scopeID == "" {
+		var statusResult bson.M
+		errCmd := crawler.dbConn.Database("admin").RunCommand(context.Background(), bson.D{{Key: "replSetGetStatus", Value: 1}}).Decode(&statusResult)
+		if errCmd == nil {
+			if set, ok := statusResult["set"].(string); ok && set != "" {
+				crawler.scopeID = set
+			}
+		}
+	}
+
+	if crawler.scopeID == "" {
+		var masterResult bson.M
+		errCmd := crawler.dbConn.Database("admin").RunCommand(context.Background(), bson.D{{Key: "isMaster", Value: 1}}).Decode(&masterResult)
+		if errCmd == nil {
+			if setName, ok := masterResult["setName"].(string); ok && setName != "" {
+				crawler.scopeID = setName
+			} else if me, ok := masterResult["me"].(string); ok && me != "" {
+				crawler.scopeID = me
+			}
+		}
+	}
+
+	if crawler.scopeID == "" {
+		crawler.scopeID = crawler.dataSource.DataSourceID
+	}
 
 	return &crawler, nil
 }
@@ -116,10 +142,10 @@ func connectToDB(host, user, pass string) (*mongo.Client, error) {
 func (mongoCrawler *mongoCrawler) Crawl() {
 	crawlTicker := time.NewTicker(mongoCrawler.crawlInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.dataSource.DataSourceID)
+	log.Info().Msgf("Starting ticker for: %s", mongoCrawler.scopeID)
 	for range crawlTicker.C {
 		_, errCrawl := mongoCrawler.crawl()
-		log.Info().Msgf("Crawling MongoDB for %s", mongoCrawler.dataSource.DataSourceID)
+		log.Info().Msgf("Crawling MongoDB for %s", mongoCrawler.scopeID)
 		if errCrawl != nil {
 			// do not ship any data
 			log.Info().Msgf(errCrawl.Error())
@@ -137,7 +163,8 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 
 		// get the mongo database
 		mongoDB := mongoCrawler.getMongodbDatabase(dbName)
-		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, mongoDB.Name, mongodb.MONGODB_TYPE_DATABASE, bloopi_agent.StatusNoStatus, "", crawlTime)
+		dbInternalName := fmt.Sprintf("%s/%s", mongoCrawler.scopeID, mongoDB.Name)
+		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, dbInternalName, mongodb.MONGODB_TYPE_DATABASE, bloopi_agent.StatusNoStatus, "", crawlTime)
 		if errDBElem != nil {
 			return nil, errDBElem
 		}
@@ -153,29 +180,39 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			collectionHandle := dbHandle.Collection(collection.Name)
 			mongoCollection, errMongoCollection := mongoCrawler.getMongodbDatabaseCollection(dbHandle, collection.Name)
 			if errMongoCollection != nil {
-				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
+				log.Error().Msgf("could not get collection: %s and data source: %s", collection.Name, mongoCrawler.scopeID)
 				continue
 			}
-			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, mongoCollection.Name, mongodb.MONGODB_TYPE_COLLECTION, bloopi_agent.StatusNoStatus, "", crawlTime)
+			collectionInternalName := fmt.Sprintf("%s/%s", dbInternalName, collection.Name)
+			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, collectionInternalName, mongodb.MONGODB_TYPE_COLLECTION, bloopi_agent.StatusNoStatus, "", crawlTime)
 			if errCollectionElem != nil {
-				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
+				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.scopeID)
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, collectionElem)
+				relDbColl, errRelDbColl := utils.CreateRelationship(dbInternalName, collectionInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				if errRelDbColl == nil {
+					allCrawledElements = append(allCrawledElements, relDbColl)
+				}
 
 			// get indexes
 			collectionIndexes, errCollectionIndexes := mongoCrawler.listCollectionIndexes(collectionHandle)
 			if errCollectionIndexes != nil {
-				log.Error().Msgf("could not get collection indexes for collection: %s and data source: %s", collection.Name, mongoCrawler.dataSource.DataSourceID)
+				log.Error().Msgf("could not get collection indexes for collection: %s and data source: %s", collection.Name, mongoCrawler.scopeID)
 			}
 
 			for _, foundIndex := range collectionIndexes {
-				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, foundIndex.Name, mongodb.MONGODB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
+				indexInternalName := fmt.Sprintf("%s/%s", collectionInternalName, foundIndex.Name)
+				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, indexInternalName, mongodb.MONGODB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
 				if errIndexElem != nil {
-					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.dataSource.DataSourceID)
+					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.scopeID)
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
+					relCollIndex, errRelCollIndex := utils.CreateRelationship(collectionInternalName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+					if errRelCollIndex == nil {
+						allCrawledElements = append(allCrawledElements, relCollIndex)
+					}
 			}
 		}
 
@@ -183,7 +220,7 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 			Data: allCrawledElements,
 		}
 
-		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.dataSource.DataSourceID, dbName)
+		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.scopeID, dbName)
 
 		mongoCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
 			Timestamp:       crawlTime,

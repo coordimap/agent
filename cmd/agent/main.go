@@ -1,10 +1,10 @@
 package main
 
 import (
-	cloudutils "cleye/internal/cloud/utils"
-	configuration "cleye/internal/config"
-	"cleye/internal/integrations"
-	"cleye/pkg/utils"
+	cloudutils "coordimap-agent/internal/cloud/utils"
+	configuration "coordimap-agent/internal/config"
+	"coordimap-agent/internal/integrations"
+	"coordimap-agent/pkg/utils"
 	"fmt"
 	"strings"
 	"time"
@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	endpoint   = kingpin.Flag("endpoint", "The server URL where to send data.").Default("http://localhost:8000/crawlers/infra/aws").OverrideDefaultFromEnvar("CLEYE_ENDPOINT").String()
+	endpoint   = kingpin.Flag("endpoint", "The server URL where to send data.").Default("http://localhost:8000/crawlers/infra/aws").OverrideDefaultFromEnvar("COORDIMAP_ENDPOINT").String()
 	configFile = kingpin.Flag("config", "The config file path.").Default("config.yaml").OverrideDefaultFromEnvar("BLOOPIE_CONFIG_PATH").String()
 	debug      = kingpin.Flag("debug", "Displays debug statements giving the user more information as to what is happening inside the agent.").Bool()
 )

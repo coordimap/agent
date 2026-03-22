@@ -1,7 +1,7 @@
 package configuration_test
 
 import (
-	configuration "cleye/internal/config"
+	configuration "coordimap-agent/internal/config"
 	"os"
 	"reflect"
 	"testing"

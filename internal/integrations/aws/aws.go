@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"cleye/pkg/utils"
+	"coordimap-agent/pkg/utils"
 	"errors"
 	"fmt"
 	"strconv"
@@ -22,6 +22,7 @@ type AwsCrawl struct {
 	outChannel      chan *bloopi_agent.CloudCrawlData
 	secretAccessKey string
 	accessKeyID     string
+	scopeID         string
 }
 
 // MakeAWS creates an AWS cloud struct
@@ -58,7 +59,7 @@ func (awsCrawl *AwsCrawl) Crawl() {
 
 	crawlTicker := time.NewTicker(durationInterval)
 
-	log.Info().Msgf("Starting ticker for: %s", awsCrawl.ds.DataSourceID)
+	log.Info().Msgf("Starting ticker for: %s", awsCrawl.scopeID)
 	for range crawlTicker.C {
 		crawledData, errCrawl := awsCrawl.crawl()
 		if errCrawl != nil {
@@ -121,7 +122,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		},
 	)
 
-	awsRegions, errRegions := describeAllRegions(initSession, awsCrawl.ds.DataSourceID, crawlTime)
+	awsRegions, errRegions := describeAllRegions(initSession, awsCrawl.scopeID, crawlTime)
 	if errRegions != nil {
 		return nil, fmt.Errorf("could not retrieve AWS regions")
 	}
@@ -156,59 +157,59 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		}
 
 		wg.Add(1)
-		go worker("vpcs", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("vpcs", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("route_tables", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("route_tables", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("dhcp_options", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("dhcp_options", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("subnets", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("subnets", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("natgws", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("natgws", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("net_acls", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("net_acls", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("azs", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("azs", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("amis", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("amis", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("ec2", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("ec2", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("sec_groups", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("sec_groups", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("vols", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("vols", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("lbs", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("lbs", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("lambdas", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("lambdas", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker("rds", owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker("rds", owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AwsTypeEKS, owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker(aws_shared_model.AwsTypeEKS, owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AwsTypeECRRepository, owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker(aws_shared_model.AwsTypeECRRepository, owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 		wg.Add(1)
-		go worker(aws_shared_model.AwsTypeAutoscalingGroup, owner, regionSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+		go worker(aws_shared_model.AwsTypeAutoscalingGroup, owner, regionSession, results, &wg, awsCrawl.scopeID, crawlTime)
 	}
 
 	wg.Add(1)
-	go worker("s3-buckets", owner, initSession, results, &wg, awsCrawl.ds.DataSourceID, crawlTime)
+	go worker("s3-buckets", owner, initSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
 	ownerElement, errOwnerElement := utils.CreateElement(owner, *owner[0], *owner[0], aws_shared_model.AwsTypeOwner, bloopi_agent.StatusNoStatus, "", crawlTime)
 	if errOwnerElement == nil {

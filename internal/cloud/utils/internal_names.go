@@ -8,16 +8,16 @@ import (
 	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
 )
 
-func CreateGCPInternalName(dataSourceID, zone, assetType, name string) string {
-	return fmt.Sprintf("%s-%s-%s-%s", dataSourceID, zone, assetType, name)
+func CreateGCPInternalName(scopeID, zone, assetType, name string) string {
+	return fmt.Sprintf("%s-%s-%s-%s", scopeID, zone, assetType, name)
 }
 
-func CreateKubeInternalName(clusterUID, namespace, assetType, name string) string {
-	return fmt.Sprintf("%s-%s-%s-%s", clusterUID, namespace, assetType, name)
+func CreateKubeInternalName(scopeID, namespace, assetType, name string) string {
+	return fmt.Sprintf("%s-%s-%s-%s", scopeID, namespace, assetType, name)
 }
 
-func CreateAWSInternalID(dsID string, awsElementID string) string {
-	return fmt.Sprintf("%s@%s", dsID, awsElementID)
+func CreateAWSInternalID(scopeID string, awsElementID string) string {
+	return fmt.Sprintf("%s@%s", scopeID, awsElementID)
 }
 
 // CreateSQLInternalName generate the internal name of the SQL server

@@ -16,6 +16,7 @@ type mongoCrawler struct {
 	outputChannel chan *bloopi_agent.CloudCrawlData
 	crawlInterval time.Duration
 	dataSource    *bloopi_agent.DataSource
+	scopeID       string
 }
 
 type Crawler interface {

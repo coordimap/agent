@@ -46,7 +46,7 @@ FROM alpine:latest
 
 COPY --from=build-env /src/cmd/agent/agent /agent
 
-RUN addgroup -S cleye && adduser -S cleye -G cleye
-USER cleye
+RUN addgroup -S coordimap-agent && adduser -S coordimap-agent -G coordimap-agent
+USER coordimap-agent
 
 CMD [ "/agent" ]

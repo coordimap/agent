@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	cloudutils "cleye/internal/cloud/utils"
-	"cleye/pkg/utils"
+	cloudutils "coordimap-agent/internal/cloud/utils"
+	"coordimap-agent/pkg/utils"
 	"fmt"
 	"strconv"
 	"strings"
