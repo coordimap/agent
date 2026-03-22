@@ -1,14 +1,14 @@
-# Cleye
+# coordimap-agent
 
-Cleye is a data crawler that gathers information from various sources and generates a JSON graph of all the elements. It is written in Go and can be configured to crawl different data sources.
+`coordimap-agent` is a data crawler that gathers information from various sources and generates a JSON graph of all the elements. It is written in Go and can be configured to crawl different data sources.
 
 ## Getting Started
 
-To get started with Cleye, you\'ll need to have Go installed on your system. You can find the installation instructions for Go in the [official documentation](https://golang.org/doc/install).
+To get started with `coordimap-agent`, you\'ll need to have Go installed on your system. You can find the installation instructions for Go in the [official documentation](https://golang.org/doc/install).
 
 ### Dependencies
 
-Cleye has the following dependencies:
+`coordimap-agent` has the following dependencies:
 
 - [cloud.google.com/go/compute/metadata](http://cloud.google.com/go/compute/metadata)
 - [dev.azure.com/bloopi/bloopi/\_git/shared_models.git](http://dev.azure.com/bloopi/bloopi/_git/shared_models.git)
@@ -36,23 +36,23 @@ These dependencies will be automatically downloaded when you build the project.
 
 ## Build and Test
 
-To build and run Cleye, you can use the provided Dockerfile. You will need to have Docker installed on your system. You can find the installation instructions for Docker in the [official documentation](https://docs.docker.com/get-docker/).
+To build and run `coordimap-agent`, you can use the provided Dockerfile. You will need to have Docker installed on your system. You can find the installation instructions for Docker in the [official documentation](https://docs.docker.com/get-docker/).
 
 To build the Docker image, run the following command from the root of the project:
 
 ```
-docker build -t cleye .
+docker build -t coordimap-agent .
 ```
 
-Once the image is built, you can run the Cleye agent with the following command:
+Once the image is built, you can run the `coordimap-agent` container with the following command:
 
 ```
-docker run cleye
+docker run coordimap-agent
 ```
 
 ## eBPF Flow Crawler
 
-Cleye includes an eBPF-based flow crawler that can be used to monitor network traffic in a Kubernetes environment. This crawler uses eBPF to capture network flows and map the connections between services and pods.
+`coordimap-agent` includes an eBPF-based flow crawler that can be used to monitor network traffic in a Kubernetes environment. This crawler uses eBPF to capture network flows and map the connections between services and pods.
 
 ### eBPF Dependencies
 
@@ -64,7 +64,7 @@ To use the eBPF flow crawler, you will need to have the following additional dep
 
 ### eBPF Build Step
 
-Before building the Cleye application, you will need to run the following command to generate the eBPF Go files:
+Before building `coordimap-agent`, you will need to run the following command to generate the eBPF Go files:
 
 ```
 go generate ./internal/cloud/flows
@@ -92,7 +92,7 @@ To enable the eBPF flow crawler, you will need to add the following configuratio
 
 ## Configuration
 
-Cleye is configured using a YAML file. By default, the application looks for a `config.yaml` file in the same directory as the executable. You can specify a different configuration file using the `--config` flag.
+`coordimap-agent` is configured using a YAML file. By default, the application looks for a `config.yaml` file in the same directory as the executable. You can specify a different configuration file using the `--config` flag.
 
 The configuration file specifies the data sources to be crawled. Here is an example configuration:
 
@@ -285,6 +285,158 @@ Use this UID in:
       value: 30s
 ```
 
+## Identity Matrix
+
+`coordimap-agent` uses an internal asset identity model that should be scoped by the upstream system identity, not by the connector `data_source_id`. The `data_source_id` identifies the crawl configuration, while the `scope_id` identifies the real ownership boundary the assets belong to.
+
+| Data source | Recommended `scope_id` | Where it comes from | Typical asset path | Fallback order | Risk if fallback is used |
+| --- | --- | --- | --- | --- | --- |
+| Kubernetes | `cluster_uid` | Kubernetes API cluster identity | `namespace/type/name`, `type/name` for cluster-wide assets | `cluster_name` -> `data_source_id` | `cluster_name`: medium, `data_source_id`: high |
+| GCP | `project_number` | GCP project metadata / API | `zone/vm_instance/name`, `region/bucket/name`, `region/sql/name` | `project_id` -> `data_source_id` | `project_id`: low-medium, `data_source_id`: high |
+| AWS | `account_id` | AWS STS caller identity | `region/ec2/instance-id`, `region/rds/db-arn`, `global/s3/bucket-name` | `data_source_id` | `data_source_id`: high |
+| PostgreSQL | `system_identifier` | PostgreSQL server or cluster identity | `database/schema/table`, `database/schema/index` | explicit stable `scope_id` -> `data_source_id` | explicit `scope_id`: medium, `data_source_id`: high |
+| MySQL / MariaDB | `server_uuid` | MySQL or MariaDB server identity | `database/schema/table`, `database/schema/index` | explicit stable `scope_id` -> `data_source_id` | explicit `scope_id`: medium, `data_source_id`: high |
+| MongoDB | replica set or cluster ID | replica set or cluster identity | `database/collection`, `database/collection/index` | replica set name -> explicit stable `scope_id` -> `data_source_id` | replica set name: medium, explicit `scope_id`: medium, `data_source_id`: high |
+| OTel | reuse upstream `scope_id` | OTel resource attributes from the source system | `coordimap.scope_id`, `k8s.cluster.uid`, `cloud.account.id`, `cloud.project.number`, `db.postgresql.system_identifier` | derived value from datasource config | high |
+
+### Fallback Policy
+
+- Prefer provider-native immutable IDs whenever they are available.
+- Use provider-native stable names only when an immutable ID is not exposed.
+- Use explicitly configured stable identities before falling back to `data_source_id`.
+- Treat `data_source_id` as a last resort because it ties asset continuity to connector configuration.
+
+### Continuity Risk Levels
+
+- Low: provider-native immutable IDs.
+- Medium: human-readable but stable upstream names.
+- High: connector-scoped identifiers such as `data_source_id`.
+
+## How To Find Your `scope_id`
+
+Whenever possible, use a stable upstream identity as the `scope_id` instead of the connector `data_source_id`. This keeps internal asset IDs stable even if the data source configuration changes.
+
+### Kubernetes
+
+Use the cluster UID:
+
+```bash
+kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
+```
+
+Recommended `scope_id`: `cluster_uid`
+
+Notes:
+
+- Works for both self-hosted and managed Kubernetes clusters.
+- This is the preferred scope for Kubernetes internal names.
+
+### GCP
+
+Use the project number:
+
+```bash
+gcloud projects describe PROJECT_ID --format='value(projectNumber)'
+```
+
+You can also get the project ID if needed:
+
+```bash
+gcloud projects describe PROJECT_ID --format='value(projectId)'
+```
+
+Recommended `scope_id`: `project_number`
+Fallback: `project_id`
+
+### AWS
+
+Use the AWS account ID:
+
+```bash
+aws sts get-caller-identity --query Account --output text
+```
+
+Recommended `scope_id`: `account_id`
+
+### PostgreSQL
+
+Use the PostgreSQL system identifier:
+
+```sql
+SELECT system_identifier FROM pg_control_system();
+```
+
+Recommended `scope_id`: `system_identifier`
+
+Notes:
+
+- This is the preferred scope for self-hosted PostgreSQL.
+- It identifies the PostgreSQL server or cluster lineage.
+- If `pg_control_system()` is unavailable, the value can also be retrieved with PostgreSQL system tooling such as `pg_controldata`.
+
+### MySQL / MariaDB
+
+Use the server UUID:
+
+```sql
+SHOW VARIABLES LIKE 'server_uuid';
+```
+
+Recommended `scope_id`: `server_uuid`
+
+Notes:
+
+- This is the preferred scope for self-hosted MySQL and MariaDB instances.
+- If `server_uuid` is not available in a specific deployment, use an explicitly configured stable `scope_id`.
+
+### MongoDB
+
+Use a replica set or cluster identity when available.
+
+Useful commands:
+
+```javascript
+rs.conf()
+rs.status()
+```
+
+Recommended `scope_id`: replica set / cluster ID
+Fallback: replica set name
+
+Notes:
+
+- For replica set deployments, prefer a true replica set or cluster identifier if your deployment exposes one.
+- If no immutable ID is available, the replica set name is an acceptable but weaker fallback.
+- For standalone MongoDB instances, use an explicitly configured stable `scope_id`.
+
+### OTel
+
+OTel should reuse the upstream `scope_id` instead of inventing a separate identity.
+
+Recommended resource attributes include:
+
+- `bloopi.scope_id`
+- `k8s.cluster.uid`
+- `cloud.account.id`
+- `cloud.project.number`
+- `db.postgresql.system_identifier`
+
+Notes:
+
+- OTel should emit the same scope used by the infrastructure crawler.
+- This allows the backend to generate matching internal IDs and create relationships reliably.
+
+### Fallback Order
+
+When a native source identity is not available, use this order:
+
+1. Provider-native immutable ID
+2. Provider-native stable name
+3. Explicitly configured stable `scope_id`
+4. `data_source_id` as a last resort
+
+Using `data_source_id` as the scope ties internal asset continuity to connector configuration and should be avoided when a more stable upstream identity exists.
+
 ## Contribute
 
-If you would like to contribute to Cleye, please fork the repository and submit a pull request. We welcome all contributions!
+If you would like to contribute to `coordimap-agent`, please fork the repository and submit a pull request. We welcome all contributions!
