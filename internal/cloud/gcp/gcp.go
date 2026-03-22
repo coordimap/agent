@@ -1,8 +1,8 @@
 package gcp
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
 	"context"
+	cloudutils "coordimap-agent/internal/cloud/utils"
 	"errors"
 	"fmt"
 	"os"
@@ -78,9 +78,9 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 
 		case gcpConfigIncludeRegions:
 			gcpCrawler.includedRegions = append(gcpCrawler.includedRegions, strings.Split(config.Value, ",")...)
-		case "scope_id":
-			gcpCrawler.scopeID = config.Value
 
+		case gcpConfigScopeID:
+			gcpCrawler.scopeID = config.Value
 
 		case gcpProjectID:
 			if config.Value == "" {
@@ -118,7 +118,6 @@ func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_
 	if gcpCrawler.scopeID == "" {
 		return nil, fmt.Errorf("GCP crawler config error: scope_id must be provided for data source %s", gcpCrawler.dataSource.DataSourceID)
 	}
-
 
 	if flowConfigured {
 		client, errClient := logging.NewService(context.Background(), gcpCrawler.clientOpts...)

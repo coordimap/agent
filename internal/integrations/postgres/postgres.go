@@ -53,6 +53,9 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		case "db_host":
 			crawler.Host = dsConfig.Value
 
+		case "scope_id":
+			crawler.scopeID = dsConfig.Value
+
 		case "mapping_internal_id":
 			crawler.externalMappingID = dsConfig.Value
 
@@ -88,6 +91,10 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		}
 	}
 
+	if crawler.scopeID == "" {
+		return nil, fmt.Errorf("PostgreSQL crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
+	}
+
 	// 3. connect to the DB
 	db, errDBConn := connectToDB(crawler.Host, crawler.User, crawler.Pass, crawler.DBName, crawler.SSLMode)
 	if errDBConn != nil {
@@ -95,9 +102,6 @@ func NewPostgresCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bl
 		return &crawler, errDBConn
 	}
 	crawler.dbConn = db
-	if crawler.scopeID == "" {
-		return nil, fmt.Errorf("PostgreSQL crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
-	}
 
 	return &crawler, nil
 }

@@ -16,6 +16,7 @@ const (
 	gcpConfigFlows            = "gcp_flows"
 	gcpConfigExternalMappings = "external_mappings"
 	gcpConfigIncludeRegions   = "include_regions"
+	gcpConfigScopeID          = "scope_id"
 )
 
 // ServiceAccountKey represents the complete structure of a Google Cloud service account key JSON file
