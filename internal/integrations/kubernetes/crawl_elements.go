@@ -7,8 +7,8 @@ import (
 	"slices"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	kube_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	"coordimap-agent/pkg/domain/agent"
+	kube_model "coordimap-agent/pkg/domain/kubernetes"
 	promV1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/rs/zerolog/log"
@@ -71,18 +71,18 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespace string) ([]bloopi_agent.RelationshipElement, error) {
-	allDeploymentPodsRelationships := []bloopi_agent.RelationshipElement{}
+func (kubeCrawler *kubernetesCrawler) listDeplymentPods(deployment *appsv1.Deployment, namespace string) ([]agent.RelationshipElement, error) {
+	allDeploymentPodsRelationships := []agent.RelationshipElement{}
 
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 	listOptions := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
-		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, bloopi_agent.RelationshipElement{
+		allDeploymentPodsRelationships = append(allDeploymentPodsRelationships, agent.RelationshipElement{
 			SourceID:         kubeCrawler.kubeInternalName(namespace, kube_model.TypeDeployment, deployment.Name),
 			DestinationID:    kubeCrawler.kubeInternalName(namespace, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeDeploymentPod,
-			RelationType:     bloopi_agent.ParentChildTypeRelation,
+			RelationType:     agent.ParentChildTypeRelation,
 		})
 	}
 
@@ -98,18 +98,18 @@ func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Servi
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespace string) ([]bloopi_agent.RelationshipElement, error) {
-	allServicePodsRelationships := []bloopi_agent.RelationshipElement{}
+func (kubeCrawler *kubernetesCrawler) listServicePods(service *v1.Service, namespace string) ([]agent.RelationshipElement, error) {
+	allServicePodsRelationships := []agent.RelationshipElement{}
 
 	set := labels.Set(service.Spec.Selector)
 	listOptions := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
 	pods, err := kubeCrawler.kubeClient.CoreV1().Pods(namespace).List(context.Background(), listOptions)
 	for _, pod := range pods.Items {
-		allServicePodsRelationships = append(allServicePodsRelationships, bloopi_agent.RelationshipElement{
+		allServicePodsRelationships = append(allServicePodsRelationships, agent.RelationshipElement{
 			SourceID:         kubeCrawler.kubeInternalName(namespace, kube_model.TypeService, service.Name),
 			DestinationID:    kubeCrawler.kubeInternalName(namespace, kube_model.TypePod, pod.Name),
 			RelationshipType: kube_model.RelationshipTypeServicePod,
-			RelationType:     bloopi_agent.ParentChildTypeRelation,
+			RelationType:     agent.ParentChildTypeRelation,
 		})
 	}
 
@@ -250,8 +250,8 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1Beta1(namespace s
 	return list.Items, nil
 }
 
-func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInternalID, namespace string, labelsToCheckIn map[string]string, createdElementsFromLabels []string, crawlTime time.Time) ([]*bloopi_agent.Element, []string) {
-	allFoundElementsAndRelationships := []*bloopi_agent.Element{}
+func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInternalID, namespace string, labelsToCheckIn map[string]string, createdElementsFromLabels []string, crawlTime time.Time) ([]*agent.Element, []string) {
+	allFoundElementsAndRelationships := []*agent.Element{}
 	createdElements := []string{}
 
 	// check for helm chart
@@ -260,13 +260,13 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 		chartInternalID := kubeCrawler.kubeInternalName(namespace, kube_model.TypeHelmChart, name)
 
 		if !slices.Contains(createdElementsFromLabels, chartInternalID) {
-			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
+			if elem, errElem := utils.CreateElement(kube_model.KubernetesChart{Name: name}, name, chartInternalID, kube_model.TypeHelmChart, agent.StatusNoStatus, "", crawlTime); errElem == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 				createdElements = append(createdElements, chartInternalID)
 			}
 		}
 
-		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(chartInternalID, elemInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -276,12 +276,12 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	partOfLabelValue, partOfLabelExists := labelsToCheckIn[partOfLabel]
 	partOfLabelInternalID := kubeCrawler.kubeInternalName(namespace, kube_model.TypeLabelPartOf, partOfLabelValue)
 	if partOfLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: partOfLabelValue}, partOfLabelValue, partOfLabelInternalID, kube_model.TypeLabelPartOf, agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, partOfLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, elemInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 	}
@@ -291,17 +291,17 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	componentLabelValue, componentLabelExists := labelsToCheckIn[componentLabel]
 	componentLabelInternalID := kubeCrawler.kubeInternalName(namespace, kube_model.TypeLabelComponent, componentLabelValue)
 	if componentLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelComponent{Name: componentLabelValue}, componentLabelValue, componentLabelInternalID, kube_model.TypeLabelName, agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, componentLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(componentLabelInternalID, elemInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, componentLabelInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -311,23 +311,23 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	nameLabelValue, nameLabelExists := labelsToCheckIn[nameLabel]
 	nameLabelInternalID := kubeCrawler.kubeInternalName(namespace, kube_model.TypeLabelName, nameLabelValue)
 	if nameLabelExists {
-		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, bloopi_agent.StatusNoStatus, "", crawlTime); errElem == nil {
+		if elem, errElem := utils.CreateElement(kube_model.KubernetesLabelName{Name: nameLabelValue}, nameLabelValue, nameLabelInternalID, kube_model.TypeLabelName, agent.StatusNoStatus, "", crawlTime); errElem == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, elem)
 			createdElements = append(createdElements, nameLabelInternalID)
 		}
 
-		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(nameLabelInternalID, elemInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 			allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 		}
 
 		if partOfLabelExists {
-			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(partOfLabelInternalID, nameLabelInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
 
 		if componentLabelExists {
-			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime); errRel == nil {
+			if rel, errRel := utils.CreateRelationship(componentLabelInternalID, nameLabelInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime); errRel == nil {
 				allFoundElementsAndRelationships = append(allFoundElementsAndRelationships, rel)
 			}
 		}
@@ -336,8 +336,8 @@ func (kubeCrawler *kubernetesCrawler) getLabelElementsAndRelationships(elemInter
 	return allFoundElementsAndRelationships, createdElements
 }
 
-func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time.Time) ([]*bloopi_agent.Element, error) {
-	allFoundRelationships := []*bloopi_agent.Element{}
+func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time.Time) ([]*agent.Element, error) {
+	allFoundRelationships := []*agent.Element{}
 	sourcePromQuery := `networkobservability_adv_forward_bytes{destination_namespace!="unknown", source_namespace!="unknown"}[5m]`
 
 	v1api := promV1.NewAPI(kubeCrawler.retinaCrawler.promClient)
@@ -368,7 +368,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		sourceInternalID := kubeCrawler.kubeInternalName(string(metric["source_namespace"]), kube_model.TypePod, string(metric["source_podname"]))
 		destinationInternalID := kubeCrawler.kubeInternalName(string(metric["destination_namespace"]), kube_model.TypePod, string(metric["destination_podname"]))
 
-		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
 		}
 	}
@@ -377,9 +377,9 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 }
 
 // crawl, queries the prometheus endpoint to get the data regarding the istio relationships
-func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.RelationshipElement, error) {
-	istioMappingFromQueries := map[string]bloopi_agent.RelationshipElement{}
-	allFoundRelationships := []bloopi_agent.RelationshipElement{}
+func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.RelationshipElement, error) {
+	istioMappingFromQueries := map[string]agent.RelationshipElement{}
+	allFoundRelationships := []agent.RelationshipElement{}
 	if !kubeCrawler.istioConfigured {
 		return allFoundRelationships, nil
 	}
@@ -429,14 +429,14 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 			sourceID := kubeCrawler.kubeInternalName(string(sourceWorkloadNamespace), kube_model.TypeService, string(sourceCanonicalService))
 			destinationID := kubeCrawler.kubeInternalName(string(destinationWorkloadNamespace), kube_model.TypeService, string(destinationCanonicalService))
 
-			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+			allFoundRelationships = append(allFoundRelationships, agent.RelationshipElement{
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeService,
-				RelationType:     bloopi_agent.FlowTypeRelation,
+				RelationType:     agent.FlowTypeRelation,
 			})
 
-			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
+			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = agent.RelationshipElement{}
 		}
 
 		if sourceWorkload != "unknown" && sourceWorkloadNamespace != "unknown" && destinationWorkload != "unknown" && destinationWorkloadNamespace != "unknown" {
@@ -444,21 +444,21 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 			sourceID := kubeCrawler.kubeInternalName(string(sourceWorkloadNamespace), kube_model.TypeDeployment, string(sourceWorkload))
 			destinationID := kubeCrawler.kubeInternalName(string(destinationWorkloadNamespace), kube_model.TypeDeployment, string(destinationWorkload))
 
-			allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+			allFoundRelationships = append(allFoundRelationships, agent.RelationshipElement{
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
-				RelationType:     bloopi_agent.FlowTypeRelation,
+				RelationType:     agent.FlowTypeRelation,
 			})
 
-			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = bloopi_agent.RelationshipElement{}
+			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = agent.RelationshipElement{}
 		}
 
-		istioMappingFromQueries[fmt.Sprintf("%s.%s.%s-%s.%s.%s", sourceWorkload, sourceCanonicalService, sourceWorkloadNamespace, destinationWorkload, destinationCanonicalService, destinationWorkloadNamespace)] = bloopi_agent.RelationshipElement{
+		istioMappingFromQueries[fmt.Sprintf("%s.%s.%s-%s.%s.%s", sourceWorkload, sourceCanonicalService, sourceWorkloadNamespace, destinationWorkload, destinationCanonicalService, destinationWorkloadNamespace)] = agent.RelationshipElement{
 			SourceID:         string(pod),
 			DestinationID:    "",
 			RelationshipType: kube_model.FlowIstioRelationshipTypePod,
-			RelationType:     bloopi_agent.FlowTypeRelation,
+			RelationType:     agent.FlowTypeRelation,
 		}
 	}
 
@@ -499,14 +499,14 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
-				allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+				allFoundRelationships = append(allFoundRelationships, agent.RelationshipElement{
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeService,
-					RelationType:     bloopi_agent.FlowTypeRelation,
+					RelationType:     agent.FlowTypeRelation,
 				})
 
-				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}
+				istioMappingFromQueries[relationshipKey] = agent.RelationshipElement{}
 			}
 		}
 
@@ -517,14 +517,14 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]bloopi_agent.Re
 			relationshipKey := fmt.Sprintf("%s@%s", sourceID, destinationID)
 
 			if _, ok := istioMappingFromQueries[relationshipKey]; !ok {
-				allFoundRelationships = append(allFoundRelationships, bloopi_agent.RelationshipElement{
+				allFoundRelationships = append(allFoundRelationships, agent.RelationshipElement{
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
-					RelationType:     bloopi_agent.FlowTypeRelation,
+					RelationType:     agent.FlowTypeRelation,
 				})
 
-				istioMappingFromQueries[relationshipKey] = bloopi_agent.RelationshipElement{}
+				istioMappingFromQueries[relationshipKey] = agent.RelationshipElement{}
 			}
 		}
 

@@ -10,7 +10,7 @@ import (
 
 	"coordimap-agent/internal/cloud/utils"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -28,8 +28,8 @@ type Crawler interface {
 }
 
 type flowsCrawler struct {
-	outputChannel     chan *bloopi_agent.CloudCrawlData
-	dataSource        *bloopi_agent.DataSource
+	outputChannel     chan *agent.CloudCrawlData
+	dataSource        *agent.DataSource
 	kubeClientset     *kubernetes.Clientset
 	podCache          *PodCache
 	crawlInterval     time.Duration

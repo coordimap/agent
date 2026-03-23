@@ -3,8 +3,8 @@ package mariadb
 import (
 	"fmt"
 
-	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mariadb"
+	"coordimap-agent/pkg/domain/database"
+	"coordimap-agent/pkg/domain/mariadb"
 )
 
 func (mariaCrawler *mariadbCrawler) GetTableNames(schemaName string) ([]string, error) {
@@ -31,11 +31,11 @@ func (mariaCrawler *mariadbCrawler) GetTableNames(schemaName string) ([]string, 
 	return foundTableNames, nil
 }
 
-func (mariaCrawler *mariadbCrawler) GetTableData(schemaName, tableName string) (databasemodels.Table, error) {
-	table := databasemodels.Table{
+func (mariaCrawler *mariadbCrawler) GetTableData(schemaName, tableName string) (database.Table, error) {
+	table := database.Table{
 		Name:        tableName,
-		Columns:     []databasemodels.Column{},
-		Constraints: []databasemodels.Constraint{},
+		Columns:     []database.Column{},
+		Constraints: []database.Constraint{},
 		Schema:      schemaName,
 		Indexes:     []string{},
 	}
@@ -55,8 +55,8 @@ func (mariaCrawler *mariadbCrawler) GetTableData(schemaName, tableName string) (
 	return table, nil
 }
 
-func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string) ([]databasemodels.Column, error) {
-	columns := []databasemodels.Column{}
+func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string) ([]database.Column, error) {
+	columns := []database.Column{}
 	sqlQuery := `
 		SELECT column_name, column_type, ordinal_position -- column_default, is_nullable, column_comment, extra, generation_expression
 		FROM information_schema.columns
@@ -70,7 +70,7 @@ func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string
 	defer rows.Close()
 
 	for rows.Next() {
-		var column databasemodels.Column
+		var column database.Column
 		if err := rows.Scan(&column.Name, &column.Type, &column.Position); err != nil {
 			return columns, err
 		}
@@ -83,8 +83,8 @@ func (mariaCrawler *mariadbCrawler) getTableColumns(schemaName, tableName string
 	return columns, nil
 }
 
-func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName string) ([]databasemodels.Constraint, error) {
-	constraints := []databasemodels.Constraint{}
+func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName string) ([]database.Constraint, error) {
+	constraints := []database.Constraint{}
 
 	// get primary key
 	sqlPrimaryKeyQuery := `
@@ -103,15 +103,15 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 		return constraints, fmt.Errorf("could not retrieve the table columns because %w", errPrimaryKeyRows)
 	}
 
-	pkConstraint := databasemodels.Constraint{
+	pkConstraint := database.Constraint{
 		Name:         "PRIMARY KEY",
 		Type:         mariadb.MARIADB_CONSTRAINT_PK,
-		Sources:      []databasemodels.Column{},
-		Destinations: []databasemodels.Column{},
+		Sources:      []database.Column{},
+		Destinations: []database.Column{},
 	}
 
 	for primaryKeyRows.Next() {
-		var col databasemodels.Column
+		var col database.Column
 
 		if err := primaryKeyRows.Scan(&col.Name, &col.Position, &col.Type); err != nil {
 			continue
@@ -175,11 +175,11 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 		WHERE kcu.TABLE_SCHEMA = ? and kcu.constraint_name = ?;
 		`
 
-		constraint := databasemodels.Constraint{
+		constraint := database.Constraint{
 			Name:         constraintName,
 			Type:         "",
-			Sources:      []databasemodels.Column{},
-			Destinations: []databasemodels.Column{},
+			Sources:      []database.Column{},
+			Destinations: []database.Column{},
 		}
 
 		constraintColumnsRows, err := mariaCrawler.dbConn.Query(constraintColumnsQuery, schemaName, constraintName)
@@ -189,7 +189,7 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 
 		for constraintColumnsRows.Next() {
 			var constraintType string
-			var columnFrom, columnTo databasemodels.Column
+			var columnFrom, columnTo database.Column
 
 			if err := constraintColumnsRows.Scan(&columnFrom.Table, &columnFrom.Name, &columnFrom.Position, &columnFrom.Type, &columnTo.Type, &columnTo.Position, &columnTo.Name, &columnTo.Table, &constraintType); err != nil {
 				continue
@@ -215,8 +215,8 @@ func (mariaCrawler *mariadbCrawler) getTableConstraints(schemaName, tableName st
 	return constraints, nil
 }
 
-func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string) ([]databasemodels.Index, error) {
-	allIndexes := []databasemodels.Index{}
+func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string) ([]database.Index, error) {
+	allIndexes := []database.Index{}
 
 	indexesNamesQuery := `
 	SELECT DISTINCT
@@ -237,9 +237,9 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 		}
 
 		// get index data
-		index := databasemodels.Index{
+		index := database.Index{
 			Name:    indexName,
-			Columns: []databasemodels.Column{},
+			Columns: []database.Column{},
 			Table:   generateInternalName(mariaCrawler.scopeID, schemaName, tableName),
 			Schema:  schemaName,
 		}
@@ -261,7 +261,7 @@ func (mariaCrawler *mariadbCrawler) getTableIndexes(schemaName, tableName string
 		}
 
 		for indexColumnsRows.Next() {
-			var indexColumn databasemodels.Column
+			var indexColumn database.Column
 
 			if err := indexColumnsRows.Scan(&indexColumn.Name, &indexColumn.Position, &indexColumn.Type); err != nil {
 				continue

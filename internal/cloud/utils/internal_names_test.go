@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	kube_model "coordimap-agent/pkg/domain/kubernetes"
 )
 
 func TestCreateKubeInternalName(t *testing.T) {
@@ -21,7 +21,7 @@ func TestCreateSQLInternalNameKubeUsesClusterUIDScope(t *testing.T) {
 		t.Fatalf("CreateSQLInternalName() unexpected error: %v", err)
 	}
 
-	want := CreateKubeInternalName("cluster-uid-123", "default", kubernetes.TypeNamespace, "orders-db")
+	want := CreateKubeInternalName("cluster-uid-123", "default", kube_model.TypeNamespace, "orders-db")
 	if got != want {
 		t.Fatalf("CreateSQLInternalName() = %q, want %q", got, want)
 	}

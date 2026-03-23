@@ -8,14 +8,14 @@ import (
 	"slices"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	gcpModel "dev.azure.com/bloopi/bloopi/_git/shared_models.git/gcp"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	"coordimap-agent/pkg/domain/agent"
+	gcpModel "coordimap-agent/pkg/domain/gcp"
+	kube_model "coordimap-agent/pkg/domain/kubernetes"
 	"google.golang.org/api/logging/v2"
 )
 
-func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, error) {
-	allFoundRelationships := []*bloopi_agent.Element{}
+func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) {
+	allFoundRelationships := []*agent.Element{}
 	startTime := time.Now().UTC().Add(-4 * crawler.crawlInterval)
 	endTime := startTime.Add(crawler.crawlInterval - 5*time.Second)
 
@@ -51,7 +51,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 
-			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
+			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime)
 			if errVmRel == nil {
 				allFoundRelationships = append(allFoundRelationships, vmRel)
 			}
@@ -69,20 +69,20 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 			}
 
 			if jsonPayload.SrcGkeDetails.Pod.Name != "" && jsonPayload.SrcGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Namespace != "" && jsonPayload.DstGkeDetails.Pod.Name != "" {
-				srcPodInternalName := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
-				dstPodInternalName := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
+				srcPodInternalName := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kube_model.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
+				dstPodInternalName := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kube_model.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
 
-				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, bloopi_agent.RelationshipExternalBothSidesType, bloopi_agent.FlowTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, agent.RelationshipExternalBothSidesType, agent.FlowTypeRelation, crawlTime)
 				if errRel == nil {
 					allFoundRelationships = append(allFoundRelationships, rel)
 				}
 			}
 
 			if jsonPayload.SrcGkeDetails.Pod.Workload.Type == "DEPLOYMENT" && jsonPayload.DstGkeDetails.Pod.Workload.Type == "DEPLOYMENT" {
-				srcDeployment := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
-				dstDeployment := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kubernetes.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
+				srcDeployment := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kube_model.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
+				dstDeployment := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kube_model.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
 
-				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, bloopi_agent.RelationshipExternalBothSidesType, bloopi_agent.FlowTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, agent.RelationshipExternalBothSidesType, agent.FlowTypeRelation, crawlTime)
 				if errRel == nil {
 					allFoundRelationships = append(allFoundRelationships, rel)
 				}
@@ -113,23 +113,23 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 					continue
 				}
 
-				podInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kubernetes.TypePod, gke.Pod.Name)
-				deplomentInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kubernetes.TypeDeployment, gke.Pod.Workload.Name)
+				podInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kube_model.TypePod, gke.Pod.Name)
+				deplomentInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kube_model.TypeDeployment, gke.Pod.Workload.Name)
 				if index == 0 {
-					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.FlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relPodSql)
 					}
-					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(deplomentInternalName, sqlInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(deplomentInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.FlowTypeRelation, crawlTime)
 					if errRelDeploymentSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
 					}
 				} else {
-					relPodSql, errRelPodSql := utils.CreateRelationship(sqlInternalName, podInternalName, bloopi_agent.RelationshipExternalDestinationSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					relPodSql, errRelPodSql := utils.CreateRelationship(sqlInternalName, podInternalName, agent.RelationshipExternalDestinationSideType, agent.FlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relPodSql)
 					}
-					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(sqlInternalName, deplomentInternalName, bloopi_agent.RelationshipExternalDestinationSideType, bloopi_agent.FlowTypeRelation, crawlTime)
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(sqlInternalName, deplomentInternalName, agent.RelationshipExternalDestinationSideType, agent.FlowTypeRelation, crawlTime)
 					if errRelDeploymentSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
 					}
@@ -145,9 +145,9 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*bloopi_agent.Element, 
 
 				instanceInternalName := cloudutils.CreateGCPInternalName(crawler.scopeID, instance.Zone, gcpModel.TypeVMInstance, instance.VmName)
 				if index == 0 {
-					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, bloopi_agent.FlowTypeRelation, crawlTime)
+					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, agent.FlowTypeRelation, crawlTime)
 				} else if index == 1 {
-					utils.AddRelationship(&allFoundRelationships, instanceInternalName, sqlInternalName, bloopi_agent.FlowTypeRelation, crawlTime)
+					utils.AddRelationship(&allFoundRelationships, instanceInternalName, sqlInternalName, agent.FlowTypeRelation, crawlTime)
 				}
 			}
 		}

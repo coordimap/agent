@@ -13,8 +13,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/collector"
+	"coordimap-agent/pkg/domain/agent"
+	"coordimap-agent/pkg/domain/collector"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -24,7 +24,7 @@ var (
 	debug      = kingpin.Flag("debug", "Displays debug statements giving the user more information as to what is happening inside the agent.").Bool()
 )
 
-func getDataSourceConfigValue(dataSource *bloopi_agent.DataSource, key string) string {
+func getDataSourceConfigValue(dataSource *agent.DataSource, key string) string {
 	for _, valuePair := range dataSource.Config.ValuePairs {
 		if valuePair.Key == key {
 			value, errValue := utils.LoadValueFromEnvConfig(valuePair.Value)
@@ -39,7 +39,7 @@ func getDataSourceConfigValue(dataSource *bloopi_agent.DataSource, key string) s
 	return ""
 }
 
-func validateKubernetesScopeMappings(allDataSources map[string][]*bloopi_agent.DataSource) error {
+func validateKubernetesScopeMappings(allDataSources map[string][]*agent.DataSource) error {
 	kubernetesDataSources := allDataSources[integrations.INTEGRATION_KUBERNETES]
 	if len(kubernetesDataSources) == 0 {
 		return nil
@@ -70,7 +70,7 @@ func validateKubernetesScopeMappings(allDataSources map[string][]*bloopi_agent.D
 	return fmt.Errorf("invalid external_mappings for kubernetes cluster scope:\n- %s", strings.Join(allValidationErrors, "\n- "))
 }
 
-func validateExternalMappingsForKubernetesScopes(dataSources []*bloopi_agent.DataSource, integrationName string, kubeDataSourceIDToClusterUID map[string]string) []string {
+func validateExternalMappingsForKubernetesScopes(dataSources []*agent.DataSource, integrationName string, kubeDataSourceIDToClusterUID map[string]string) []string {
 	validationErrors := []string{}
 
 	for _, dataSource := range dataSources {
@@ -132,7 +132,7 @@ func main() {
 		return
 	}
 
-	sender := make(chan *bloopi_agent.CloudCrawlData, 5000)
+	sender := make(chan *agent.CloudCrawlData, 5000)
 
 	// Steps for crawling all the configured DataSources
 	// 1. Load Yaml config into the respective structs

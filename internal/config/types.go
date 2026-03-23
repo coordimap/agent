@@ -1,12 +1,12 @@
 package configuration
 
 import (
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 )
 
 // Config defines the interface for retrieving configuration data.
 type Config interface {
-	GetAllDataSources() map[string][]*bloopi_agent.DataSource
+	GetAllDataSources() map[string][]*agent.DataSource
 	GetCoordimapKey() (string, error)
 	GetSkipFields() []string
 }

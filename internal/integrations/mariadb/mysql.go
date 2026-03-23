@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/rs/zerolog/log"
 )
 
-func NewMysqlCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewMysqlCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	crawler := mariadbCrawler{
 		dbConn:        nil,
 		outputChannel: outChannel,

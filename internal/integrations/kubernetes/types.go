@@ -3,7 +3,7 @@ package kubernetes
 import (
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/prometheus/client_golang/api"
 	"k8s.io/client-go/kubernetes"
 )
@@ -25,8 +25,8 @@ const (
 type kubernetesCrawler struct {
 	retinaCrawler     *prometheusCrawler
 	kubeClient        *kubernetes.Clientset
-	outputChannel     chan *bloopi_agent.CloudCrawlData
-	dataSource        bloopi_agent.DataSource
+	outputChannel     chan *agent.CloudCrawlData
+	dataSource        agent.DataSource
 	istioCrawler      prometheusCrawler
 	internalNodeNames map[string]string
 	externalMappings  map[string]string

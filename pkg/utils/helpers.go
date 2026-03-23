@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 )
 
 func LoadValueFromEnvConfig(value string) (string, error) {
@@ -56,17 +56,17 @@ func encodeAndHashElement(postgresElem interface{}) ([]byte, string, error) {
 }
 
 // CreateElement create a generic element
-func CreateElement(element interface{}, name, id, elemType, status, version string, crawlTime time.Time) (*bloopi_agent.Element, error) {
+func CreateElement(element interface{}, name, id, elemType, status, version string, crawlTime time.Time) (*agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashElement(element)
 	if err != nil {
 		return nil, err
 	}
 
 	if status == "" {
-		status = bloopi_agent.StatusNoStatus
+		status = agent.StatusNoStatus
 	}
 
-	return &bloopi_agent.Element{
+	return &agent.Element{
 		RetrievedAt: crawlTime,
 		Name:        name,
 		ID:          id,
@@ -80,13 +80,13 @@ func CreateElement(element interface{}, name, id, elemType, status, version stri
 }
 
 // CreateAWSElement create an AWS element
-func CreateAWSElement(element interface{}, name, id, elemType, status, version string, crawlTime time.Time) (*bloopi_agent.Element, error) {
+func CreateAWSElement(element interface{}, name, id, elemType, status, version string, crawlTime time.Time) (*agent.Element, error) {
 	marshaled, hashed, err := encodeAndHashAWSStruct(element)
 	if err != nil {
 		return nil, err
 	}
 
-	return &bloopi_agent.Element{
+	return &agent.Element{
 		RetrievedAt: crawlTime,
 		Name:        name,
 		ID:          id,
@@ -100,12 +100,12 @@ func CreateAWSElement(element interface{}, name, id, elemType, status, version s
 }
 
 // CreateRelationship create a relationship element
-func CreateRelationship(sourceID, destinationID, relationshipType string, relationType int, crawlTime time.Time) (*bloopi_agent.Element, error) {
+func CreateRelationship(sourceID, destinationID, relationshipType string, relationType int, crawlTime time.Time) (*agent.Element, error) {
 	if sourceID == "" || destinationID == "" {
 		return nil, errors.New("SourceID or DestinationID must both be non empty in oder to create a relationship")
 	}
 
-	parentElem := bloopi_agent.RelationshipElement{
+	parentElem := agent.RelationshipElement{
 		SourceID:         sourceID,
 		DestinationID:    destinationID,
 		RelationshipType: relationshipType,
@@ -116,8 +116,8 @@ func CreateRelationship(sourceID, destinationID, relationshipType string, relati
 		parentElem,
 		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
 		fmt.Sprintf("%s.%s", parentElem.SourceID, parentElem.DestinationID),
-		bloopi_agent.RelationshipType,
-		bloopi_agent.StatusNoStatus,
+		agent.RelationshipType,
+		agent.StatusNoStatus,
 		"",
 		crawlTime,
 	)
@@ -128,8 +128,8 @@ func CreateRelationship(sourceID, destinationID, relationshipType string, relati
 	return relationshipWrapperElem, nil
 }
 
-func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *bloopi_agent.DataSource {
-	var cleanedDataSource bloopi_agent.DataSource
+func CleanUpDataSource(inputDS *agent.DataSource, skipFields []string) *agent.DataSource {
+	var cleanedDataSource agent.DataSource
 
 	cleanedDataSource.Info.Name = inputDS.Info.Name
 	cleanedDataSource.Info.Type = inputDS.Info.Type
@@ -141,7 +141,7 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 			continue
 		}
 
-		cleanedDataSource.Config.ValuePairs = append(cleanedDataSource.Config.ValuePairs, bloopi_agent.KeyValue{
+		cleanedDataSource.Config.ValuePairs = append(cleanedDataSource.Config.ValuePairs, agent.KeyValue{
 			Key:   dsConfigKeyValue.Key,
 			Value: dsConfigKeyValue.Value,
 		})
@@ -150,8 +150,8 @@ func CleanUpDataSource(inputDS *bloopi_agent.DataSource, skipFields []string) *b
 	return &cleanedDataSource
 }
 
-func AddRelationship(existingRelationships *[]*bloopi_agent.Element, source, destination string, relationType int, crawlTime time.Time) {
-	rel, errRel := CreateRelationship(source, destination, bloopi_agent.RelationshipType, relationType, crawlTime)
+func AddRelationship(existingRelationships *[]*agent.Element, source, destination string, relationType int, crawlTime time.Time) {
+	rel, errRel := CreateRelationship(source, destination, agent.RelationshipType, relationType, crawlTime)
 	if errRel == nil {
 		*existingRelationships = append(*existingRelationships, rel)
 	}

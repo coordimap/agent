@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/gcp"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	gcpModel "coordimap-agent/pkg/domain/gcp"
+	kube_model "coordimap-agent/pkg/domain/kubernetes"
 )
 
 func CreateGCPInternalName(scopeID, zone, assetType, name string) string {
@@ -30,10 +30,10 @@ func CreateSQLInternalName(config string) (string, error) {
 	internalName := ""
 
 	if configParts[0] == "gcp" && len(configParts) == 4 {
-		internalName = CreateGCPInternalName(configParts[3], configParts[1], gcp.TypeCloudSQL, configParts[2])
+		internalName = CreateGCPInternalName(configParts[3], configParts[1], gcpModel.TypeCloudSQL, configParts[2])
 	} else if strings.HasPrefix(config, "aws") {
 	} else if configParts[0] == "kube" && len(configParts) == 4 {
-		internalName = CreateKubeInternalName(configParts[3], configParts[1], kubernetes.TypeNamespace, configParts[2])
+		internalName = CreateKubeInternalName(configParts[3], configParts[1], kube_model.TypeNamespace, configParts[2])
 	} else {
 		return "", fmt.Errorf("wrong config %s", config)
 	}

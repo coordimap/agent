@@ -3,8 +3,8 @@ package postgres
 import (
 	"fmt"
 
-	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
-	post_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/postgres"
+	"coordimap-agent/pkg/domain/database"
+	"coordimap-agent/pkg/domain/postgres"
 	"github.com/rs/zerolog/log"
 )
 
@@ -50,11 +50,11 @@ func (postCrawler *postgresCrawler) getSchemaTables(schemaName string) ([]string
 	return tableNames, nil
 }
 
-func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (databasemodels.Table, error) {
-	table := databasemodels.Table{
+func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (database.Table, error) {
+	table := database.Table{
 		Name:        tableName,
-		Columns:     []databasemodels.Column{},
-		Constraints: []databasemodels.Constraint{},
+		Columns:     []database.Column{},
+		Constraints: []database.Constraint{},
 		Schema:      schemaName,
 		Indexes:     []string{},
 	}
@@ -74,8 +74,8 @@ func (postCrawler *postgresCrawler) getTableData(schemaName, tableName string) (
 	return table, nil
 }
 
-func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName string) ([]databasemodels.Constraint, error) {
-	constraints := []databasemodels.Constraint{}
+func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName string) ([]database.Constraint, error) {
+	constraints := []database.Constraint{}
 	tableNameCleaned := cleanupSchemaName(tableName)
 
 	// Get all constraint names of table
@@ -95,11 +95,11 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 			return constraints, err
 		}
 
-		constraint := databasemodels.Constraint{
+		constraint := database.Constraint{
 			Name:         constraintName,
 			Type:         "",
-			Sources:      []databasemodels.Column{},
-			Destinations: []databasemodels.Column{},
+			Sources:      []database.Column{},
+			Destinations: []database.Column{},
 		}
 
 		// Get all columns of the constraint
@@ -129,7 +129,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 		// Collect all source columns first
 		for rowsConstraintsColumns.Next() {
-			var sourceConstraintCol databasemodels.Column
+			var sourceConstraintCol database.Column
 			if err := rowsConstraintsColumns.Scan(&sourceConstraintCol.Position, &sourceConstraintCol.Name, &constraintType); err != nil {
 				log.Err(err).Msg("Error while getting constraint columns")
 				continue
@@ -139,13 +139,13 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 			switch constraintType {
 			case "PRIMARY KEY":
-				constraint.Type = post_model.POSTGRES_CONSTRAINT_PK
+				constraint.Type = postgres.POSTGRES_CONSTRAINT_PK
 
 			case "FOREIGN KEY":
-				constraint.Type = post_model.POSTGRES_CONSTRAINT_FK
+				constraint.Type = postgres.POSTGRES_CONSTRAINT_FK
 
 			case "UNIQUE":
-				constraint.Type = post_model.POSTGRES_CONSTRAINT_UNIQUE
+				constraint.Type = postgres.POSTGRES_CONSTRAINT_UNIQUE
 
 			default:
 				constraint.Type = constraintType
@@ -156,7 +156,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 		rowsConstraintsColumns.Close() // Close rows explicitly as we might query again before the outer loop defer
 
 		// If it's a Foreign Key, now query for the destination columns
-		if constraint.Type == post_model.POSTGRES_CONSTRAINT_FK {
+		if constraint.Type == postgres.POSTGRES_CONSTRAINT_FK {
 			sqlReferencedColumns := `
 				SELECT DISTINCT
 					kcu_ref.table_schema AS referenced_table_schema,
@@ -189,7 +189,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 			defer rowsFKConstraint.Close()
 			for rowsFKConstraint.Next() {
-				var destCol databasemodels.Column
+				var destCol database.Column
 				var referencedSchema, referencedTable, referencedColumn string
 				if err := rowsFKConstraint.Scan(&referencedSchema, &referencedTable, &referencedColumn, &destCol.Position); err != nil {
 					log.Warn().Msgf("Could not scan foreign key destination column for constraint %s: %v", constraintName, err)
@@ -207,8 +207,8 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 	return constraints, nil
 }
 
-func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string) ([]databasemodels.Column, error) {
-	columns := []databasemodels.Column{}
+func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string) ([]database.Column, error) {
+	columns := []database.Column{}
 	tableNameCleaned := cleanupSchemaName(tableName)
 	sqlStatement := `select column_name, data_type, ordinal_position from information_schema.columns where table_schema = $1 and table_name = $2`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableNameCleaned)
@@ -219,7 +219,7 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 	defer rows.Close()
 
 	for rows.Next() {
-		var column databasemodels.Column
+		var column database.Column
 		if err := rows.Scan(&column.Name, &column.Type, &column.Position); err != nil {
 			return columns, err
 		}
@@ -232,8 +232,8 @@ func (postCrawler *postgresCrawler) getTableColumns(schemaName, tableName string
 	return columns, nil
 }
 
-func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string) ([]databasemodels.Index, error) {
-	indexes := []databasemodels.Index{}
+func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string) ([]database.Index, error) {
+	indexes := []database.Index{}
 	tableNameCleaned := cleanupSchemaName(tableName)
 	sqlStatement := `select indexname from pg_indexes where schemaname = $1 AND tablename = $2`
 	rows, err := postCrawler.dbConn.Query(sqlStatement, schemaName, tableNameCleaned)
@@ -244,7 +244,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 	defer rows.Close()
 
 	for rows.Next() {
-		index := databasemodels.Index{
+		index := database.Index{
 			Table:  generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, tableName),
 			Schema: generateInternalName(postCrawler.scopeID, postCrawler.DBName, schemaName, ""),
 		}
@@ -280,7 +280,7 @@ func (postCrawler *postgresCrawler) getTableIndexes(schemaName, tableName string
 		defer rowsIndexCols.Close()
 
 		for rowsIndexCols.Next() {
-			var indexCol databasemodels.Column
+			var indexCol database.Column
 			if err := rowsIndexCols.Scan(&indexCol.Name, &indexCol.Position); err != nil {
 				log.Debug().Msgf("Could not read column from the index %s because %s", indexName, err.Error())
 				continue
@@ -321,8 +321,8 @@ func (postCrawler *postgresCrawler) getSchemaMaterializedViewNames(schemaName st
 	return viewNames, nil
 }
 
-func (postCrawler *postgresCrawler) getMaterializedView(schemaName, viewName string) (databasemodels.MaterializedView, error) {
-	view := databasemodels.MaterializedView{
+func (postCrawler *postgresCrawler) getMaterializedView(schemaName, viewName string) (database.MaterializedView, error) {
+	view := database.MaterializedView{
 		Name:   viewName,
 		Schema: schemaName,
 	}
@@ -350,7 +350,7 @@ func (postCrawler *postgresCrawler) getMaterializedView(schemaName, viewName str
 	defer rows.Close()
 
 	for rows.Next() {
-		var column databasemodels.Column
+		var column database.Column
 		if err := rows.Scan(&column.Position, &column.Name, &column.Type); err != nil {
 			return view, nil
 		}

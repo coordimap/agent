@@ -11,10 +11,10 @@ import (
 	"coordimap-agent/internal/integrations/postgres"
 	"fmt"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 )
 
-func IntegrationsFactory(name string, dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func IntegrationsFactory(name string, dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	switch name {
 	case INTEGRATION_AWS:
 		return aws.MakeAWS(dataSource, outChannel)

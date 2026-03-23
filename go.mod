@@ -4,7 +4,6 @@ go 1.23
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.2
-	dev.azure.com/bloopi/bloopi/_git/shared_models.git v0.0.0-20250601125928-7ef352f63158
 	github.com/aws/aws-sdk-go v1.44.143
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-redis/redis/v8 v8.11.5
@@ -25,7 +24,11 @@ require (
 	k8s.io/client-go v0.25.4
 )
 
-require google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f // indirect
+require (
+	github.com/elazarl/goproxy v0.0.0-20221015165544-a0805db90819 // indirect
+	github.com/smartystreets/goconvey v1.8.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f // indirect
+)
 
 require (
 	cloud.google.com/go/auth v0.11.0 // indirect
@@ -56,12 +59,10 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
-	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -71,7 +72,6 @@ require (
 	github.com/montanaflynn/stats v0.6.6 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/smartystreets/assertions v1.13.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.1 // indirect

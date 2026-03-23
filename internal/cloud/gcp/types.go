@@ -3,7 +3,7 @@ package gcp
 import (
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/option"
 )
@@ -37,10 +37,10 @@ type ServiceAccountKey struct {
 }
 
 type gcpCrawler struct {
-	outputChan          chan *bloopi_agent.CloudCrawlData
+	outputChan          chan *agent.CloudCrawlData
 	logClient           *logging.Service
 	clientOpts          []option.ClientOption
-	dataSource          bloopi_agent.DataSource
+	dataSource          agent.DataSource
 	externalMappings    map[string]string
 	internalIDMapper    map[string]string
 	ConfiguredProjectID string

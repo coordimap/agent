@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
+	"coordimap-agent/pkg/domain/awsflowlogs"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 )

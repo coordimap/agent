@@ -10,23 +10,23 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	aws_shared_model "coordimap-agent/pkg/domain/aws"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 type AwsCrawl struct {
-	ds              *bloopi_agent.DataSource
-	outChannel      chan *bloopi_agent.CloudCrawlData
+	ds              *agent.DataSource
+	outChannel      chan *agent.CloudCrawlData
 	secretAccessKey string
 	accessKeyID     string
 	scopeID         string
 }
 
 // MakeAWS creates an AWS cloud struct
-func MakeAWS(dsConfig *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (*AwsCrawl, error) {
+func MakeAWS(dsConfig *agent.DataSource, outChannel chan *agent.CloudCrawlData) (*AwsCrawl, error) {
 	secretAccessKey := ""
 	accessKeyID := ""
 
@@ -113,9 +113,9 @@ func (awsCrawl *AwsCrawl) GetCrawlInterval() (time.Duration, error) {
 // 2. Loop through all the regions and store slices of each element, i.e. allVPCs
 // 3. Assign all the elements to the CloudData object
 // 4. return the CloudData object
-func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (awsCrawl *AwsCrawl) crawl() (*agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
-	var crawledData bloopi_agent.CrawledData
+	var crawledData agent.CrawledData
 
 	initSession, _ := session.NewSession(
 		&aws.Config{
@@ -137,11 +137,11 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	crawledData.Data = append(crawledData.Data, awsRegions...)
 	accountID, _ := getAwsAccountID(initSession)
 	owner := []*string{accountID}
-	ownerElem, errOwnerElem := utils.CreateAWSElement(owner, *accountID, *accountID, aws_shared_model.AwsTypeOwner, bloopi_agent.StatusNoStatus, "", crawlTime)
+	ownerElem, errOwnerElem := utils.CreateAWSElement(owner, *accountID, *accountID, aws_shared_model.AwsTypeOwner, agent.StatusNoStatus, "", crawlTime)
 	if errOwnerElem == nil {
 		crawledData.Data = append(crawledData.Data, ownerElem)
 	}
-	results := make(chan []*bloopi_agent.Element, 5000)
+	results := make(chan []*agent.Element, 5000)
 	var wg sync.WaitGroup
 
 	for _, region := range awsRegions {
@@ -218,9 +218,9 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	wg.Add(1)
 	go worker("s3-buckets", owner, initSession, results, &wg, awsCrawl.scopeID, crawlTime)
 
-	ownerElement, errOwnerElement := utils.CreateElement(owner, *owner[0], *owner[0], aws_shared_model.AwsTypeOwner, bloopi_agent.StatusNoStatus, "", crawlTime)
+	ownerElement, errOwnerElement := utils.CreateElement(owner, *owner[0], *owner[0], aws_shared_model.AwsTypeOwner, agent.StatusNoStatus, "", crawlTime)
 	if errOwnerElement == nil {
-		results <- []*bloopi_agent.Element{ownerElement}
+		results <- []*agent.Element{ownerElement}
 	}
 
 	go func() {
@@ -237,7 +237,7 @@ func (awsCrawl *AwsCrawl) crawl() (*bloopi_agent.CloudCrawlData, error) {
 	}
 
 	// return &crawledData, nil
-	return &bloopi_agent.CloudCrawlData{
+	return &agent.CloudCrawlData{
 		Timestamp:       crawlTime,
 		DataSource:      *awsCrawl.ds,
 		CrawledData:     crawledData,

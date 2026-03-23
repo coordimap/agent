@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mongodb"
+	"coordimap-agent/pkg/domain/agent"
+	"coordimap-agent/pkg/domain/mongodb"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func NewMongoDBCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewMongoDBCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	// 1. initialize postgresCrawler with default values
 	crawler := mongoCrawler{
 		outputChannel: outChannel,
@@ -131,17 +131,17 @@ func (mongoCrawler *mongoCrawler) Crawl() {
 	}
 }
 
-func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (mongoCrawler *mongoCrawler) crawl() (*agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
 	for _, dbName := range mongoCrawler.DBName {
 
-		allCrawledElements := []*bloopi_agent.Element{}
+		allCrawledElements := []*agent.Element{}
 		dbHandle := mongoCrawler.dbConn.Database(dbName)
 
 		// get the mongo database
 		mongoDB := mongoCrawler.getMongodbDatabase(dbName)
 		dbInternalName := fmt.Sprintf("%s/%s", mongoCrawler.scopeID, mongoDB.Name)
-		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, dbInternalName, mongodb.MONGODB_TYPE_DATABASE, bloopi_agent.StatusNoStatus, "", crawlTime)
+		dbElem, errDBElem := utils.CreateElement(mongoDB, mongoDB.Name, dbInternalName, mongodb.MONGODB_TYPE_DATABASE, agent.StatusNoStatus, "", crawlTime)
 		if errDBElem != nil {
 			return nil, errDBElem
 		}
@@ -161,13 +161,13 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 				continue
 			}
 			collectionInternalName := fmt.Sprintf("%s/%s", dbInternalName, collection.Name)
-			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, collectionInternalName, mongodb.MONGODB_TYPE_COLLECTION, bloopi_agent.StatusNoStatus, "", crawlTime)
+			collectionElem, errCollectionElem := utils.CreateElement(mongoCollection, mongoCollection.Name, collectionInternalName, mongodb.MONGODB_TYPE_COLLECTION, agent.StatusNoStatus, "", crawlTime)
 			if errCollectionElem != nil {
 				log.Error().Msgf("could not create collection element for collection: %s and data source: %s", collection.Name, mongoCrawler.scopeID)
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, collectionElem)
-				relDbColl, errRelDbColl := utils.CreateRelationship(dbInternalName, collectionInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+				relDbColl, errRelDbColl := utils.CreateRelationship(dbInternalName, collectionInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 				if errRelDbColl == nil {
 					allCrawledElements = append(allCrawledElements, relDbColl)
 				}
@@ -180,26 +180,26 @@ func (mongoCrawler *mongoCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) 
 
 			for _, foundIndex := range collectionIndexes {
 				indexInternalName := fmt.Sprintf("%s/%s", collectionInternalName, foundIndex.Name)
-				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, indexInternalName, mongodb.MONGODB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
+				indexElem, errIndexElem := utils.CreateElement(foundIndex, foundIndex.Name, indexInternalName, mongodb.MONGODB_TYPE_INDEX, agent.StatusNoStatus, "", crawlTime)
 				if errIndexElem != nil {
 					log.Error().Msgf("could not create index element for index: %s, collection: %s and data source: %s", foundIndex.Name, collection.Name, mongoCrawler.scopeID)
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
-					relCollIndex, errRelCollIndex := utils.CreateRelationship(collectionInternalName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+					relCollIndex, errRelCollIndex := utils.CreateRelationship(collectionInternalName, indexInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 					if errRelCollIndex == nil {
 						allCrawledElements = append(allCrawledElements, relCollIndex)
 					}
 			}
 		}
 
-		crawledData := bloopi_agent.CrawledData{
+		crawledData := agent.CrawledData{
 			Data: allCrawledElements,
 		}
 
 		log.Info().Msgf("Crawled %d MongoDB elements for connection %s and database %s", len(allCrawledElements), mongoCrawler.scopeID, dbName)
 
-		mongoCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+		mongoCrawler.outputChannel <- &agent.CloudCrawlData{
 			Timestamp:       crawlTime,
 			DataSource:      *mongoCrawler.dataSource,
 			CrawledData:     crawledData,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"gopkg.in/yaml.v3"
 )
 
@@ -35,31 +35,31 @@ func (coordimapConfig *yamlConfig) GetSkipFields() []string {
 	return coordimapConfig.parsedConfig.SkipFields
 }
 
-func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*bloopi_agent.DataSource {
+func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*agent.DataSource {
 	if coordimapConfig.parsedConfig == nil {
-		return map[string][]*bloopi_agent.DataSource{}
+		return map[string][]*agent.DataSource{}
 	}
 
-	allDataSources := map[string][]*bloopi_agent.DataSource{}
+	allDataSources := map[string][]*agent.DataSource{}
 	for _, dataSource := range coordimapConfig.parsedConfig.DataSources {
-		info := bloopi_agent.DataSourceInfo{
+		info := agent.DataSourceInfo{
 			Name: dataSource.Name,
 			Desc: dataSource.Desc,
 			Type: dataSource.Type,
 		}
 
-		dsValuePairs := []bloopi_agent.KeyValue{}
+		dsValuePairs := []agent.KeyValue{}
 		for _, valuePair := range dataSource.Config {
-			dsValuePairs = append(dsValuePairs, bloopi_agent.KeyValue{
+			dsValuePairs = append(dsValuePairs, agent.KeyValue{
 				Key:   valuePair.Name,
 				Value: valuePair.Value,
 			})
 		}
 
-		currentDS := &bloopi_agent.DataSource{
+		currentDS := &agent.DataSource{
 			Info:         info,
 			DataSourceID: dataSource.ID,
-			Config: bloopi_agent.DataSourceConfig{
+			Config: agent.DataSourceConfig{
 				ValuePairs: dsValuePairs,
 			},
 		}

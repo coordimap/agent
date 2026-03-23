@@ -3,14 +3,14 @@ package kubernetes
 import (
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
 
 func getDeploymentStatus(deploymentConditions []appsv1.DeploymentCondition) string {
 	var mostRecentStatusTime time.Time
-	deploymentStatus := bloopi_agent.StatusNoStatus
+	deploymentStatus := agent.StatusNoStatus
 
 	for _, condition := range deploymentConditions {
 		if mostRecentStatusTime.After(condition.LastUpdateTime.Time) {
@@ -20,11 +20,11 @@ func getDeploymentStatus(deploymentConditions []appsv1.DeploymentCondition) stri
 		mostRecentStatusTime = condition.LastUpdateTime.Time
 
 		if condition.Type == appsv1.DeploymentProgressing {
-			deploymentStatus = bloopi_agent.StatusNoStatus
+			deploymentStatus = agent.StatusNoStatus
 		} else if condition.Type == appsv1.DeploymentAvailable {
-			deploymentStatus = bloopi_agent.StatusGreen
+			deploymentStatus = agent.StatusGreen
 		} else if condition.Type == appsv1.DeploymentReplicaFailure {
-			deploymentStatus = bloopi_agent.StatusRed
+			deploymentStatus = agent.StatusRed
 		}
 	}
 
@@ -34,15 +34,15 @@ func getDeploymentStatus(deploymentConditions []appsv1.DeploymentCondition) stri
 func getPodStatus(condition v1.PodPhase) string {
 	switch condition {
 	case v1.PodFailed:
-		return bloopi_agent.StatusRed
+		return agent.StatusRed
 
 	case v1.PodSucceeded, v1.PodRunning:
-		return bloopi_agent.StatusGreen
+		return agent.StatusGreen
 
 	case v1.PodPending:
-		return bloopi_agent.StatusOrange
+		return agent.StatusOrange
 
 	default:
-		return bloopi_agent.StatusNoStatus
+		return agent.StatusNoStatus
 	}
 }

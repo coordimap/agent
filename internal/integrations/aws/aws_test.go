@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 )
 
 func TestAwsCrawl_GetCrawlInterval(t *testing.T) {
 	type fields struct {
-		ds *bloopi_agent.DataSource
+		ds *agent.DataSource
 	}
 	tests := []struct {
 		fields  fields

@@ -10,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/awsflowlogs"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/rs/zerolog/log"
 )
 
-func NewAWSFlowLogs(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewAWSFlowLogs(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	crawler := &awsFlowLogsCrawler{
 		logFormat:      "${account-id} ${action} ${az-id} ${bytes} ${dstaddr} ${dstport} ${end} ${flow-direction} ${instance-id} ${interface-id} ${log-status} ${packets} ${pkt-dst-aws-service} ${pkt-dstaddr} ${pkt-src-aws-service} ${pkt-srcaddr} ${protocol} ${region} ${srcaddr} ${srcport} ${start} ${sublocation-id} ${sublocation-type} ${subnet-id} ${tcp-flags} ${traffic-path} ${type} ${version} ${vpc-id}",
 		bucketName:     "",
@@ -110,7 +110,7 @@ func (crawler *awsFlowLogsCrawler) Crawl() {
 	}
 }
 
-func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (crawler *awsFlowLogsCrawler) crawl() (*agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
 	crawler.mutex.Lock()
 	defer crawler.mutex.Unlock()
@@ -120,7 +120,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 		crawler.lastHandledKey = flowLogsState.LastFileProcessed
 	}
 
-	allCrawledElements := []*bloopi_agent.Element{}
+	allCrawledElements := []*agent.Element{}
 	allFlows := map[string]awsflowlogs.FlowRelation{}
 	input := &s3.ListObjectsV2Input{
 		Bucket:     &crawler.bucketName,
@@ -233,7 +233,7 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 
 		// FIXME: add a custom date time
 		elementName := fmt.Sprintf("%s-%s", foundFlow.Src.InterfaceID, foundFlow.Dst.InterfaceID)
-		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2_SKIPINSERT, bloopi_agent.StatusNoStatus, "", crawlTime)
+		flowElement, errFlowElement := utils.CreateElement(foundFlow, elementName, elementName, awsflowlogs.AWS_FLOW_LOGS_TYPE_EC2_SKIPINSERT, agent.StatusNoStatus, "", crawlTime)
 		if errFlowElement != nil {
 			continue
 		}
@@ -242,20 +242,20 @@ func (crawler *awsFlowLogsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error)
 	}
 
 	// Create an element here and append to crawledElements
-	crawledData := bloopi_agent.CrawledData{
+	crawledData := agent.CrawledData{
 		Data: allCrawledElements,
 	}
 
 	errFlowLogStateWrite := writeState(crawler.stateFilename, crawler.lastHandledKey)
 	if errFlowLogStateWrite != nil {
-		return &bloopi_agent.CloudCrawlData{
+		return &agent.CloudCrawlData{
 			Timestamp:   crawlTime,
 			DataSource:  *crawler.dataSource,
-			CrawledData: bloopi_agent.CrawledData{},
+			CrawledData: agent.CrawledData{},
 		}, fmt.Errorf("could not store flow logs state in file %s because %w", crawler.stateFilename, errFlowLogStateWrite)
 	}
 
-	return &bloopi_agent.CloudCrawlData{
+	return &agent.CloudCrawlData{
 		Timestamp:       crawlTime,
 		DataSource:      *crawler.dataSource,
 		CrawledData:     crawledData,

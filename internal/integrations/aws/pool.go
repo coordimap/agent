@@ -5,16 +5,16 @@ import (
 	"sync"
 	"time"
 
-	aws_shared_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	aws_shared_model "coordimap-agent/pkg/domain/aws"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*bloopi_agent.Element, wg *sync.WaitGroup, dataSourceID string, crawlTime time.Time) {
+func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*agent.Element, wg *sync.WaitGroup, dataSourceID string, crawlTime time.Time) {
 	defer wg.Done()
 
-	var res []*bloopi_agent.Element
+	var res []*agent.Element
 	var err error
 
 	switch whatToCrawl {

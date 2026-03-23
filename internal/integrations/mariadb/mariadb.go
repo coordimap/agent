@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	databasemodels "dev.azure.com/bloopi/bloopi/_git/shared_models.git/database_models"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/mariadb"
+	"coordimap-agent/pkg/domain/agent"
+	"coordimap-agent/pkg/domain/database"
+	"coordimap-agent/pkg/domain/mariadb"
 	"github.com/rs/zerolog/log"
 )
 
-func NewMariadbCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewMariadbCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	crawler := mariadbCrawler{
 		dbConn:            nil,
 		outputChannel:     outChannel,
@@ -123,11 +123,11 @@ func (mariaCrawler *mariadbCrawler) Crawl() {
 	}
 }
 
-func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (mariaCrawler *mariadbCrawler) crawl() (*agent.CloudCrawlData, error) {
 	crawlTime := time.Now().UTC()
-	allCrawledElements := []*bloopi_agent.Element{}
+	allCrawledElements := []*agent.Element{}
 
-	postDB := databasemodels.Database{
+	postDB := database.Database{
 		Name:    mariaCrawler.DBName,
 		Host:    mariaCrawler.Host,
 		Schemas: []string{},
@@ -135,18 +135,18 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 	schemaName := mariaCrawler.DBName
 	dbInternalName := generateInternalName(mariaCrawler.scopeID, mariaCrawler.DBName, "")
-	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, mariadb.MARIADB_TYPE_DB, bloopi_agent.StatusNoStatus, "", crawlTime)
+	dbElem, errDBElem := utils.CreateElement(postDB, postDB.Name, dbInternalName, mariadb.MARIADB_TYPE_DB, agent.StatusNoStatus, "", crawlTime)
 	if errDBElem != nil {
 		log.Error().Msgf("Cannot create schema db element for db name: %s because %s", mariaCrawler.DBName, errDBElem.Error())
 		return nil, errDBElem
 	}
 
 	allCrawledElements = append(allCrawledElements, dbElem)
-	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(mariaCrawler.externalMappingID, dbInternalName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ParentChildTypeRelation, crawlTime)
+	extIDDBNameRel, errExtIDDBNameRel := utils.CreateRelationship(mariaCrawler.externalMappingID, dbInternalName, agent.RelationshipExternalSourceSideType, agent.ParentChildTypeRelation, crawlTime)
 	if errExtIDDBNameRel == nil {
 		allCrawledElements = append(allCrawledElements, extIDDBNameRel)
 	}
-	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, bloopi_agent.RelationshipExternalSourceSideType, bloopi_agent.ErTypeRelation, crawlTime)
+	rel, errRel := utils.CreateRelationship(mariaCrawler.Host, mariaCrawler.DBName, agent.RelationshipExternalSourceSideType, agent.ErTypeRelation, crawlTime)
 	if errRel == nil {
 		allCrawledElements = append(allCrawledElements, rel)
 	}
@@ -171,7 +171,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 
 			for _, destination := range constraint.Destinations {
 				// add the referenced tableName in the current elem's relations
-				rel, errRel := utils.CreateRelationship(internalTableName, destination.Table, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(internalTableName, destination.Table, agent.RelationshipType, agent.ErTypeRelation, crawlTime)
 				if errRel == nil {
 					allCrawledElements = append(allCrawledElements, rel)
 				}
@@ -182,7 +182,7 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 		tableIndexes, _ := mariaCrawler.getTableIndexes(schemaName, tableName)
 		for _, tableIndex := range tableIndexes {
 			indexInternalName := generateInternalName(mariaCrawler.scopeID, schemaName, tableIndex.Name)
-			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, bloopi_agent.StatusNoStatus, "", crawlTime)
+			indexElem, errIndexElem := utils.CreateElement(tableIndex, tableIndex.Name, indexInternalName, mariadb.MARIADB_TYPE_INDEX, agent.StatusNoStatus, "", crawlTime)
 			if errIndexElem != nil {
 				log.Info().Msgf("Cannot create table index element for index: %s because %s", tableIndex.Name, errIndexElem.Error())
 				continue
@@ -190,29 +190,29 @@ func (mariaCrawler *mariadbCrawler) crawl() (*bloopi_agent.CloudCrawlData, error
 			allCrawledElements = append(allCrawledElements, indexElem)
 			tableData.Indexes = append(tableData.Indexes, indexInternalName)
 
-			relTableIndex, errRelTableIndex := utils.CreateRelationship(internalTableName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+			relTableIndex, errRelTableIndex := utils.CreateRelationship(internalTableName, indexInternalName, agent.RelationshipType, agent.ErTypeRelation, crawlTime)
 			if errRelTableIndex == nil {
 				allCrawledElements = append(allCrawledElements, relTableIndex)
 			}
 
-			relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(mariaCrawler.DBName, indexInternalName, bloopi_agent.RelationshipType, bloopi_agent.ErTypeRelation, crawlTime)
+			relDBNameIndex, errRelDBNameIndex := utils.CreateRelationship(mariaCrawler.DBName, indexInternalName, agent.RelationshipType, agent.ErTypeRelation, crawlTime)
 			if errRelDBNameIndex == nil {
 				allCrawledElements = append(allCrawledElements, relDBNameIndex)
 			}
 		}
 
-		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, internalTableName, mariadb.MARIADB_TYPE_TABLE, bloopi_agent.StatusNoStatus, "", crawlTime)
+		tableElem, errTableElem := utils.CreateElement(tableData, tableData.Name, internalTableName, mariadb.MARIADB_TYPE_TABLE, agent.StatusNoStatus, "", crawlTime)
 		if errTableElem != nil {
 			continue
 		}
 		allCrawledElements = append(allCrawledElements, tableElem)
 	}
 
-	crawledData := bloopi_agent.CrawledData{
+	crawledData := agent.CrawledData{
 		Data: allCrawledElements,
 	}
 
-	mariaCrawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+	mariaCrawler.outputChannel <- &agent.CloudCrawlData{
 		Timestamp:       time.Now().UTC(),
 		DataSource:      *mariaCrawler.dataSource,
 		CrawledData:     crawledData,

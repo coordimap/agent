@@ -15,14 +15,14 @@ import (
 	"syscall"
 	"time"
 
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
-	kube_model "dev.azure.com/bloopi/bloopi/_git/shared_models.git/kubernetes"
+	"coordimap-agent/pkg/domain/agent"
+	kube_model "coordimap-agent/pkg/domain/kubernetes"
 	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-func NewFlowsCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewFlowsCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	crawler := &flowsCrawler{
 		outputChannel: outChannel,
 		dataSource:    dataSource,
@@ -209,7 +209,7 @@ func (crawler *flowsCrawler) Crawl() {
 }
 
 func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
-	crawledElements := []*bloopi_agent.Element{}
+	crawledElements := []*agent.Element{}
 	crawlTime := time.Now().UTC()
 	clusterUID, errGetClusterUIDFromMapping := crawler.mappings.GetValue("*")
 	if errGetClusterUIDFromMapping != nil {
@@ -220,19 +220,19 @@ func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 	srcInternalID := cloudutils.CreateKubeInternalName(clusterUID, srcPod.Namespace, kube_model.TypePod, srcPod.Name)
 	dstInternalID := cloudutils.CreateKubeInternalName(clusterUID, dstPod.Namespace, kube_model.TypePod, dstPod.Name)
 
-	srcElement, errSrc := utils.CreateElement(srcPod, srcPod.Name, srcInternalID, kube_model.TypePod, bloopi_agent.StatusNoStatus, "", crawlTime)
+	srcElement, errSrc := utils.CreateElement(srcPod, srcPod.Name, srcInternalID, kube_model.TypePod, agent.StatusNoStatus, "", crawlTime)
 	if errSrc != nil {
 		log.Warn().Msgf("Error creating source element: %s", errSrc.Error())
 		return
 	}
 
-	dstElement, errDst := utils.CreateElement(dstPod, dstPod.Name, dstInternalID, kube_model.TypePod, bloopi_agent.StatusNoStatus, "", crawlTime)
+	dstElement, errDst := utils.CreateElement(dstPod, dstPod.Name, dstInternalID, kube_model.TypePod, agent.StatusNoStatus, "", crawlTime)
 	if errDst != nil {
 		log.Warn().Msgf("Error creating destination element: %s", errDst.Error())
 		return
 	}
 
-	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, bloopi_agent.RelationshipType, bloopi_agent.FlowTypeRelation, crawlTime)
+	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime)
 	if errRel != nil {
 		log.Warn().Msgf("Error creating relationship: %s", errRel.Error())
 		return
@@ -240,11 +240,11 @@ func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 
 	crawledElements = append(crawledElements, srcElement, dstElement, relation)
 
-	crawledData := bloopi_agent.CrawledData{
+	crawledData := agent.CrawledData{
 		Data: crawledElements,
 	}
 
-	crawler.outputChannel <- &bloopi_agent.CloudCrawlData{
+	crawler.outputChannel <- &agent.CloudCrawlData{
 		Timestamp:       crawlTime,
 		DataSource:      *crawler.dataSource,
 		CrawledData:     crawledData,
@@ -252,7 +252,7 @@ func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 	}
 }
 
-func (crawler *flowsCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (crawler *flowsCrawler) crawl() (*agent.CloudCrawlData, error) {
 	// This function will be called by the ticker, but the main logic is now in Crawl()
 	// We can leave this empty or add some periodic tasks if needed.
 	return nil, nil

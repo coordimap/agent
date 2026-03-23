@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	awsflowlogs "dev.azure.com/bloopi/bloopi/_git/shared_models.git/aws_flow_logs"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/awsflowlogs"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -58,9 +58,9 @@ type awsFlowLogsCrawler struct {
 	bucketName         string
 	region             string
 	accountID          string
-	outputChannel      chan *bloopi_agent.CloudCrawlData
+	outputChannel      chan *agent.CloudCrawlData
 	crawlInterval      time.Duration
-	dataSource         *bloopi_agent.DataSource
+	dataSource         *agent.DataSource
 	awsSession         *s3.S3
 	foundRelationships map[string]awsflowlogs.AWSFlowLog
 	lastHandledKey     string

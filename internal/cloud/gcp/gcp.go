@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	"dev.azure.com/bloopi/bloopi/_git/shared_models.git/bloopi_agent"
+	"coordimap-agent/pkg/domain/agent"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/option"
 )
 
-func NewGCPCrawler(dataSource *bloopi_agent.DataSource, outChannel chan *bloopi_agent.CloudCrawlData) (Crawler, error) {
+func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {
 	gcpCrawler := gcpCrawler{
 		clientOpts:          []option.ClientOption{},
 		crawlInterval:       30 * time.Second,
@@ -188,10 +188,10 @@ func (gcpCrawler *gcpCrawler) GetProjectID(ctx context.Context) (string, error) 
 	return creds.ProjectID, nil
 }
 
-func (gcpCrawler *gcpCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
+func (gcpCrawler *gcpCrawler) crawl() (*agent.CloudCrawlData, error) {
 	logger := log.With().Str("DataSourceType", "gcp").Str("ProjectID", gcpCrawler.ConfiguredProjectID).Str("DataSourceID", gcpCrawler.dataSource.DataSourceID).Logger()
 	crawlTime := time.Now().UTC()
-	allCrawledElemsAndRelationships := []*bloopi_agent.Element{}
+	allCrawledElemsAndRelationships := []*agent.Element{}
 
 	bucketElems, errBucketElems := gcpCrawler.GetBuckets(crawlTime)
 	if errBucketElems != nil {
@@ -229,11 +229,11 @@ func (gcpCrawler *gcpCrawler) crawl() (*bloopi_agent.CloudCrawlData, error) {
 		}
 	}
 
-	crawledData := bloopi_agent.CrawledData{
+	crawledData := agent.CrawledData{
 		Data: allCrawledElemsAndRelationships,
 	}
 
-	gcpCrawler.outputChan <- &bloopi_agent.CloudCrawlData{
+	gcpCrawler.outputChan <- &agent.CloudCrawlData{
 		Timestamp:       crawlTime,
 		DataSource:      gcpCrawler.dataSource,
 		CrawledData:     crawledData,
