@@ -72,12 +72,12 @@ func TestNewYamlStringConfig(t *testing.T) {
 			want: &configuration.CoordimapConfig{
 				Coordimap: configuration.Coordimap{
 					APIKey: "123",
-					DataSources: []configuration.BloopiConfigDataSource{
+					DataSources: []configuration.CoordimapConfigDataSource{
 						{
 							Type: "aws",
 							Name: "aws1",
 							Desc: "desc1",
-							Config: []configuration.BloopiConfigNameValueConfig{
+							Config: []configuration.CoordimapConfigNameValueConfig{
 								{
 									Name:  "policy_config",
 									Value: "true",
@@ -88,7 +88,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 							Type: "postgres",
 							Name: "post1",
 							Desc: "desc1",
-							Config: []configuration.BloopiConfigNameValueConfig{
+							Config: []configuration.CoordimapConfigNameValueConfig{
 								{
 									Name:  "db_name",
 									Value: "dbname1",

@@ -11,27 +11,27 @@ type Config interface {
 	GetSkipFields() []string
 }
 
-// BloopiConfigNameValueConfig represents a name-value pair configuration item.
-type BloopiConfigNameValueConfig struct {
+// CoordimapConfigNameValueConfig represents a name-value pair configuration item.
+type CoordimapConfigNameValueConfig struct {
 	Name  string
 	Value string
 	Send  bool
 }
 
-// BloopiConfigDataSource represents a data source configuration.
-type BloopiConfigDataSource struct {
+// CoordimapConfigDataSource represents a data source configuration.
+type CoordimapConfigDataSource struct {
 	Type   string
 	Name   string
 	Desc   string
 	ID     string
-	Config []BloopiConfigNameValueConfig
+	Config []CoordimapConfigNameValueConfig
 }
 
 // Coordimap holds the configuration specific to the Coordimap integration.
 type Coordimap struct {
 	APIKey      string                   `yaml:"api_key"`
 	SkipFields  []string                 `yaml:"skip_fields"`
-	DataSources []BloopiConfigDataSource `yaml:"data_sources"`
+	DataSources []CoordimapConfigDataSource `yaml:"data_sources"`
 }
 
 // CoordimapConfig represents the top-level configuration structure for Coordimap.

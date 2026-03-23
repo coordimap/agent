@@ -414,7 +414,7 @@ OTel should reuse the upstream `scope_id` instead of inventing a separate identi
 
 Recommended resource attributes include:
 
-- `bloopi.scope_id`
+- `coordimap.scope_id`
 - `k8s.cluster.uid`
 - `cloud.account.id`
 - `cloud.project.number`

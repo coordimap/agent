@@ -15,12 +15,13 @@ import (
 
 	"coordimap-agent/pkg/domain/agent"
 	"coordimap-agent/pkg/domain/collector"
+
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
 	endpoint   = kingpin.Flag("endpoint", "The server URL where to send data.").Default("http://localhost:8000/crawlers/infra/aws").OverrideDefaultFromEnvar("COORDIMAP_ENDPOINT").String()
-	configFile = kingpin.Flag("config", "The config file path.").Default("config.yaml").OverrideDefaultFromEnvar("BLOOPIE_CONFIG_PATH").String()
+	configFile = kingpin.Flag("config", "The config file path.").Default("config.yaml").OverrideDefaultFromEnvar("COORDIMAP_CONFIG_PATH").String()
 	debug      = kingpin.Flag("debug", "Displays debug statements giving the user more information as to what is happening inside the agent.").Bool()
 )
 
@@ -125,6 +126,12 @@ func main() {
 	}
 	log.Info().Msgf("Loading configuration file %s", *configFile)
 
+	coordimapKey, errCoordimapKey := configuration.GetCoordimapKey()
+	if errCoordimapKey != nil || coordimapKey == "" {
+		log.Fatal().Msg("COORDIMAP_API_KEY is not set or is empty. Stopping the crawler.")
+		return
+	}
+
 	allDataSources := configuration.GetAllDataSources()
 	errValidateMappings := validateKubernetesScopeMappings(allDataSources)
 	if errValidateMappings != nil {
@@ -168,15 +175,15 @@ func main() {
 
 		requestStruct.CloudCrawlData.DataSource = *utils.CleanUpDataSource(&requestStruct.CloudCrawlData.DataSource, configuration.GetSkipFields())
 
-		bloopiKey, errBloopiKey := configuration.GetCoordimapKey()
-		if errBloopiKey != nil {
-			log.Warn().Msg("Could not find a configurable COORDIMAP_KEY in the config file. Defaulting to 'dummy_coordimap_key'")
-			bloopiKey = "dummy_bloopi_key"
+		coordimapKey, errCoordimapKey := configuration.GetCoordimapKey()
+		if errCoordimapKey != nil || coordimapKey == "" {
+			log.Fatal().Msg("COORDIMAP_API_KEY is not set or is empty. Stopping the crawler.")
+			return
 		}
 
 		var respData collector.AddCrawledInfraFromAgentResponse
 		req := gorequest.New().Timeout(15 * time.Second)
-		resp, _, errs := req.Post(*endpoint).Set("Api-Key", bloopiKey).SendStruct(requestStruct).EndStruct(&respData)
+		resp, _, errs := req.Post(*endpoint).Set("Api-Key", coordimapKey).SendStruct(requestStruct).EndStruct(&respData)
 		if len(errs) > 0 {
 			log.Info().Msgf("Error from collector %s. Error: %s", *endpoint, errs[0].Error())
 			continue

@@ -1,5 +1,5 @@
 coordimap:
-  api_key: ${BLOOPI_API_KEY}
+  api_key: ${COORDIMAP_API_KEY}
   data_sources:
     - type: aws
       name: aws1
