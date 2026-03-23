@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"coordimap-agent/pkg/domain/agent"
+	"github.com/rs/zerolog/log"
 )
 
 func LoadValueFromEnvConfig(value string) (string, error) {
@@ -66,6 +67,8 @@ func CreateElement(element interface{}, name, id, elemType, status, version stri
 		status = agent.StatusNoStatus
 	}
 
+	log.Debug().Msgf("Creating Element [Name: %s] [ID: %s] [Type: %s]", name, id, elemType)
+
 	return &agent.Element{
 		RetrievedAt: crawlTime,
 		Name:        name,
@@ -85,6 +88,8 @@ func CreateAWSElement(element interface{}, name, id, elemType, status, version s
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debug().Msgf("Creating AWS Element [Name: %s] [ID: %s] [Type: %s]", name, id, elemType)
 
 	return &agent.Element{
 		RetrievedAt: crawlTime,
@@ -111,6 +116,8 @@ func CreateRelationship(sourceID, destinationID, relationshipType string, relati
 		RelationshipType: relationshipType,
 		RelationType:     relationType,
 	}
+
+	log.Debug().Msgf("Creating Relationship [SourceID: %s] [DestinationID: %s] [RelationType: %d]", sourceID, destinationID, relationType)
 
 	relationshipWrapperElem, errRelationshipWrapperElem := CreateElement(
 		parentElem,
