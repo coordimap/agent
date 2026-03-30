@@ -32,6 +32,15 @@ jobs:
       - name: Generate eBPF artifacts
         run: go generate ./internal/cloud/flows
 
+      - name: Debug generated eBPF artifacts
+        run: |
+          pwd
+          echo "Repository files:"
+          find . -print | sort
+          echo ""
+          echo "Flows directory details:"
+          ls -la internal/cloud/flows
+
       - name: Run Tests
         run: go test -v ./...
 
