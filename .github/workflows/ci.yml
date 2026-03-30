@@ -100,7 +100,6 @@ jobs:
           description: "Coordimap Agent for infrastructure crawling"
           homepage: "https://coordimap.com"
           license: "MIT"
-          bindir: "/usr/local/bin"
           contents:
             - src: "build/coordimap-agent"
               dst: "/usr/local/bin/coordimap-agent"
