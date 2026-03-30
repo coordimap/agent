@@ -55,7 +55,7 @@ jobs:
     name: Build Packages
     needs: test
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -128,7 +128,7 @@ jobs:
     name: Publish Docker Image
     needs: test
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
       packages: write
@@ -190,7 +190,7 @@ jobs:
     name: Update Helm Chart Version
     needs: [build-and-release, docker]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout Helm Chart Repository
         uses: actions/checkout@v4
