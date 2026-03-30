@@ -3,9 +3,9 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - '**'
+      - "**"
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Install dependencies
         run: go mod download
@@ -33,11 +33,6 @@ jobs:
         working-directory: internal/cloud/flows
         run: go generate
 
-      - name: Verify eBPF artifacts
-        run: |
-          test -f internal/cloud/flows/bpf_bpfel.o
-          test -f internal/cloud/flows/bpf_bpfeb.o
-
       - name: Debug generated eBPF artifacts
         run: |
           pwd
@@ -46,6 +41,11 @@ jobs:
           echo ""
           echo "Flows directory details:"
           ls -la internal/cloud/flows
+
+      - name: Verify eBPF artifacts
+        run: |
+          test -f internal/cloud/flows/bpf_bpfel.o
+          test -f internal/cloud/flows/bpf_bpfeb.o
 
       - name: Run Tests
         run: go test -v ./...
@@ -62,7 +62,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Install eBPF build dependencies
         run: |
@@ -86,7 +86,7 @@ jobs:
         run: |
           mkdir -p build/
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/coordimap-agent ./cmd/agent
-          
+
       - name: Create nfpm configuration
         run: |
           cat << 'NFPM' > nfpm.yaml
@@ -200,13 +200,13 @@ jobs:
           # The tag without 'refs/tags/'
           VERSION="${GITHUB_REF#refs/tags/}"
           # Remove 'v' prefix for appVersion if needed, but let's keep it as the tag
-          
+
           # Update appVersion in Chart.yaml
           sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" charts/agent/Chart.yaml
-          
+
           # Update image tag in values.yaml
           sed -i "s/tag:.*/tag: \"${VERSION}\"/" charts/agent/values.yaml
-          
+
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
