@@ -1,0 +1,48 @@
+package kubernetes
+
+import (
+	"time"
+
+	"coordimap-agent/pkg/domain/agent"
+	"github.com/prometheus/client_golang/api"
+	"k8s.io/client-go/kubernetes"
+)
+
+const defaultCrawlTime = 30 * time.Second
+
+const (
+	kubeConfigInCluster            = "in_cluster"
+	kubeConfigConfigFile           = "config_file"
+	kubeConfigCrawlInterval        = "crawl_interval"
+	kubeConfigIstioPrometheusHost  = "prometheus_host"
+	kubeConfigClusterName          = "cluster_name"
+	kubeConfigRetinaPrometheusHost = "retina_prometheus"
+	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
+	kubeConfigExternalMappings     = "external_mappings"
+	kubeConfigScopeID              = "scope_id"
+)
+
+type kubernetesCrawler struct {
+	retinaCrawler     *prometheusCrawler
+	kubeClient        *kubernetes.Clientset
+	outputChannel     chan *agent.CloudCrawlData
+	dataSource        agent.DataSource
+	istioCrawler      prometheusCrawler
+	internalNodeNames map[string]string
+	externalMappings  map[string]string
+	clusterName       string
+	clusterUID        string
+	cloudDataSourceID string
+	crawlInterval     time.Duration
+	istioConfigured   bool
+}
+
+type prometheusCrawler struct {
+	Host          string
+	promClient    api.Client
+	promQueryTime string
+}
+
+type Crawler interface {
+	Crawl()
+}

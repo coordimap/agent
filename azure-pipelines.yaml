@@ -1,0 +1,194 @@
+name: coordimap-agent pipeline
+
+trigger:
+  batch: "true"
+  branches:
+    include:
+      - refs/tags/*
+      - develop
+      - master
+
+variables:
+  GOPATH: "$(System.DefaultWorkingDirectory)/../gopath"
+  GOBIN: "$(GOPATH)/bin"
+  GOVERSION: 1.23.0
+  POOL: "ubuntu-latest"
+  disable.coverage.autogenerate: "true"
+  PROJECT_NAME: "coordimap-agent"
+  # Variables for the new release stage
+  agentBinary: "agent"
+  dockerImageName: "cleye-agent-build"
+
+stages:
+  - stage: RunTestsAndCoverageReport
+    displayName: Build the App and Run Unit Tests
+    jobs:
+      - job: BuildAndRunTest
+        pool:
+          vmImage: $(POOL)
+        steps:
+          - task: GoTool@0
+            inputs:
+              version: $(GOVERSION)
+            displayName: SetUp Go $(GOVERSION) in the machine
+
+          - script: |
+              set -e -x
+              echo "GOBIN $(GOBIN)"
+              echo "GOPATH $(GOPATH)"
+              mkdir -p '$(GOPATH)'
+              mkdir -p '$(GOBIN)'
+              mkdir -p '$(GOPATH)/pkg'
+
+            workingDirectory: "$(System.DefaultWorkingDirectory)"
+            displayName: Setup GOPATH and DB Schema
+
+          - script: |
+              git config --global url."https://$(AZURE_GIT_KEY)@dev.azure.com/bloopi/bloopi/_git/shared_models".insteadOf "https://dev.azure.com/bloopi/bloopi/_git/shared_models"
+            displayName: Configure Git to get private repos
+
+          - task: Go@0
+            displayName: Go get all dependencies
+            inputs:
+              command: "get"
+              arguments: "-d -t ./..."
+              workingDirectory: "$(System.DefaultWorkingDirectory)"
+
+          - script: |
+              set -x
+              mkdir coverage
+
+              go install github.com/jstemmer/go-junit-report/v2@latest
+              go install github.com/axw/gocov/gocov@latest
+              go install github.com/AlekSi/gocov-xml@latest
+              go install github.com/matm/gocov-html/cmd/gocov-html@latest
+
+              go test -v -coverprofile=coverage.txt -covermode count ./... > test_results.txt
+
+              $(GOBIN)/go-junit-report < test_results.txt > report.xml
+              $(GOBIN)/gocov convert coverage.txt > coverage.json
+              $(GOBIN)/gocov-xml < coverage.json > coverage.xml
+              $(GOBIN)/gocov-html < coverage.json > coverage/index.html
+            workingDirectory: "$(System.DefaultWorkingDirectory)"
+            displayName: Run Unit Tests and Code Coverage
+
+          - task: PublishTestResults@1
+            inputs:
+              testRunner: JUnit
+              testResultsFiles: $(System.DefaultWorkingDirectory)/report.xml
+
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: $(System.DefaultWorkingDirectory)/coverage.xml
+              reportDirectory: $(System.DefaultWorkingDirectory)/coverage
+
+  - stage: BuildAndPushToDockerHub
+    displayName: Build and Push to DockerHub
+    dependsOn: RunTestsAndCoverageReport
+    pool:
+      vmImage: $(POOL)
+    jobs:
+      - job: BuildDockerContainer
+        displayName: Build Docker Container
+        steps:
+          - task: Docker@2
+            displayName: Build and Push Container
+            inputs:
+              command: buildAndPush
+              arguments: --build-arg GIT_TOKEN=$(AZURE_GIT_KEY) --progress=plain --debug
+              repository: coordimap/$(PROJECT_NAME)
+              Dockerfile: $(System.DefaultWorkingDirectory)/Dockerfile
+              buildContext: $(System.DefaultWorkingDirectory)
+              containerRegistry: blptesting-dockerhub
+              tags: |
+                latest
+                $(Build.BuildId)
+
+  # New stage for building and creating a GitHub Release
+  - stage: BuildAndReleaseGitHub
+    displayName: "Build and Release Agent to GitHub"
+    jobs:
+      - job: BuildAndReleaseJob
+        displayName: "Build Binary and Create GitHub Release"
+        pool:
+          vmImage: $(POOL)
+        steps:
+          - task: Docker@2
+            displayName: "Build Docker Image for Release"
+            inputs:
+              command: "build"
+              containerRegistry: ""
+              repository: $(dockerImageName)
+              Dockerfile: "$(Build.SourcesDirectory)/Dockerfile"
+              tags: "$(Build.BuildId)"
+              # Note: AZURE_GIT_KEY is used here as it's defined in the original pipeline
+              arguments: "--build-arg GIT_TOKEN=$(AZURE_GIT_KEY)"
+
+          - script: |
+              echo "Creating a temporary container to extract the binary..."
+              docker create --name temp_container $(dockerImageName):$(Build.BuildId)
+
+              echo "Copying binary from container to the Artifact Staging Directory..."
+              docker cp temp_container:/agent $(Build.ArtifactStagingDirectory)/$(agentBinary)
+
+              echo "Removing temporary container..."
+              docker rm temp_container
+            displayName: "Extract Binary from Docker Image"
+
+          - script: |
+              echo "Installing nfpm..."
+              mkdir -p $(System.DefaultWorkingDirectory)/bin
+              curl -sfL https://github.com/goreleaser/nfpm/releases/download/v2.43.4/nfpm_2.43.4_Linux_x86_64.tar.gz | tar xvz -C $(System.DefaultWorkingDirectory)/bin nfpm
+              export PATH=$PATH:$(System.DefaultWorkingDirectory)/bin
+
+              echo "Preparing for packaging..."
+              cd $(System.DefaultWorkingDirectory)
+              cp $(Build.ArtifactStagingDirectory)/$(agentBinary) ./agent
+              cp build/package/agent/nfpm.yaml .
+              cp configs/agent.example.yaml ./config.example.yaml
+              cp build/package/agent/coordimap-agent.service .
+              cp -r build/package/agent/scripts .
+
+              # Prepare binary for tarball with project name
+              cp ./agent ./$(PROJECT_NAME)
+
+              export VERSION="$(Build.BuildId)"
+
+              echo "Building packages..."
+              nfpm pkg --packager deb --target .
+              nfpm pkg --packager rpm --target .
+              nfpm pkg --packager archlinux --target .
+
+              echo "Creating tarball..."
+              tar cvzf "$(PROJECT_NAME).tar.gz" ./$(PROJECT_NAME)
+
+              ls -lha
+
+              ls -lha $(System.DefaultWorkingDirectory)/bin
+            displayName: "Create Packages (deb, rpm, pacman, tar.gz)"
+
+          - script: |
+              curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: token $(GITHUB_TOKEN)" https://api.github.com/repos/coordimap/agent/releases -d '{"tag_name":"$(Build.BuildId)","target_commitish":"4132714202ad3cc012c4d7912c7568b8c5d76a43","name":"$(Build.BuildId)","body":"Agent Release $(Build.BuildId)","draft":false,"prerelease":false,"generate_release_notes":false}'
+            displayName: "Create GitHub Release"
+
+          - script: |
+              echo "Retrieving the release of tag: $(Build.BuildId)"
+              releaseID=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: token $(GITHUB_TOKEN)" https://api.github.com/repos/coordimap/agent/releases/tags/$(Build.BuildId) | jq ".id")
+              echo "Release of tag: $(Build.BuildId) is: $releaseID"
+
+              echo "Submitting assets..."
+              cd $(System.DefaultWorkingDirectory)
+              for filename in $(PROJECT_NAME).tar.gz *.deb *.rpm *.pkg.tar.zst; do
+                if [ -f "$filename" ]; then
+                  echo "Uploading $filename..."
+                  # Determine content type
+                  if [[ "$filename" == *.tar.gz ]]; then
+                    CTYPE="application/gzip"
+                  else
+                    CTYPE="application/octet-stream"
+                  fi
+                  curl --data-binary @"$filename" -H "Authorization: token $(GITHUB_TOKEN)" -H "Content-Type: $CTYPE" "https://uploads.github.com/repos/coordimap/agent/releases/$releaseID/assets?name=`basename "$filename"`"
+                fi
+              done
+            displayName: "Upload Release Assets"

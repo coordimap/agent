@@ -1,0 +1,218 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  pull_request:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        working-directory: internal/cloud/flows
+        run: |
+          go run github.com/cilium/ebpf/cmd/bpf2go -go-package flows -cc clang -cflags "-O2 -g -Wall -Werror" bpf ./bpf_probe/tc.c -- -I./headers -I/usr/include/x86_64-linux-gnu/ -I/usr/i686-linux-gnu/include/
+
+      - name: Debug generated eBPF artifacts
+        run: |
+          pwd
+          echo "Repository files:"
+          find . -print | sort
+          echo ""
+          echo "Flows directory details:"
+          ls -la internal/cloud/flows
+
+      - name: Verify eBPF artifacts
+        run: |
+          test -f internal/cloud/flows/bpf_bpfel.o
+          test -f internal/cloud/flows/bpf_bpfeb.o
+
+      - name: Run Tests
+        run: go test -v ./...
+
+  build-and-release:
+    name: Build Packages
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        working-directory: internal/cloud/flows
+        run: |
+          go run github.com/cilium/ebpf/cmd/bpf2go -go-package flows -cc clang -cflags "-O2 -g -Wall -Werror" bpf ./bpf_probe/tc.c -- -I./headers -I/usr/include/x86_64-linux-gnu/ -I/usr/i686-linux-gnu/include/
+
+      - name: Verify eBPF artifacts
+        run: |
+          test -f internal/cloud/flows/bpf_bpfel.o
+          test -f internal/cloud/flows/bpf_bpfeb.o
+
+      - name: Install nfpm
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Build Binary
+        run: |
+          mkdir -p build/
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/coordimap-agent ./cmd/agent
+
+      - name: Create nfpm configuration
+        run: |
+          cat << 'NFPM' > nfpm.yaml
+          name: "coordimap-agent"
+          arch: "amd64"
+          platform: "linux"
+          version: "${{ github.ref_name }}"
+          maintainer: "Coordimap"
+          description: "Coordimap Agent for infrastructure crawling"
+          homepage: "https://coordimap.com"
+          license: "MIT"
+          bindir: "/usr/local/bin"
+          contents:
+            - src: "build/coordimap-agent"
+              dst: "/usr/local/bin/coordimap-agent"
+          NFPM
+
+      - name: Package rpm, deb, and apk
+        run: |
+          nfpm pkg --packager rpm --target build/
+          nfpm pkg --packager deb --target build/
+          nfpm pkg --packager apk --target build/
+          # For Arch Linux
+          nfpm pkg --packager archlinux --target build/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/*.rpm
+            build/*.deb
+            build/*.apk
+            build/*.pkg.tar.zst
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Publish Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        working-directory: internal/cloud/flows
+        run: |
+          go run github.com/cilium/ebpf/cmd/bpf2go -go-package flows -cc clang -cflags "-O2 -g -Wall -Werror" bpf ./bpf_probe/tc.c -- -I./headers -I/usr/include/x86_64-linux-gnu/ -I/usr/i686-linux-gnu/include/
+
+      - name: Verify eBPF artifacts
+        run: |
+          test -f internal/cloud/flows/bpf_bpfel.o
+          test -f internal/cloud/flows/bpf_bpfeb.o
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/coordimap-agent
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  update-helm-chart:
+    name: Update Helm Chart Version
+    needs: [build-and-release, docker]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Helm Chart Repository
+        uses: actions/checkout@v4
+        with:
+          repository: coordimap/coordimap-agent-helmchart
+          token: ${{ secrets.HELM_REPO_PAT }}
+          path: helm-chart
+
+      - name: Update Chart.yaml and values.yaml
+        run: |
+          cd helm-chart
+          # The tag without 'refs/tags/'
+          VERSION="${GITHUB_REF#refs/tags/}"
+          # Remove 'v' prefix for appVersion if needed, but let's keep it as the tag
+
+          # Update appVersion in Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" charts/agent/Chart.yaml
+
+          # Update image tag in values.yaml
+          sed -i "s/tag:.*/tag: \"${VERSION}\"/" charts/agent/values.yaml
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add charts/agent/Chart.yaml charts/agent/values.yaml
+          git commit -m "Bump agent version to ${VERSION}"
+          git push origin main
