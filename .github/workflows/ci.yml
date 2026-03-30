@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        run: go generate ./internal/cloud/flows
+
       - name: Run Tests
         run: go test -v ./...
 
@@ -40,6 +48,14 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        run: go generate ./internal/cloud/flows
 
       - name: Install nfpm
         run: |
@@ -97,6 +113,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install eBPF build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+
+      - name: Generate eBPF artifacts
+        run: go generate ./internal/cloud/flows
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
