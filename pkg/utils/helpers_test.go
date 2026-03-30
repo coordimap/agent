@@ -58,6 +58,10 @@ func TestLoadValueFromEnvConfig(t *testing.T) {
 }
 
 func Test_encodeAndHashAWSStruct(t *testing.T) {
+	if os.Getenv("RUN_AWS_INTEGRATION_TESTS") == "" {
+		t.Skip("set RUN_AWS_INTEGRATION_TESTS=1 to run AWS integration tests")
+	}
+
 	type args struct {
 		elem interface{}
 	}
