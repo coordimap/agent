@@ -27,7 +27,7 @@ jobs:
       - name: Install eBPF build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
 
       - name: Generate eBPF artifacts
         working-directory: internal/cloud/flows
@@ -68,7 +68,7 @@ jobs:
       - name: Install eBPF build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
 
       - name: Generate eBPF artifacts
         working-directory: internal/cloud/flows
@@ -140,7 +140,7 @@ jobs:
       - name: Install eBPF build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm libelf-dev gcc-multilib
+          sudo apt-get install -y clang llvm libelf-dev libbpf-dev gcc-multilib
 
       - name: Generate eBPF artifacts
         working-directory: internal/cloud/flows
