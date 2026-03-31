@@ -11,8 +11,7 @@ coordimap:
     # # --- AWS Data Source ---
     # # Collects inventory and configuration data from an AWS account.
     # - type: aws
-    #   name: aws-production
-    #   desc: "Production AWS Account"
+    #   id: aws-production
     #   config:
     #     - name: scope_id
     #       value: your-aws-account-id
@@ -35,8 +34,7 @@ coordimap:
     # # --- GCP Data Source ---
     # # Collects inventory and configuration data from a GCP project.
     # - type: gcp
-    #   name: gcp-production
-    #   desc: "Production GCP Project"
+    #   id: gcp-production
     #   config:
     #     - name: scope_id
     #       value: your-gcp-project-number
@@ -64,8 +62,7 @@ coordimap:
     # # --- PostgreSQL Data Source ---
     # # Collects schema and metadata from a PostgreSQL database.
     # - type: postgres
-    #   name: postgres-primary
-    #   desc: "Primary PostgreSQL Database"
+    #   id: postgres-primary
     #   config:
     #     - name: scope_id
     #       value: your-postgres-system-identifier
@@ -88,8 +85,7 @@ coordimap:
     # # --- MySQL Data Source ---
     # # Collects schema and metadata from a MySQL database.
     # - type: mysql
-    #   name: mysql-primary
-    #   desc: "Primary MySQL Database"
+    #   id: mysql-primary
     #   config:
     #     - name: scope_id
     #       value: your-mysql-server-uuid
@@ -109,8 +105,7 @@ coordimap:
     # # --- MariaDB Data Source ---
     # # Collects schema and metadata from a MariaDB database.
     # - type: mariadb
-    #   name: mariadb-primary
-    #   desc: "Primary MariaDB Database"
+    #   id: mariadb-primary
     #   config:
     #     - name: scope_id
     #       value: your-mariadb-server-uuid
@@ -135,8 +130,7 @@ coordimap:
     # # --- Kubernetes Data Source ---
     # # Collects resource definitions and status from a Kubernetes cluster.
     # - type: kubernetes
-    #   name: k8s-cluster-1
-    #   desc: "Main Kubernetes Cluster"
+    #   id: k8s-cluster-1
     #   config:
     #     - name: scope_id
     #       value: your_k8s_cluster_uid
@@ -173,8 +167,7 @@ coordimap:
     # # --- AWS Flow Logs Data Source ---
     # # Collects and parses VPC Flow Logs stored in S3.
     # - type: aws_flow_logs
-    #   name: flowlogs-vpc-1
-    #   desc: "VPC Flow Logs from S3"
+    #   id: flowlogs-vpc-1
     #   config:
     #     - name: scope_id
     #       value: your-aws-account-id
@@ -198,8 +191,7 @@ coordimap:
     # # --- eBPF Flows Data Source ---
     # # Captures runtime network flows with eBPF.
     # - type: flows
-    #   name: ebpf-flows
-    #   desc: "Runtime eBPF Flow Collection"
+    #   id: ebpf-flows
     #   config:
     #     # Use "all" or a specific interface name like "eth0".
     #     - name: interface_name
@@ -216,8 +208,7 @@ coordimap:
     # # --- MongoDB Data Source ---
     # # Collects metadata from a MongoDB instance.
     # - type: mongodb
-    #   name: mongo-production
-    #   desc: "Production MongoDB"
+    #   id: mongo-production
     #   config:
     #     - name: scope_id
     #       value: your-replica-set-id

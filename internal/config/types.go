@@ -21,8 +21,6 @@ type CoordimapConfigNameValueConfig struct {
 // CoordimapConfigDataSource represents a data source configuration.
 type CoordimapConfigDataSource struct {
 	Type   string
-	Name   string
-	Desc   string
 	ID     string
 	Config []CoordimapConfigNameValueConfig
 }

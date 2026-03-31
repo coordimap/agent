@@ -44,8 +44,8 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*agent.DataS
 	allDataSources := map[string][]*agent.DataSource{}
 	for _, dataSource := range coordimapConfig.parsedConfig.DataSources {
 		info := agent.DataSourceInfo{
-			Name: dataSource.Name,
-			Desc: dataSource.Desc,
+			Name: dataSource.ID,
+			Desc: dataSource.ID,
 			Type: dataSource.Type,
 		}
 

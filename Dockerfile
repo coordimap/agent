@@ -42,7 +42,7 @@ RUN go generate ./...
 RUN CGO_ENABLED=0 go build -a -o cmd/agent/agent cmd/agent/main.go
 
 # --- Final Stage ---
-FROM alpine:latest
+FROM alpine:3.21.6
 
 COPY --from=build-env /src/cmd/agent/agent /agent
 

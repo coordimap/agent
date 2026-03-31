@@ -76,8 +76,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 					DataSources: []configuration.CoordimapConfigDataSource{
 						{
 							Type: "aws",
-							Name: "aws1",
-							Desc: "desc1",
+							ID:   "aws1",
 							Config: []configuration.CoordimapConfigNameValueConfig{
 								{
 									Name:  "policy_config",
@@ -87,8 +86,7 @@ func TestNewYamlStringConfig(t *testing.T) {
 						},
 						{
 							Type: "postgres",
-							Name: "post1",
-							Desc: "desc1",
+							ID:   "post1",
 							Config: []configuration.CoordimapConfigNameValueConfig{
 								{
 									Name:  "db_name",
@@ -116,14 +114,12 @@ func TestNewYamlStringConfig(t *testing.T) {
   api_key: 123
   data_sources:
     - type: aws
-      name: aws1
-      desc: desc1
+      id: aws1
       config:
       - name: policy_config
         value: "true"
     - type: postgres
-      name: post1
-      desc: desc1
+      id: post1
       config:
         - name: db_name
           value: dbname1

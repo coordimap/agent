@@ -2,8 +2,7 @@ coordimap:
   api_key: ${COORDIMAP_API_KEY}
   data_sources:
     - type: aws
-      name: aws1
-      desc: desc1
+      id: aws1
       config:
       - name: scope_id
         value: \"your-aws-account-id\"
@@ -16,8 +15,7 @@ coordimap:
       - name: crawl_interval
         value: 30s
     - type: postgres
-      name: post1
-      desc: desc1
+      id: post1
       config:
         - name: scope_id
           value: \"your-postgres-system-identifier\"
@@ -32,8 +30,7 @@ coordimap:
         - name: crawl_interval
           value: 30s
     - type: kubernetes
-      name: kube1
-      desc: desc1
+      id: kube1
       config:
       - name: scope_id
         value: \"your_k8s_cluster_uid\"
@@ -44,8 +41,7 @@ coordimap:
       - name: crawl_interval
         value: 30s
     - type: aws_flow_logs
-      name: flowlog1
-      desc: desc1
+      id: flowlog1
       config:
       - name: scope_id
         value: \"your-aws-account-id\"
@@ -66,8 +62,7 @@ coordimap:
       - name: crawl_interval
         value: 30s
     - type: mongodb
-      name: mongo-atlas
-      desc: desc1
+      id: mongo-atlas
       config:
       - name: scope_id
         value: \"your-replica-set-id\"
