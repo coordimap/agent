@@ -1,17 +1,18 @@
 package integrations
 
 import (
-	"coordimap-agent/internal/cloud/flows"
-	"coordimap-agent/internal/cloud/gcp"
-	"coordimap-agent/internal/integrations/aws"
-	awsflowlogs "coordimap-agent/internal/integrations/aws_flow_logs"
-	"coordimap-agent/internal/integrations/kubernetes"
-	"coordimap-agent/internal/integrations/mariadb"
-	"coordimap-agent/internal/integrations/mongodb"
-	"coordimap-agent/internal/integrations/postgres"
 	"fmt"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/internal/cloud/flows"
+	"github.com/coordimap/agent/internal/cloud/gcp"
+	"github.com/coordimap/agent/internal/integrations/aws"
+	awsflowlogs "github.com/coordimap/agent/internal/integrations/aws_flow_logs"
+	"github.com/coordimap/agent/internal/integrations/kubernetes"
+	"github.com/coordimap/agent/internal/integrations/mariadb"
+	"github.com/coordimap/agent/internal/integrations/mongodb"
+	"github.com/coordimap/agent/internal/integrations/postgres"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
 func IntegrationsFactory(name string, dataSource *agent.DataSource, outChannel chan *agent.CloudCrawlData) (Crawler, error) {

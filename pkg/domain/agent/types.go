@@ -14,9 +14,13 @@ const (
 )
 
 const (
-	ParentChildTypeRelation = 3
-	ErTypeRelation          = 4
-	FlowTypeRelation        = 7
+	ParentChildTypeRelation          = 3
+	ErTypeRelation                   = 4
+	GenericFlowTypeRelation          = 100
+	GCPNetworkFlowTypeRelation       = 101
+	KubernetesRetinaFlowTypeRelation = 102
+	KubernetesIstioFlowTypeRelation  = 103
+	EBPFFlowTypeRelation             = 104
 )
 
 const (

@@ -1,8 +1,8 @@
 package collector
 
 import (
-	"coordimap-agent/pkg/domain/agent"
-	"coordimap-agent/pkg/domain/generic"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/generic"
 )
 
 type TenantInfo struct {
@@ -11,7 +11,7 @@ type TenantInfo struct {
 }
 
 type CloudAsset struct {
-	TenantInfo     TenantInfo                  `json:"tenant_info"`
+	TenantInfo     TenantInfo           `json:"tenant_info"`
 	DataSourceInfo agent.DataSourceInfo `json:"data_source_info"`
 	Element        agent.Element        `json:"element"`
 }

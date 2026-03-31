@@ -1,6 +1,6 @@
 package gcp
 
-import "coordimap-agent/pkg/domain/agent"
+import "github.com/coordimap/agent/pkg/domain/agent"
 
 func getComputeStatus(status string) string {
 	switch status {

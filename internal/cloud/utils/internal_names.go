@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	gcpModel "coordimap-agent/pkg/domain/gcp"
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
 )
 
 func CreateGCPInternalName(scopeID, zone, assetType, name string) string {

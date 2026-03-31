@@ -1,4 +1,4 @@
-module coordimap-agent
+module github.com/coordimap/agent
 
 go 1.23
 

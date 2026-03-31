@@ -3,7 +3,7 @@ package kubernetes
 import (
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )

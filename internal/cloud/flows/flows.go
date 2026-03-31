@@ -1,8 +1,6 @@
 package flows
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -15,8 +13,12 @@ import (
 	"syscall"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
+
 	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -232,7 +234,7 @@ func (crawler *flowsCrawler) createAndSendElements(srcPod, dstPod PodInfo) {
 		return
 	}
 
-	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime)
+	relation, errRel := utils.CreateRelationship(srcInternalID, dstInternalID, agent.RelationshipType, agent.EBPFFlowTypeRelation, crawlTime)
 	if errRel != nil {
 		log.Warn().Msgf("Error creating relationship: %s", errRel.Error())
 		return

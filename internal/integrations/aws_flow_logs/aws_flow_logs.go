@@ -2,7 +2,6 @@ package awsflowlogs
 
 import (
 	"bufio"
-	"coordimap-agent/pkg/utils"
 	"compress/gzip"
 	"fmt"
 	"strconv"
@@ -10,10 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"coordimap-agent/pkg/domain/awsflowlogs"
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/utils"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/awsflowlogs"
 	"github.com/rs/zerolog/log"
 )
 

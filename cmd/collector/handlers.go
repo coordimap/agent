@@ -1,13 +1,14 @@
 package main
 
 import (
-	"coordimap-agent/internal/integrations/clouds"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/coordimap/agent/internal/integrations/clouds"
 )
 
 func handleInfraAWS(c *AppContext, w http.ResponseWriter, r *http.Request) (int, error) {

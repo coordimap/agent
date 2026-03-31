@@ -1,16 +1,17 @@
 package gcp
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	gcpModel "coordimap-agent/pkg/domain/gcp"
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/compute/v1"
 	run "google.golang.org/api/run/v1"

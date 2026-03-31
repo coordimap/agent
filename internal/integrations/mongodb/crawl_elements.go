@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"coordimap-agent/pkg/domain/database"
-	"coordimap-agent/pkg/domain/mongodb"
+	"github.com/coordimap/agent/pkg/domain/database"
+	"github.com/coordimap/agent/pkg/domain/mongodb"
 	"github.com/gertd/go-pluralize"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"

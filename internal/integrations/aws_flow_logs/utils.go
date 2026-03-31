@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"coordimap-agent/pkg/domain/awsflowlogs"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/coordimap/agent/pkg/domain/awsflowlogs"
 )
 
 var privateIPBlocks []*net.IPNet

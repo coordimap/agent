@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"github.com/rs/zerolog/log"
 )
 

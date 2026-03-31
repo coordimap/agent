@@ -3,7 +3,7 @@ package gcp
 import (
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/option"
 )

@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"coordimap-agent/pkg/domain/awsflowlogs"
-	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/awsflowlogs"
 )
 
 const (

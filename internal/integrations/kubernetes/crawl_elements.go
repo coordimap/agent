@@ -1,14 +1,16 @@
 package kubernetes
 
 import (
-	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"slices"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
+
 	promV1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/rs/zerolog/log"
@@ -368,7 +370,7 @@ func (kubeCrawler *kubernetesCrawler) getRetinaFlowsRelationships(crawlTime time
 		sourceInternalID := kubeCrawler.kubeInternalName(string(metric["source_namespace"]), kube_model.TypePod, string(metric["source_podname"]))
 		destinationInternalID := kubeCrawler.kubeInternalName(string(metric["destination_namespace"]), kube_model.TypePod, string(metric["destination_podname"]))
 
-		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime); errRel == nil {
+		if rel, errRel := utils.CreateRelationship(sourceInternalID, destinationInternalID, agent.RelationshipType, agent.KubernetesRetinaFlowTypeRelation, crawlTime); errRel == nil {
 			allFoundRelationships = append(allFoundRelationships, rel)
 		}
 	}
@@ -433,7 +435,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.Relations
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeService,
-				RelationType:     agent.FlowTypeRelation,
+				RelationType:     agent.KubernetesIstioFlowTypeRelation,
 			})
 
 			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = agent.RelationshipElement{}
@@ -448,7 +450,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.Relations
 				SourceID:         sourceID,
 				DestinationID:    destinationID,
 				RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
-				RelationType:     agent.FlowTypeRelation,
+				RelationType:     agent.KubernetesIstioFlowTypeRelation,
 			})
 
 			istioMappingFromQueries[fmt.Sprintf("%s@%s", sourceID, destinationID)] = agent.RelationshipElement{}
@@ -458,7 +460,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.Relations
 			SourceID:         string(pod),
 			DestinationID:    "",
 			RelationshipType: kube_model.FlowIstioRelationshipTypePod,
-			RelationType:     agent.FlowTypeRelation,
+			RelationType:     agent.KubernetesIstioFlowTypeRelation,
 		}
 	}
 
@@ -503,7 +505,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.Relations
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeService,
-					RelationType:     agent.FlowTypeRelation,
+					RelationType:     agent.KubernetesIstioFlowTypeRelation,
 				})
 
 				istioMappingFromQueries[relationshipKey] = agent.RelationshipElement{}
@@ -521,7 +523,7 @@ func (kubeCrawler *kubernetesCrawler) getIstioRelationships() ([]agent.Relations
 					SourceID:         sourceID,
 					DestinationID:    destinationID,
 					RelationshipType: kube_model.FlowIstioRelationshipTypeDeployment,
-					RelationType:     agent.FlowTypeRelation,
+					RelationType:     agent.KubernetesIstioFlowTypeRelation,
 				})
 
 				istioMappingFromQueries[relationshipKey] = agent.RelationshipElement{}

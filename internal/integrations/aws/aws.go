@@ -1,20 +1,21 @@
 package aws
 
 import (
-	"coordimap-agent/pkg/utils"
 	"errors"
 	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/coordimap/agent/pkg/utils"
+
 	"github.com/rs/zerolog/log"
 
-	aws_shared_model "coordimap-agent/pkg/domain/aws"
-	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	aws_shared_model "github.com/coordimap/agent/pkg/domain/aws"
 )
 
 type AwsCrawl struct {
@@ -41,7 +42,7 @@ func MakeAWS(dsConfig *agent.DataSource, outChannel chan *agent.CloudCrawlData) 
 			scopeID = dsConfigValuePair.Value
 		}
 	}
-	
+
 	if scopeID == "" {
 		return nil, fmt.Errorf("AWS crawler config error: scope_id must be provided for data source %s", dsConfig.DataSourceID)
 	}

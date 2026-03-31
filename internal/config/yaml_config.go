@@ -1,11 +1,12 @@
 package configuration
 
 import (
-	"coordimap-agent/pkg/utils"
 	"fmt"
 	"os"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"gopkg.in/yaml.v3"
 )
 

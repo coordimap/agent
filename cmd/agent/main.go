@@ -1,20 +1,21 @@
 package main
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	configuration "coordimap-agent/internal/config"
-	"coordimap-agent/internal/integrations"
-	"coordimap-agent/pkg/utils"
 	"fmt"
 	"strings"
 	"time"
+
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	configuration "github.com/coordimap/agent/internal/config"
+	"github.com/coordimap/agent/internal/integrations"
+	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/parnurzeal/gorequest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"coordimap-agent/pkg/domain/agent"
-	"coordimap-agent/pkg/domain/collector"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/collector"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )

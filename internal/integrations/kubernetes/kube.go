@@ -1,16 +1,17 @@
 package kubernetes
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	gcpModel "coordimap-agent/pkg/domain/gcp"
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
 	"github.com/rs/zerolog/log"
 )
 

@@ -1,15 +1,16 @@
 package mongodb
 
 import (
-	"coordimap-agent/pkg/utils"
 	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	"coordimap-agent/pkg/domain/mongodb"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/mongodb"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -167,10 +168,10 @@ func (mongoCrawler *mongoCrawler) crawl() (*agent.CloudCrawlData, error) {
 				continue
 			}
 			allCrawledElements = append(allCrawledElements, collectionElem)
-				relDbColl, errRelDbColl := utils.CreateRelationship(dbInternalName, collectionInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
-				if errRelDbColl == nil {
-					allCrawledElements = append(allCrawledElements, relDbColl)
-				}
+			relDbColl, errRelDbColl := utils.CreateRelationship(dbInternalName, collectionInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+			if errRelDbColl == nil {
+				allCrawledElements = append(allCrawledElements, relDbColl)
+			}
 
 			// get indexes
 			collectionIndexes, errCollectionIndexes := mongoCrawler.listCollectionIndexes(collectionHandle)
@@ -186,10 +187,10 @@ func (mongoCrawler *mongoCrawler) crawl() (*agent.CloudCrawlData, error) {
 					continue
 				}
 				allCrawledElements = append(allCrawledElements, indexElem)
-					relCollIndex, errRelCollIndex := utils.CreateRelationship(collectionInternalName, indexInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
-					if errRelCollIndex == nil {
-						allCrawledElements = append(allCrawledElements, relCollIndex)
-					}
+				relCollIndex, errRelCollIndex := utils.CreateRelationship(collectionInternalName, indexInternalName, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+				if errRelCollIndex == nil {
+					allCrawledElements = append(allCrawledElements, relCollIndex)
+				}
 			}
 		}
 

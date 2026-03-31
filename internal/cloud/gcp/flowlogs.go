@@ -1,16 +1,18 @@
 package gcp
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"slices"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
-	gcpModel "coordimap-agent/pkg/domain/gcp"
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
+
 	"google.golang.org/api/logging/v2"
 )
 
@@ -51,7 +53,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 			srcVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 			dstVmInternalID := cloudutils.CreateGCPInternalName(crawler.scopeID, jsonPayload.DstInstance.Zone, gcpModel.TypeVMInstance, jsonPayload.DstInstance.VmName)
 
-			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, agent.RelationshipType, agent.FlowTypeRelation, crawlTime)
+			vmRel, errVmRel := utils.CreateRelationship(srcVmInternalID, dstVmInternalID, agent.RelationshipType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 			if errVmRel == nil {
 				allFoundRelationships = append(allFoundRelationships, vmRel)
 			}
@@ -72,7 +74,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 				srcPodInternalName := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kube_model.TypePod, jsonPayload.SrcGkeDetails.Pod.Name)
 				dstPodInternalName := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kube_model.TypePod, jsonPayload.DstGkeDetails.Pod.Name)
 
-				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, agent.RelationshipExternalBothSidesType, agent.FlowTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(srcPodInternalName, dstPodInternalName, agent.RelationshipExternalBothSidesType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 				if errRel == nil {
 					allFoundRelationships = append(allFoundRelationships, rel)
 				}
@@ -82,7 +84,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 				srcDeployment := cloudutils.CreateKubeInternalName(srcClusterUID, jsonPayload.SrcGkeDetails.Pod.Namespace, kube_model.TypeDeployment, jsonPayload.SrcGkeDetails.Pod.Workload.Name)
 				dstDeployment := cloudutils.CreateKubeInternalName(dstClusterUID, jsonPayload.DstGkeDetails.Pod.Namespace, kube_model.TypeDeployment, jsonPayload.DstGkeDetails.Pod.Workload.Name)
 
-				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, agent.RelationshipExternalBothSidesType, agent.FlowTypeRelation, crawlTime)
+				rel, errRel := utils.CreateRelationship(srcDeployment, dstDeployment, agent.RelationshipExternalBothSidesType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 				if errRel == nil {
 					allFoundRelationships = append(allFoundRelationships, rel)
 				}
@@ -116,20 +118,20 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 				podInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kube_model.TypePod, gke.Pod.Name)
 				deplomentInternalName := cloudutils.CreateKubeInternalName(clusterUID, gke.Pod.Namespace, kube_model.TypeDeployment, gke.Pod.Workload.Name)
 				if index == 0 {
-					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.FlowTypeRelation, crawlTime)
+					relPodSql, errRelPodSql := utils.CreateRelationship(podInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relPodSql)
 					}
-					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(deplomentInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.FlowTypeRelation, crawlTime)
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(deplomentInternalName, sqlInternalName, agent.RelationshipExternalSourceSideType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 					if errRelDeploymentSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
 					}
 				} else {
-					relPodSql, errRelPodSql := utils.CreateRelationship(sqlInternalName, podInternalName, agent.RelationshipExternalDestinationSideType, agent.FlowTypeRelation, crawlTime)
+					relPodSql, errRelPodSql := utils.CreateRelationship(sqlInternalName, podInternalName, agent.RelationshipExternalDestinationSideType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 					if errRelPodSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relPodSql)
 					}
-					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(sqlInternalName, deplomentInternalName, agent.RelationshipExternalDestinationSideType, agent.FlowTypeRelation, crawlTime)
+					relDeploymentSql, errRelDeploymentSql := utils.CreateRelationship(sqlInternalName, deplomentInternalName, agent.RelationshipExternalDestinationSideType, agent.GCPNetworkFlowTypeRelation, crawlTime)
 					if errRelDeploymentSql == nil {
 						allFoundRelationships = append(allFoundRelationships, relDeploymentSql)
 					}
@@ -145,9 +147,9 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 
 				instanceInternalName := cloudutils.CreateGCPInternalName(crawler.scopeID, instance.Zone, gcpModel.TypeVMInstance, instance.VmName)
 				if index == 0 {
-					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, agent.FlowTypeRelation, crawlTime)
+					utils.AddRelationship(&allFoundRelationships, sqlInternalName, instanceInternalName, agent.GCPNetworkFlowTypeRelation, crawlTime)
 				} else if index == 1 {
-					utils.AddRelationship(&allFoundRelationships, instanceInternalName, sqlInternalName, agent.FlowTypeRelation, crawlTime)
+					utils.AddRelationship(&allFoundRelationships, instanceInternalName, sqlInternalName, agent.GCPNetworkFlowTypeRelation, crawlTime)
 				}
 			}
 		}

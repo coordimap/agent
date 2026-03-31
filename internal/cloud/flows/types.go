@@ -8,17 +8,17 @@ import (
 	"sync"
 	"time"
 
-	"coordimap-agent/internal/cloud/utils"
+	"github.com/coordimap/agent/internal/cloud/utils"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	FLOWS_CONFIG_CRAWL_INTERVAL           = "crawl_interval"
-	FLOWS_CONFIG_DEPLOYED_AT              = "deployedAt"
-	FLOWS_CONFIG_INTERFACE_NAME           = "interface_name"
-	FLOWS_CONFIG_EXTERNAL_MAPPINGS        = "external_mappings"
+	FLOWS_CONFIG_CRAWL_INTERVAL    = "crawl_interval"
+	FLOWS_CONFIG_DEPLOYED_AT       = "deployedAt"
+	FLOWS_CONFIG_INTERFACE_NAME    = "interface_name"
+	FLOWS_CONFIG_EXTERNAL_MAPPINGS = "external_mappings"
 )
 
 // Crawler is the interface for all the crawlers
@@ -28,14 +28,14 @@ type Crawler interface {
 }
 
 type flowsCrawler struct {
-	outputChannel     chan *agent.CloudCrawlData
-	dataSource        *agent.DataSource
-	kubeClientset     *kubernetes.Clientset
-	podCache          *PodCache
-	crawlInterval     time.Duration
-	deployedAt        string
-	interfaceName     string
-	mappings          utils.Mappings
+	outputChannel chan *agent.CloudCrawlData
+	dataSource    *agent.DataSource
+	kubeClientset *kubernetes.Clientset
+	podCache      *PodCache
+	crawlInterval time.Duration
+	deployedAt    string
+	interfaceName string
+	mappings      utils.Mappings
 }
 
 type ConnectionData struct {

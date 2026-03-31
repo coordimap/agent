@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
 type mariadbCrawler struct {

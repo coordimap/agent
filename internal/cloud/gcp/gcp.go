@@ -2,7 +2,6 @@ package gcp
 
 import (
 	"context"
-	cloudutils "coordimap-agent/internal/cloud/utils"
 	"errors"
 	"fmt"
 	"os"
@@ -10,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+
 	"cloud.google.com/go/compute/metadata"
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2"

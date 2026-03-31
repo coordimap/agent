@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	aws_shared_model "coordimap-agent/pkg/domain/aws"
-	"coordimap-agent/pkg/domain/agent"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	aws_shared_model "github.com/coordimap/agent/pkg/domain/aws"
 )
 
 func worker(whatToCrawl string, owner []*string, regionSession *session.Session, results chan<- []*agent.Element, wg *sync.WaitGroup, dataSourceID string, crawlTime time.Time) {

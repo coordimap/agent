@@ -1,13 +1,14 @@
 package mariadb
 
 import (
-	"coordimap-agent/pkg/utils"
 	"fmt"
 	"slices"
 	"strconv"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/utils"
+
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"github.com/rs/zerolog/log"
 )
 

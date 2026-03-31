@@ -1,10 +1,11 @@
 package configuration_test
 
 import (
-	configuration "coordimap-agent/internal/config"
 	"os"
 	"reflect"
 	"testing"
+
+	configuration "github.com/coordimap/agent/internal/config"
 )
 
 func TestNewYamlFileConfig(t *testing.T) {

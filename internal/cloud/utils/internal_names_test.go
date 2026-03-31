@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	kube_model "coordimap-agent/pkg/domain/kubernetes"
+	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
 )
 
 func TestCreateKubeInternalName(t *testing.T) {

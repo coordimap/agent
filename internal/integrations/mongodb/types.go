@@ -3,7 +3,7 @@ package mongodb
 import (
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

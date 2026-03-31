@@ -3,8 +3,8 @@ package mariadb
 import (
 	"fmt"
 
-	"coordimap-agent/pkg/domain/database"
-	"coordimap-agent/pkg/domain/mariadb"
+	"github.com/coordimap/agent/pkg/domain/database"
+	"github.com/coordimap/agent/pkg/domain/mariadb"
 )
 
 func (mariaCrawler *mariadbCrawler) GetTableNames(schemaName string) ([]string, error) {

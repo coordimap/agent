@@ -3,8 +3,8 @@ package postgres
 import (
 	"fmt"
 
-	"coordimap-agent/pkg/domain/database"
-	"coordimap-agent/pkg/domain/postgres"
+	"github.com/coordimap/agent/pkg/domain/database"
+	"github.com/coordimap/agent/pkg/domain/postgres"
 	"github.com/rs/zerolog/log"
 )
 
@@ -104,7 +104,7 @@ func (postCrawler *postgresCrawler) getTableConstraints(schemaName, tableName st
 
 		// Get all columns of the constraint
 		sqlConstraintsColumns := `
-			select DISTINCT 
+			select DISTINCT
 				kcu.ordinal_position as position,
 				kcu.column_name as key_column,
 				tco.constraint_type AS constraint_type

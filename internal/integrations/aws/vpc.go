@@ -1,15 +1,14 @@
 package aws
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
-	aws_shared_model "coordimap-agent/pkg/domain/aws"
-	"coordimap-agent/pkg/domain/agent"
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -22,6 +21,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	aws_shared_model "github.com/coordimap/agent/pkg/domain/aws"
 )
 
 func getAwsAccountID(session *session.Session) (*string, error) {

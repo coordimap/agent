@@ -1,19 +1,20 @@
 package postgres
 
 import (
-	cloudutils "coordimap-agent/internal/cloud/utils"
-	"coordimap-agent/pkg/utils"
 	"database/sql"
 	"fmt"
 	"slices"
 	"strconv"
 	"time"
 
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/pkg/utils"
+
 	_ "github.com/lib/pq"
 
-	"coordimap-agent/pkg/domain/agent"
-	"coordimap-agent/pkg/domain/database"
-	"coordimap-agent/pkg/domain/postgres"
+	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/database"
+	"github.com/coordimap/agent/pkg/domain/postgres"
 	"github.com/rs/zerolog/log"
 )
 

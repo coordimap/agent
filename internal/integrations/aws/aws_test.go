@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
 func TestAwsCrawl_GetCrawlInterval(t *testing.T) {

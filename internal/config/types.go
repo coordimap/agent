@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	"coordimap-agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
 // Config defines the interface for retrieving configuration data.
@@ -29,8 +29,8 @@ type CoordimapConfigDataSource struct {
 
 // Coordimap holds the configuration specific to the Coordimap integration.
 type Coordimap struct {
-	APIKey      string                   `yaml:"api_key"`
-	SkipFields  []string                 `yaml:"skip_fields"`
+	APIKey      string                      `yaml:"api_key"`
+	SkipFields  []string                    `yaml:"skip_fields"`
 	DataSources []CoordimapConfigDataSource `yaml:"data_sources"`
 }
 
