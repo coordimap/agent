@@ -21,6 +21,7 @@ const (
 	KubernetesRetinaFlowTypeRelation = 102
 	KubernetesIstioFlowTypeRelation  = 103
 	EBPFFlowTypeRelation             = 104
+	AWSNetworkFlowTypeRelation       = 105
 )
 
 const (
