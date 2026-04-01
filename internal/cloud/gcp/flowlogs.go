@@ -25,7 +25,7 @@ func (crawler *gcpCrawler) getFlowLogsRelationships() ([]*agent.Element, error) 
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339))
 
-	filter := fmt.Sprintf("resource.type=\"gce_subnetwork\" AND jsonPayload.connection.src_ip!=\"\" AND jsonPayload.connection.dest_ip!=\"\" AND %s", timeFilter)
+	filter := fmt.Sprintf("logName=~\"compute.googleapis.com%2Fvpc_flows\" AND %s", timeFilter)
 
 	entries, errEntries := crawler.logClient.Entries.List(&logging.ListLogEntriesRequest{
 		ResourceNames: []string{fmt.Sprintf("projects/%s", crawler.ConfiguredProjectID)},
