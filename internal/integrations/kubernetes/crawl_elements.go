@@ -25,6 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+func setListItemsTypeMeta(length int, setTypeMeta func(i int)) {
+	for i := 0; i < length; i++ {
+		setTypeMeta(i)
+	}
+}
+
 func (kubeCrawler *kubernetesCrawler) getNodes() ([]v1.Node, error) {
 	list, err := kubeCrawler.kubeClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -35,6 +41,11 @@ func (kubeCrawler *kubernetesCrawler) getNodes() ([]v1.Node, error) {
 		clearManagedFields(&item.ObjectMeta)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Node"
+		list.Items[i].APIVersion = "v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -43,6 +54,11 @@ func (kubeCrawler *kubernetesCrawler) listNamespaces() ([]v1.Namespace, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not load the kubernetes namespaces. %w", err)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Namespace"
+		list.Items[i].APIVersion = "v1"
+	})
 
 	return list.Items, nil
 }
@@ -57,6 +73,11 @@ func (kubeCrawler *kubernetesCrawler) listPods(namespace string) ([]v1.Pod, erro
 		clearManagedFields(&item.ObjectMeta)
 	}
 
+	setListItemsTypeMeta(len(podList.Items), func(i int) {
+		podList.Items[i].Kind = "Pod"
+		podList.Items[i].APIVersion = "v1"
+	})
+
 	return podList.Items, nil
 }
 
@@ -69,6 +90,11 @@ func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1
 	for _, item := range list.Items {
 		clearManagedFields(&item.ObjectMeta)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Deployment"
+		list.Items[i].APIVersion = "apps/v1"
+	})
 
 	return list.Items, nil
 }
@@ -96,6 +122,11 @@ func (kubeCrawler *kubernetesCrawler) listServices(namespace string) ([]v1.Servi
 	if errPods != nil {
 		return nil, fmt.Errorf("could not list the services for namespace: %s. %w", namespace, errPods)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Service"
+		list.Items[i].APIVersion = "v1"
+	})
 
 	return list.Items, nil
 }
@@ -128,6 +159,11 @@ func (kubeCrawler *kubernetesCrawler) listSecrets(namespace string) ([]v1.Secret
 		clearManagedFields(&item.ObjectMeta)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Secret"
+		list.Items[i].APIVersion = "v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -136,6 +172,11 @@ func (kubeCrawler *kubernetesCrawler) listJobs(namespace string) ([]batchv1.Job,
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the jobs for namespace: %s. %w", namespace, errList)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Job"
+		list.Items[i].APIVersion = "batch/v1"
+	})
 
 	return list.Items, nil
 }
@@ -150,6 +191,11 @@ func (kubeCrawler *kubernetesCrawler) listCronJobs(namespace string) ([]batchv1.
 		clearManagedFields(&item.ObjectMeta)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "CronJob"
+		list.Items[i].APIVersion = "batch/v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -162,6 +208,11 @@ func (kubeCrawler *kubernetesCrawler) listEndpoints(namespace string) ([]v1.Endp
 	for _, item := range list.Items {
 		clearManagedFields(&item.ObjectMeta)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Endpoints"
+		list.Items[i].APIVersion = "v1"
+	})
 
 	return list.Items, nil
 }
@@ -177,6 +228,11 @@ func (kubeCrawler *kubernetesCrawler) listConfigMaps(namespace string) ([]v1.Con
 		clearManagedFields(&item.ObjectMeta)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "ConfigMap"
+		list.Items[i].APIVersion = "v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -185,6 +241,11 @@ func (kubeCrawler *kubernetesCrawler) listStatefulSets(namespace string) ([]apps
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the configmaps for namespace: %s. %w", namespace, errList)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "StatefulSet"
+		list.Items[i].APIVersion = "apps/v1"
+	})
 
 	return list.Items, nil
 }
@@ -195,6 +256,11 @@ func (kubeCrawler *kubernetesCrawler) listDaemonSets(namespace string) ([]appsv1
 		return nil, fmt.Errorf("could not list the configmaps for namespace: %s. %w", namespace, errList)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "DaemonSet"
+		list.Items[i].APIVersion = "apps/v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -203,6 +269,11 @@ func (kubeCrawler *kubernetesCrawler) listStorageClasses() ([]storagev1.StorageC
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "StorageClass"
+		list.Items[i].APIVersion = "storage.k8s.io/v1"
+	})
 
 	return list.Items, nil
 }
@@ -213,6 +284,11 @@ func (kubeCrawler *kubernetesCrawler) listPersistentVolumeClaims(namespace strin
 		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "PersistentVolumeClaim"
+		list.Items[i].APIVersion = "v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -221,6 +297,11 @@ func (kubeCrawler *kubernetesCrawler) listPersistentVolumes() ([]v1.PersistentVo
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the storageclasses. %w", errList)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "PersistentVolume"
+		list.Items[i].APIVersion = "v1"
+	})
 
 	return list.Items, nil
 }
@@ -231,6 +312,11 @@ func (kubeCrawler *kubernetesCrawler) listIngressesExtensionsBeta1(namespace str
 		return nil, fmt.Errorf("could not list the ingresses extensions beta1. %w", errList)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Ingress"
+		list.Items[i].APIVersion = "extensions/v1beta1"
+	})
+
 	return list.Items, nil
 }
 
@@ -240,6 +326,11 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1(namespace string
 		return nil, fmt.Errorf("could not list the ingresses networkingv1. %w", errList)
 	}
 
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Ingress"
+		list.Items[i].APIVersion = "networking.k8s.io/v1"
+	})
+
 	return list.Items, nil
 }
 
@@ -248,6 +339,11 @@ func (kubeCrawler *kubernetesCrawler) listIngressesNetworkingV1Beta1(namespace s
 	if errList != nil {
 		return nil, fmt.Errorf("could not list the ingresses networkingv1 beta1. %w", errList)
 	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "Ingress"
+		list.Items[i].APIVersion = "networking.k8s.io/v1beta1"
+	})
 
 	return list.Items, nil
 }

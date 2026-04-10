@@ -306,6 +306,10 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 			log.Warn().Msgf("Could not get the kubernetes deployments of data source name: %s because %s", kubeCrawler.dataSource.DataSourceID, errDeployments.Error())
 		} else {
 			for _, deployment := range deployments {
+				marshalDeployment, errMarshal := deployment.Marshal()
+				if errMarshal != nil {
+				}
+				fmt.Println(string(marshalDeployment), deployment.String())
 				deploymentStatus := getDeploymentStatus(deployment.Status.Conditions)
 				deploymentInternalID := kubeCrawler.kubeInternalName(namespace.Name, kube_model.TypeDeployment, deployment.Name)
 				version, _ := GetAppVersionFromLabels(deployment.Labels)
@@ -585,7 +589,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 
 		// list cronjobs
 		cronJobs, errCronJobs := kubeCrawler.listCronJobs(namespace.Name)
-		if errEndpoints != nil {
+		if errCronJobs != nil {
 			log.Warn().Msgf("Could not get the kubernetes cronjobs of data source name: %s because %s", kubeCrawler.dataSource.DataSourceID, errCronJobs.Error())
 		} else {
 			for _, cronJob := range cronJobs {
