@@ -1,4 +1,4 @@
-FROM golang:1.25-trixie AS build-env
+FROM golang:1.26 AS build-env
 
 # Add dependencies for building and for eBPF code generation
 # llvm is a dependency for clang
