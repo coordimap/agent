@@ -126,7 +126,7 @@ func (mongoCrawler *mongoCrawler) Crawl() {
 		log.Info().Msgf("Crawling MongoDB for %s", mongoCrawler.scopeID)
 		if errCrawl != nil {
 			// do not ship any data
-			log.Info().Msgf(errCrawl.Error())
+			log.Info().Msgf("%s", errCrawl.Error())
 			continue
 		}
 	}
