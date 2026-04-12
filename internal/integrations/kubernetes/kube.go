@@ -10,7 +10,6 @@ import (
 	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
-	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
 	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
 	"github.com/rs/zerolog/log"
 )
@@ -176,28 +175,11 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 	}
 
 	for _, node := range nodes {
-		defaultNodeInternalName := kubeCrawler.kubeInternalName("", kube_model.TypeNode, node.Name)
-		nodeInternalName := defaultNodeInternalName
-		cloudName, errCloudName := getNodeCloud(node.Labels, node.Annotations, node.Status.Addresses)
-		if errCloudName == nil && kubeCrawler.cloudDataSourceID != "" {
-			switch cloudName {
-			case "aws":
-				awsDataSourceID, errAwsDataSourceID := cloudutils.GetMappingDataSourceID(kubeCrawler.externalMappings, node.Name)
-				if errAwsDataSourceID == nil {
-					nodeInternalName = cloudutils.CreateAWSInternalID(awsDataSourceID, node.Name)
-				}
-
-			case "gcp":
-				gcpDataSourceID, errGcpDataSourceID := cloudutils.GetMappingDataSourceID(kubeCrawler.externalMappings, fmt.Sprintf("%s-%s", node.Labels["topology.kubernetes.io/region"], node.Name))
-				if errGcpDataSourceID == nil {
-					nodeInternalName = cloudutils.CreateGCPInternalName(gcpDataSourceID, node.Labels["topology.kubernetes.io/zone"], gcpModel.TypeVMInstance, node.Name)
-				}
-			}
-
-			if nodeInternalName != defaultNodeInternalName {
-				kubeCrawler.internalNodeNames[node.Name] = nodeInternalName
-				continue
-			}
+		nodeInternalName := kubeCrawler.kubeInternalName("", kube_model.TypeNode, node.Name)
+		if mappedInternalName, ok := resolveExternalNodeInternalName(node, kubeCrawler.externalMappings); ok {
+			nodeInternalName = mappedInternalName
+			kubeCrawler.internalNodeNames[node.Name] = nodeInternalName
+			continue
 		}
 
 		kubeCrawler.internalNodeNames[node.Name] = nodeInternalName

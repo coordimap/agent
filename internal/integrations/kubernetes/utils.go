@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
 	"github.com/prometheus/client_golang/api"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,6 +94,34 @@ func getNodeCloud(labels map[string]string, annotations map[string]string, addre
 	}
 
 	return "", errors.New("no cloud found")
+}
+
+func getNodeLocationLabel(labels map[string]string, primaryLabel, fallbackLabel string) string {
+	if value := labels[primaryLabel]; value != "" {
+		return value
+	}
+
+	return labels[fallbackLabel]
+}
+
+func resolveExternalNodeInternalName(node v1.Node, externalMappings map[string]string) (string, bool) {
+	cloudName, errCloudName := getNodeCloud(node.Labels, node.Annotations, node.Status.Addresses)
+	if errCloudName != nil || cloudName != "gcp" {
+		return "", false
+	}
+
+	region := getNodeLocationLabel(node.Labels, "topology.kubernetes.io/region", "failure-domain.beta.kubernetes.io/region")
+	zone := getNodeLocationLabel(node.Labels, "topology.kubernetes.io/zone", "failure-domain.beta.kubernetes.io/zone")
+	if region == "" || zone == "" {
+		return "", false
+	}
+
+	gcpDataSourceID, errGcpDataSourceID := cloudutils.GetMappingDataSourceID(externalMappings, fmt.Sprintf("%s-%s", region, node.Name))
+	if errGcpDataSourceID != nil {
+		return "", false
+	}
+
+	return cloudutils.CreateGCPInternalName(gcpDataSourceID, zone, gcpModel.TypeVMInstance, node.Name), true
 }
 
 const AppVersionLabel = "app.kubernetes.io/version"
