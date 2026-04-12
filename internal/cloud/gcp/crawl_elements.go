@@ -385,6 +385,8 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*agent.Element, er
 	for _, cluster := range clusters.Clusters {
 		zoneInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeRegion, cluster.Zone)
 		clusterInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, cluster.Location, gcpModel.TypeGKE, cluster.Name)
+		networkInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNetwork, cluster.Network)
+		subnetInternalID := cloudutils.CreateGCPInternalName(gcp.scopeID, cluster.Zone, gcpModel.TypeSubnetwork, cluster.Subnetwork)
 		clusterElem, errClusterElem := utils.CreateElement(cluster, cluster.Name, clusterInternalID, gcpModel.TypeGKE, getComputeStatus(cluster.Status), cluster.CurrentMasterVersion, crawlTime)
 		if errClusterElem != nil {
 			continue
@@ -394,12 +396,12 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*agent.Element, er
 
 		allGKEClusterElems = append(allGKEClusterElems, clusterElem)
 
-		networkRel, errNetworkRel := utils.CreateRelationship(cluster.Network, clusterInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+		networkRel, errNetworkRel := utils.CreateRelationship(networkInternalID, clusterInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 		if errNetworkRel == nil {
 			allGKEClusterElems = append(allGKEClusterElems, networkRel)
 		}
 
-		subnetRel, errSubnetRel := utils.CreateRelationship(cluster.Subnetwork, clusterInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+		subnetRel, errSubnetRel := utils.CreateRelationship(subnetInternalID, clusterInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 		if errSubnetRel == nil {
 			allGKEClusterElems = append(allGKEClusterElems, subnetRel)
 		}
@@ -445,15 +447,18 @@ func (gcp *gcpCrawler) getGKEClusters(crawlTime time.Time) ([]*agent.Element, er
 					instanceInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, instanceZone, gcpModel.TypeVMInstance, instanceName)
 
 					utils.AddRelationship(&allGKEClusterElems, clusterInternalID, instanceInternalName, agent.ParentChildTypeRelation, crawlTime)
+					utils.AddRelationship(&allGKEClusterElems, nodePoolInternalID, instanceInternalName, agent.ParentChildTypeRelation, crawlTime)
+					utils.AddRelationship(&allGKEClusterElems, subnetInternalID, instanceInternalName, agent.ParentChildTypeRelation, crawlTime)
+					utils.AddRelationship(&allGKEClusterElems, networkInternalID, instanceInternalName, agent.ParentChildTypeRelation, crawlTime)
 				}
 			}
 
-			relNetwork, errRelNetwork := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.scopeID, "", gcpModel.TypeNetwork, cluster.Network), nodePoolInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+			relNetwork, errRelNetwork := utils.CreateRelationship(networkInternalID, nodePoolInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 			if errRelNetwork == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relNetwork)
 			}
 
-			relSubnet, errRelSubnet := utils.CreateRelationship(cloudutils.CreateGCPInternalName(gcp.scopeID, cluster.Zone, gcpModel.TypeSubnetwork, cluster.Subnetwork), nodePoolInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+			relSubnet, errRelSubnet := utils.CreateRelationship(subnetInternalID, nodePoolInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
 			if errRelSubnet == nil {
 				allGKEClusterElems = append(allGKEClusterElems, relSubnet)
 			}
