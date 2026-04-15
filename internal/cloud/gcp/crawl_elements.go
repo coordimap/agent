@@ -11,6 +11,7 @@ import (
 	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/gcp"
 	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/compute/v1"
@@ -109,7 +110,8 @@ func (gcpCrawler *gcpCrawler) GetCloudRuns(crawlTime time.Time) ([]*agent.Elemen
 	}
 
 	for _, service := range services.Items {
-		elem, errElem := utils.CreateElement(service, service.Metadata.Name, service.Metadata.Name, gcpModel.TypeCloudRun, agent.StatusNoStatus, service.Metadata.ResourceVersion, crawlTime)
+		cloudRunInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcp.TypeCloudRun, service.Metadata.Name)
+		elem, errElem := utils.CreateElement(service, service.Metadata.Name, cloudRunInternalID, gcpModel.TypeCloudRun, agent.StatusNoStatus, service.Metadata.ResourceVersion, crawlTime)
 		if errElem == nil {
 			allCloudRuns = append(allCloudRuns, elem)
 		}

@@ -223,6 +223,13 @@ func (gcpCrawler *gcpCrawler) crawl() (*agent.CloudCrawlData, error) {
 		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, sqlElems...)
 	}
 
+	iamElems, errIAMElems := gcpCrawler.getIAMElements(crawlTime)
+	if errIAMElems != nil {
+		logger.Err(errIAMElems).Msg("could not retrieve IAM elements")
+	} else {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, iamElems...)
+	}
+
 	if gcpCrawler.logClient != nil {
 		flowRels, errFlowRels := gcpCrawler.getFlowLogsRelationships()
 		if errFlowRels == nil {

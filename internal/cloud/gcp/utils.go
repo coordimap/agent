@@ -1,11 +1,17 @@
 package gcp
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+
+	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
+	cloudresourcemanager "google.golang.org/api/cloudresourcemanager/v1"
 )
 
 func getZoneFromScopedZone(scopedZone string) string {
@@ -89,4 +95,54 @@ func ParseCloudSqlVersionToSemver(versionString string) (string, error) {
 	}
 
 	return semver, nil
+}
+
+func parseIAMPrincipal(member string) (string, string, bool) {
+	switch {
+	case strings.HasPrefix(member, "user:"):
+		return gcpModel.TypeIAMPrincipalUser, strings.TrimPrefix(member, "user:"), true
+	case strings.HasPrefix(member, "group:"):
+		return gcpModel.TypeIAMPrincipalGroup, strings.TrimPrefix(member, "group:"), true
+	case strings.HasPrefix(member, "domain:"):
+		return gcpModel.TypeIAMPrincipalDomain, strings.TrimPrefix(member, "domain:"), true
+	case strings.HasPrefix(member, "serviceAccount:"):
+		return gcpModel.TypeServiceAccount, strings.TrimPrefix(member, "serviceAccount:"), true
+	case member == "allUsers" || member == "allAuthenticatedUsers":
+		return gcpModel.TypeIAMPrincipalPublic, member, true
+	default:
+		return "", "", false
+	}
+}
+
+func buildIAMBindingInternalID(scopeID, projectID, role string, members []string, condition *cloudresourcemanager.Expr) string {
+	bindingKey := strings.Join([]string{
+		projectID,
+		role,
+		strings.Join(members, ","),
+		getIAMConditionSignature(condition),
+	}, "|")
+
+	hash := sha256.Sum256([]byte(bindingKey))
+	return cloudutils.CreateGCPInternalName(scopeID, "", gcpModel.TypeIAMBinding, hex.EncodeToString(hash[:]))
+}
+
+func getIAMConditionSignature(condition *cloudresourcemanager.Expr) string {
+	if condition == nil {
+		return ""
+	}
+
+	return strings.Join([]string{condition.Title, condition.Description, condition.Expression, condition.Location}, "|")
+}
+
+func sanitizeIAMName(value string) string {
+	replacer := strings.NewReplacer("/", "_", ":", "_", "@", "_", " ", "_")
+	return replacer.Replace(value)
+}
+
+func isCustomIAMRole(roleName string) bool {
+	return strings.HasPrefix(roleName, "projects/")
+}
+
+func isPredefinedIAMRole(roleName string) bool {
+	return strings.HasPrefix(roleName, "roles/")
 }
