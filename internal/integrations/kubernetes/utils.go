@@ -15,6 +15,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const gkeServiceAccountAnnotation = "iam.gke.io/gcp-service-account"
+
 func makePrometheusCrawler(prometheusHost string) (prometheusCrawler, error) {
 	crawler := prometheusCrawler{
 		promClient: nil,
@@ -122,6 +124,15 @@ func resolveExternalNodeInternalName(node v1.Node, externalMappings map[string]s
 	}
 
 	return cloudutils.CreateGCPInternalName(gcpDataSourceID, zone, gcpModel.TypeVMInstance, node.Name), true
+}
+
+func getGCPServiceAccountInternalID(gcpScopeID, gsaEmail string) string {
+	return cloudutils.CreateGCPInternalName(gcpScopeID, "", gcpModel.TypeServiceAccount, gsaEmail)
+}
+
+func _sanitizeIAMName(value string) string {
+	replacer := strings.NewReplacer("/", "_", ":", "_", "@", "_", " ", "_")
+	return replacer.Replace(value)
 }
 
 const AppVersionLabel = "app.kubernetes.io/version"

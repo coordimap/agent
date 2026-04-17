@@ -81,6 +81,24 @@ func (kubeCrawler *kubernetesCrawler) listPods(namespace string) ([]v1.Pod, erro
 	return podList.Items, nil
 }
 
+func (kubeCrawler *kubernetesCrawler) listServiceAccounts(namespace string) ([]v1.ServiceAccount, error) {
+	list, errList := kubeCrawler.kubeClient.CoreV1().ServiceAccounts(namespace).List(context.Background(), metav1.ListOptions{})
+	if errList != nil {
+		return nil, fmt.Errorf("could not list the service accounts for namespace: %s. %w", namespace, errList)
+	}
+
+	for _, item := range list.Items {
+		clearManagedFields(&item.ObjectMeta)
+	}
+
+	setListItemsTypeMeta(len(list.Items), func(i int) {
+		list.Items[i].Kind = "ServiceAccount"
+		list.Items[i].APIVersion = "v1"
+	})
+
+	return list.Items, nil
+}
+
 func (kubeCrawler *kubernetesCrawler) listDeplyments(namespace string) ([]appsv1.Deployment, error) {
 	list, errPods := kubeCrawler.kubeClient.AppsV1().Deployments(namespace).List(context.Background(), metav1.ListOptions{})
 	if errPods != nil {

@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/coordimap/agent/pkg/domain/agent"
 	"github.com/coordimap/agent/pkg/domain/gcp"
 	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
+	kubeModel "github.com/coordimap/agent/pkg/domain/kubernetes"
 	"github.com/coordimap/agent/pkg/utils"
 	cloudresourcemanager "google.golang.org/api/cloudresourcemanager/v1"
 	gcpiam "google.golang.org/api/iam/v1"
@@ -75,7 +77,128 @@ func (gcpCrawler *gcpCrawler) getIAMElements(crawlTime time.Time) ([]*agent.Elem
 		allIAMElements = append(allIAMElements, cloudRunIAMElems...)
 	}
 
+	gkeIAMElems, errGKEIAMElems := gcpCrawler.getGKEIdentityElements(crawlTime)
+	if errGKEIAMElems == nil {
+		allIAMElements = append(allIAMElements, gkeIAMElems...)
+	}
+
+	kubernetesIAMElems, errKubernetesIAMElems := gcpCrawler.getKubernetesServiceAccountIAMLInks(crawlTime)
+	if errKubernetesIAMElems == nil {
+		allIAMElements = append(allIAMElements, kubernetesIAMElems...)
+	}
+
 	return allIAMElements, nil
+}
+
+func (gcpCrawler *gcpCrawler) getGKEIdentityElements(crawlTime time.Time) ([]*agent.Element, error) {
+	allElems := []*agent.Element{}
+	client, errClient := createContainerClient(gcpCrawler.clientOpts)
+	if errClient != nil {
+		return nil, errClient
+	}
+
+	clusters, errClusters := client.Projects.Locations.Clusters.List(fmt.Sprintf("projects/%s/locations/-", gcpCrawler.ConfiguredProjectID)).Do()
+	if errClusters != nil {
+		return nil, errClusters
+	}
+
+	for _, cluster := range clusters.Clusters {
+		clusterInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, cluster.Location, gcpModel.TypeGKE, cluster.Name)
+
+		if cluster.WorkloadIdentityConfig != nil && cluster.WorkloadIdentityConfig.WorkloadPool != "" {
+			workloadPoolInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeWorkloadIdentityPool, cluster.WorkloadIdentityConfig.WorkloadPool)
+			workloadPoolElem, errWorkloadPoolElem := utils.CreateElement(cluster.WorkloadIdentityConfig, cluster.WorkloadIdentityConfig.WorkloadPool, workloadPoolInternalID, gcpModel.TypeWorkloadIdentityPool, agent.StatusNoStatus, "", crawlTime)
+			if errWorkloadPoolElem == nil {
+				allElems = append(allElems, workloadPoolElem)
+			}
+
+			utils.AddRelationship(&allElems, clusterInternalID, workloadPoolInternalID, agent.ParentChildTypeRelation, crawlTime)
+		}
+
+		if cluster.NodeConfig != nil {
+			gcpCrawler.addServiceAccountRelationship(&allElems, clusterInternalID, cluster.NodeConfig.ServiceAccount, crawlTime)
+		}
+
+		for _, nodePool := range cluster.NodePools {
+			nodePoolInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeNodePool, nodePool.Name)
+			if nodePool.Config == nil {
+				continue
+			}
+
+			gcpCrawler.addServiceAccountRelationship(&allElems, nodePoolInternalID, nodePool.Config.ServiceAccount, crawlTime)
+		}
+	}
+
+	return allElems, nil
+}
+
+func (gcpCrawler *gcpCrawler) getKubernetesServiceAccountIAMLInks(crawlTime time.Time) ([]*agent.Element, error) {
+	allElems := []*agent.Element{}
+	clusterClient, errClient := createContainerClient(gcpCrawler.clientOpts)
+	if errClient != nil {
+		return nil, errClient
+	}
+
+	clusters, errClusters := clusterClient.Projects.Locations.Clusters.List(fmt.Sprintf("projects/%s/locations/-", gcpCrawler.ConfiguredProjectID)).Do()
+	if errClusters != nil {
+		return nil, errClusters
+	}
+
+	for _, cluster := range clusters.Clusters {
+		clusterUID, errClusterUID := cloudutils.GetMappingValue(gcpCrawler.externalMappings, fmt.Sprintf("%s-%s", cluster.Location, cluster.Name))
+		if errClusterUID != nil {
+			continue
+		}
+
+		kubeCrawlerData, errKubeData := gcpCrawler.getLatestKubernetesServiceAccountElements(clusterUID)
+		if errKubeData != nil {
+			continue
+		}
+
+		for _, element := range kubeCrawlerData {
+			if element.Type != kubeModel.TypeServiceAccount {
+				continue
+			}
+
+			var serviceAccount map[string]any
+			if errUnmarshal := json.Unmarshal(element.Data, &serviceAccount); errUnmarshal != nil {
+				continue
+			}
+
+			metadata, ok := serviceAccount["metadata"].(map[string]any)
+			if !ok {
+				continue
+			}
+
+			annotations, ok := metadata["annotations"].(map[string]any)
+			if !ok {
+				continue
+			}
+
+			gsaValue, ok := annotations[gkeServiceAccountAnnotation].(string)
+			if !ok || gsaValue == "" {
+				continue
+			}
+
+			gsaInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeServiceAccount, gsaValue)
+			utils.AddRelationship(&allElems, element.ID, gsaInternalID, agent.ParentChildTypeRelation, crawlTime)
+		}
+	}
+
+	return allElems, nil
+}
+
+func (gcpCrawler *gcpCrawler) getLatestKubernetesServiceAccountElements(clusterUID string) ([]*agent.Element, error) {
+	return []*agent.Element{}, fmt.Errorf("not implemented")
+}
+
+func (gcpCrawler *gcpCrawler) addServiceAccountRelationship(existingRelationships *[]*agent.Element, sourceID, serviceAccountEmail string, crawlTime time.Time) {
+	if serviceAccountEmail == "" {
+		return
+	}
+
+	serviceAccountInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeServiceAccount, serviceAccountEmail)
+	utils.AddRelationship(existingRelationships, sourceID, serviceAccountInternalID, agent.ParentChildTypeRelation, crawlTime)
 }
 
 func (gcpCrawler *gcpCrawler) getServiceAccounts(projectInternalID string, iamClient *gcpiam.Service, crawlTime time.Time) ([]*agent.Element, error) {
@@ -87,7 +210,7 @@ func (gcpCrawler *gcpCrawler) getServiceAccounts(projectInternalID string, iamCl
 	}
 
 	for _, serviceAccount := range serviceAccounts.Accounts {
-		serviceAccountInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeServiceAccount, sanitizeIAMName(serviceAccount.Email))
+		serviceAccountInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeServiceAccount, serviceAccount.Email)
 		serviceAccountElem, errServiceAccountElem := utils.CreateElement(serviceAccount, serviceAccount.Email, serviceAccountInternalID, gcpModel.TypeServiceAccount, agent.StatusNoStatus, "", crawlTime)
 		if errServiceAccountElem == nil {
 			allElems = append(allElems, serviceAccountElem)
@@ -113,7 +236,7 @@ func (gcpCrawler *gcpCrawler) getCustomRoles(projectInternalID string, iamClient
 			roleName = role.Title
 		}
 
-		roleInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeIAMRole, sanitizeIAMName(roleName))
+		roleInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeIAMRole, roleName)
 		roleElem, errRoleElem := utils.CreateElement(role, roleName, roleInternalID, gcpModel.TypeIAMRole, agent.StatusNoStatus, role.Stage, crawlTime)
 		if errRoleElem == nil {
 			allElems = append(allElems, roleElem)
@@ -191,7 +314,7 @@ func (gcpCrawler *gcpCrawler) buildIAMPolicyElements(resourceInternalID, resourc
 
 		utils.AddRelationship(&allElems, resourceInternalID, bindingID, agent.ParentChildTypeRelation, crawlTime)
 
-		roleInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeIAMRole, sanitizeIAMName(binding.Role))
+		roleInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", gcpModel.TypeIAMRole, binding.Role)
 		if isPredefinedIAMRole(binding.Role) && !predefinedRoleCache[binding.Role] {
 			role, errRole := iamClient.Roles.Get(binding.Role).Do()
 			if errRole == nil {
@@ -211,7 +334,7 @@ func (gcpCrawler *gcpCrawler) buildIAMPolicyElements(resourceInternalID, resourc
 				continue
 			}
 
-			principalInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", principalType, sanitizeIAMName(principalValue))
+			principalInternalID := cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, "", principalType, principalValue)
 			principalElem, errPrincipalElem := utils.CreateElement(map[string]string{
 				"member": member,
 				"kind":   principalType,

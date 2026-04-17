@@ -21,6 +21,7 @@ const (
 	TypeStatefulSet              = "kubernetes.stateful_set"
 	TypeDaemonSet                = "kubernetes.daemon_set"
 	TypeHelmChart                = "kubernetes.helm_chart"
+	TypeServiceAccount           = "kubernetes.service_account"
 	TypeLabelName                = "kubernetes.label_name"
 	TypeLabelComponent           = "kubernetes.label_component"
 	TypeLabelVersion             = "kubernetes.label_version"

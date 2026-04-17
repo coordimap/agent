@@ -10,6 +10,7 @@ import (
 	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
+	gcpModel "github.com/coordimap/agent/pkg/domain/gcp"
 	kube_model "github.com/coordimap/agent/pkg/domain/kubernetes"
 	"github.com/rs/zerolog/log"
 )
@@ -335,6 +336,38 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 				}
 
 				allCrawledElements = append(allCrawledElements, nodeElement)
+			}
+		}
+
+		serviceAccounts, errServiceAccounts := kubeCrawler.listServiceAccounts(namespace.Name)
+		if errServiceAccounts != nil {
+			log.Warn().Msgf("Could not get the kubernetes service accounts of data source name: %s because %s", kubeCrawler.dataSource.DataSourceID, errServiceAccounts.Error())
+		} else {
+			for _, serviceAccount := range serviceAccounts {
+				serviceAccountInternalID := kubeCrawler.kubeInternalName(namespace.Name, kube_model.TypeServiceAccount, serviceAccount.Name)
+				serviceAccountElement, errServiceAccountElement := utils.CreateElement(serviceAccount, serviceAccount.Name, serviceAccountInternalID, kube_model.TypeServiceAccount, agent.StatusNoStatus, "", crawlTime)
+				if errServiceAccountElement != nil {
+					continue
+				}
+
+				allCrawledElements = append(allCrawledElements, serviceAccountElement)
+
+				rel, errRel := utils.CreateRelationship(namespaceInternalID, serviceAccountInternalID, agent.RelationshipType, agent.ParentChildTypeRelation, crawlTime)
+				if errRel == nil {
+					allCrawledElements = append(allCrawledElements, rel)
+				}
+
+				gcpServiceAccount, ok := serviceAccount.Annotations[gkeServiceAccountAnnotation]
+				if ok && gcpServiceAccount != "" {
+					gcpScopeID, errGCPScopeID := cloudutils.GetMappingValue(kubeCrawler.externalMappings, gcpServiceAccount)
+					if errGCPScopeID == nil {
+						gcpServiceAccountInternalID := cloudutils.CreateGCPInternalName(gcpScopeID, "", gcpModel.TypeServiceAccount, gcpServiceAccount)
+						rel, errRel = utils.CreateRelationship(serviceAccountInternalID, gcpServiceAccountInternalID, agent.RelationshipExternalDestinationSideType, agent.ParentChildTypeRelation, crawlTime)
+						if errRel == nil {
+							allCrawledElements = append(allCrawledElements, rel)
+						}
+					}
+				}
 			}
 		}
 

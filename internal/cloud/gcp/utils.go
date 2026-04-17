@@ -14,6 +14,8 @@ import (
 	cloudresourcemanager "google.golang.org/api/cloudresourcemanager/v1"
 )
 
+const gkeServiceAccountAnnotation = "iam.gke.io/gcp-service-account"
+
 func getZoneFromScopedZone(scopedZone string) string {
 	var zone string
 	fmt.Sscanf(scopedZone, "zones/%s", &zone)
@@ -132,11 +134,6 @@ func getIAMConditionSignature(condition *cloudresourcemanager.Expr) string {
 	}
 
 	return strings.Join([]string{condition.Title, condition.Description, condition.Expression, condition.Location}, "|")
-}
-
-func sanitizeIAMName(value string) string {
-	replacer := strings.NewReplacer("/", "_", ":", "_", "@", "_", " ", "_")
-	return replacer.Replace(value)
 }
 
 func isCustomIAMRole(roleName string) bool {

@@ -235,7 +235,7 @@ Here are the supported data sources and their sample configurations:
     - name: crawl_interval
       value: 30s
     - name: external_mappings
-      value: "node-1@aws_data_source_id us-central1-a-node-2@gcp_data_source_id"
+      value: "node-1@aws_data_source_id us-central1-a-node-2@gcp_data_source_id *my-project-id.iam.gserviceaccount.com@123456789012"
 ```
 
 ### Generate Kubernetes Cluster UID
@@ -331,6 +331,18 @@ Notes:
 
 - Works for both self-hosted and managed Kubernetes clusters.
 - This is the preferred scope for Kubernetes internal names.
+- When linking Kubernetes service accounts to GCP service accounts for Workload Identity,
+  use `external_mappings` entries that match the full GSA email suffix and map it to the
+  GCP `scope_id` (project number), for example:
+
+```yaml
+- name: external_mappings
+  value: "*my-project-id.iam.gserviceaccount.com@123456789012"
+```
+
+- In that mapping:
+  - `my-project-id` is the GCP project ID used in the GSA email address
+  - `123456789012` is the GCP project number, which is the recommended GCP `scope_id`
 
 ### GCP
 
