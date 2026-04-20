@@ -10,12 +10,15 @@ import (
 	"time"
 
 	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/internal/metrics"
 
 	"cloud.google.com/go/compute/metadata"
 	"github.com/coordimap/agent/pkg/domain/agent"
+	pkgutils "github.com/coordimap/agent/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2"
+	"google.golang.org/api/monitoring/v3"
 	"google.golang.org/api/option"
 )
 
@@ -29,13 +32,16 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 		credentialsFile:     "",
 		ConfiguredProjectID: "",
 		logClient:           nil,
+		monitoringClient:    nil,
 		includedRegions:     []string{},
 		internalIDMapper:    map[string]string{},
 		externalMappings:    map[string]string{},
+		metricRules:         []metrics.RuleConfig{},
 		scopeID:             "",
 	}
 
 	flowConfigured := false
+	metricRulesConfigured := false
 
 	for _, config := range dataSource.Config.ValuePairs {
 		switch config.Key {
@@ -106,6 +112,20 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 				gcpCrawler.crawlInterval = time.Duration(amount) * time.Minute
 
 			}
+
+		case gcpConfigMetricRules:
+			ruleConfigValue, errRuleConfigValue := pkgutils.LoadValueFromEnvConfig(config.Value)
+			if errRuleConfigValue != nil {
+				return nil, fmt.Errorf("could not load gcp metric_rules config value: %w", errRuleConfigValue)
+			}
+
+			parsedRules, errRules := metrics.ParseRules(ruleConfigValue)
+			if errRules != nil {
+				return nil, fmt.Errorf("could not parse gcp metric rules: %w", errRules)
+			}
+
+			gcpCrawler.metricRules = append(gcpCrawler.metricRules, parsedRules...)
+			metricRulesConfigured = len(gcpCrawler.metricRules) > 0
 		}
 	}
 
@@ -127,6 +147,15 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 		}
 
 		gcpCrawler.logClient = client
+	}
+
+	if metricRulesConfigured {
+		monitoringClient, errMonitoringClient := monitoring.NewService(context.Background(), gcpCrawler.clientOpts...)
+		if errMonitoringClient != nil {
+			return nil, fmt.Errorf("could not create gcp monitoring client: %w", errMonitoringClient)
+		}
+
+		gcpCrawler.monitoringClient = monitoringClient
 	}
 
 	return &gcpCrawler, nil
@@ -235,6 +264,13 @@ func (gcpCrawler *gcpCrawler) crawl() (*agent.CloudCrawlData, error) {
 		if errFlowRels == nil {
 			allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, flowRels...)
 		}
+	}
+
+	metricTriggerElems, errMetricTriggers := gcpCrawler.getMetricTriggerElements(crawlTime)
+	if errMetricTriggers != nil {
+		logger.Err(errMetricTriggers).Msg("could not evaluate gcp metric rules")
+	} else {
+		allCrawledElemsAndRelationships = append(allCrawledElemsAndRelationships, metricTriggerElems...)
 	}
 
 	crawledData := agent.CrawledData{

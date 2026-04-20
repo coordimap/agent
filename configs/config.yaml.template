@@ -40,6 +40,63 @@ coordimap:
         value: /home/user/.kube/config
       - name: crawl_interval
         value: 30s
+      metric_rules:
+        - id: es-pvc-low-free-space
+          name: Elasticsearch PVC low free space
+          provider: prometheus
+          mode: predefined
+          predefined:
+            name: kubernetes_statefulset_pvc_low_free_space
+            params:
+              namespace: elasticsearch
+              statefulset: elasticsearch
+              volume_claim_prefix: data
+              threshold: 0.10
+        - id: es-pvc-free-space-burn-rate
+          name: Elasticsearch PVC free space burn rate
+          provider: prometheus
+          mode: predefined
+          predefined:
+            name: kubernetes_pvc_free_space_burn_rate
+            params:
+              namespace: elasticsearch
+              pvc_regex: "data-elasticsearch-[0-9]+"
+              window: 6h
+              horizon_seconds: 86400
+              threshold: 0.10
+        - id: es-pvc-inode-low-free
+          name: Elasticsearch PVC inode low free
+          provider: prometheus
+          mode: predefined
+          predefined:
+            name: kubernetes_inode_low_free
+            params:
+              namespace: elasticsearch
+              pvc_regex: "data-elasticsearch-[0-9]+"
+              threshold: 0.10
+    - type: gcp
+      id: gcp1
+      config:
+        - name: scope_id
+          value: "your-gcp-project-number"
+        - name: in_cloud
+          value: "false"
+        - name: project_id
+          value: your-gcp-project-id
+        - name: credentials_file
+          value: /etc/coordimap-agent/gcp-service-account.json
+        - name: crawl_interval
+          value: 30s
+      metric_rules:
+        - id: cloudsql-high-cpu
+          name: CloudSQL High CPU
+          provider: gcp_monitoring
+          mode: predefined
+          predefined:
+            name: cloudsql_high_cpu
+            params:
+              lookback: 5m
+              threshold: 0.8
     - type: aws_flow_logs
       id: flowlog1
       config:

@@ -3,8 +3,10 @@ package gcp
 import (
 	"time"
 
+	"github.com/coordimap/agent/internal/metrics"
 	"github.com/coordimap/agent/pkg/domain/agent"
 	"google.golang.org/api/logging/v2"
+	"google.golang.org/api/monitoring/v3"
 	"google.golang.org/api/option"
 )
 
@@ -17,6 +19,7 @@ const (
 	gcpConfigExternalMappings = "external_mappings"
 	gcpConfigIncludeRegions   = "include_regions"
 	gcpConfigScopeID          = "scope_id"
+	gcpConfigMetricRules      = metrics.ConfigMetricRules
 )
 
 // ServiceAccountKey represents the complete structure of a Google Cloud service account key JSON file
@@ -39,9 +42,11 @@ type ServiceAccountKey struct {
 type gcpCrawler struct {
 	outputChan          chan *agent.CloudCrawlData
 	logClient           *logging.Service
+	monitoringClient    *monitoring.Service
 	clientOpts          []option.ClientOption
 	dataSource          agent.DataSource
 	externalMappings    map[string]string
+	metricRules         []metrics.RuleConfig
 	internalIDMapper    map[string]string
 	ConfiguredProjectID string
 	credentialsFile     string

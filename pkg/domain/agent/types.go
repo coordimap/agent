@@ -8,6 +8,7 @@ import (
 
 const (
 	RelationshipType                        = "coordimap.relationship_skipinsert"
+	MetricTriggerElementType                = "coordimap.metric_trigger"
 	RelationshipExternalBothSidesType       = "coordimap.relationship.external.both_sides"
 	RelationshipExternalSourceSideType      = "coordimap.relationship.external.source_side"
 	RelationshipExternalDestinationSideType = "coordimap.relationship.external.destination_side"

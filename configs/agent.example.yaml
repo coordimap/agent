@@ -58,6 +58,17 @@ coordimap:
     #       value: europe-west1,us-central1
     #     - name: crawl_interval
     #       value: 30s
+    #   # Metric rules are supported for gcp and kubernetes data sources.
+    #   metric_rules:
+    #     - id: cloudsql-high-cpu
+    #       name: CloudSQL High CPU
+    #       provider: gcp_monitoring
+    #       mode: predefined
+    #       predefined:
+    #         name: cloudsql_high_cpu
+    #         params:
+    #           lookback: 5m
+    #           threshold: 0.8
 
     # # --- PostgreSQL Data Source ---
     # # Collects schema and metadata from a PostgreSQL database.
@@ -163,6 +174,36 @@ coordimap:
     #
     #     - name: crawl_interval
     #       value: 30s
+    #   # Metric rules are evaluated by the agent and sent as metric trigger elements.
+    #   metric_rules:
+    #     # Custom query example.
+    #     - id: k8s-high-5xx-custom
+    #       name: Kubernetes Service High 5xx
+    #       provider: prometheus
+    #       mode: custom
+    #       custom:
+    #         query: sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_workload_namespace, destination_canonical_service)
+    #       lookback: 5m
+    #       threshold:
+    #         operator: ">"
+    #         value: 1
+    #       target:
+    #         resolver: kubernetes_service
+    #         namespace_label: destination_workload_namespace
+    #         name_label: destination_canonical_service
+    #
+    #     # Elasticsearch StatefulSet PVC free space < 10%.
+    #     - id: es-pvc-low-free-space
+    #       name: Elasticsearch PVC low free space
+    #       provider: prometheus
+    #       mode: predefined
+    #       predefined:
+    #         name: kubernetes_statefulset_pvc_low_free_space
+    #         params:
+    #           namespace: elasticsearch
+    #           statefulset: elasticsearch
+    #           volume_claim_prefix: data
+    #           threshold: 0.10
 
     # # --- AWS Flow Logs Data Source ---
     # # Collects and parses VPC Flow Logs stored in S3.

@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"time"
 
+	"github.com/coordimap/agent/internal/metrics"
 	"github.com/coordimap/agent/pkg/domain/agent"
 	"github.com/prometheus/client_golang/api"
 	"k8s.io/client-go/kubernetes"
@@ -17,6 +18,8 @@ const (
 	kubeConfigIstioPrometheusHost  = "prometheus_host"
 	kubeConfigClusterName          = "cluster_name"
 	kubeConfigRetinaPrometheusHost = "retina_prometheus"
+	kubeConfigMetricPrometheusHost = "metrics_prometheus_host"
+	kubeConfigMetricRules          = metrics.ConfigMetricRules
 	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
 	kubeConfigExternalMappings     = "external_mappings"
 	kubeConfigScopeID              = "scope_id"
@@ -35,6 +38,8 @@ type kubernetesCrawler struct {
 	cloudDataSourceID string
 	crawlInterval     time.Duration
 	istioConfigured   bool
+	metricRules       []metrics.RuleConfig
+	metricPromCrawler *prometheusCrawler
 }
 
 type prometheusCrawler struct {

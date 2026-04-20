@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
+	"github.com/coordimap/agent/pkg/domain/metrictrigger"
 	"github.com/rs/zerolog/log"
 )
 
@@ -162,4 +163,21 @@ func AddRelationship(existingRelationships *[]*agent.Element, source, destinatio
 	if errRel == nil {
 		*existingRelationships = append(*existingRelationships, rel)
 	}
+}
+
+// CreateMetricTriggerElement creates an element that asks the backend to process a metric blast trigger.
+func CreateMetricTriggerElement(payload metrictrigger.Trigger, name, id string, crawlTime time.Time) (*agent.Element, error) {
+	if payload.TriggerType == "" {
+		payload.TriggerType = metrictrigger.TriggerTypeMetricRule
+	}
+
+	return CreateElement(
+		payload,
+		name,
+		id,
+		agent.MetricTriggerElementType,
+		agent.StatusNoStatus,
+		"",
+		crawlTime,
+	)
 }

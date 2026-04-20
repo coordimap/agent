@@ -7,6 +7,7 @@ import (
 	"time"
 
 	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
+	"github.com/coordimap/agent/internal/metrics"
 	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
@@ -31,6 +32,8 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 		retinaCrawler:     nil,
 		internalNodeNames: map[string]string{},
 		externalMappings:  map[string]string{},
+		metricRules:       []metrics.RuleConfig{},
+		metricPromCrawler: nil,
 	}
 
 	promQueryTime := ""
@@ -95,6 +98,22 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 
 			crawler.retinaCrawler = &retinaCrawler
 
+		case kubeConfigMetricPrometheusHost:
+			metricCrawler, err := makePrometheusCrawler(value)
+			if err != nil {
+				return crawler, err
+			}
+
+			crawler.metricPromCrawler = &metricCrawler
+
+		case kubeConfigMetricRules:
+			parsedRules, errRules := metrics.ParseRules(value)
+			if errRules != nil {
+				return crawler, fmt.Errorf("could not parse kubernetes metric rules: %w", errRules)
+			}
+
+			crawler.metricRules = append(crawler.metricRules, parsedRules...)
+
 		case kubeConfigExternalMappings:
 			mappings, errMappings := cloudutils.SplitConfiguredMappings(dsConfig.Value)
 			if errMappings != nil {
@@ -141,6 +160,9 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 	}
 
 	crawler.istioCrawler.promQueryTime = promQueryTime
+	if crawler.metricPromCrawler == nil && crawler.istioCrawler.promClient != nil {
+		crawler.metricPromCrawler = &crawler.istioCrawler
+	}
 
 	return crawler, nil
 }
@@ -881,6 +903,19 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 			DataSource:      kubeCrawler.dataSource,
 			CrawledData:     crawledData,
 			CrawlInternalID: fmt.Sprintf("%s.%s", namespace.Name, kube_model.TypeNamespace),
+		}
+	}
+
+	metricTriggerElems, errMetricTriggerElems := kubeCrawler.getMetricTriggerElements(crawlTime)
+	if errMetricTriggerElems != nil {
+		log.Info().Msgf("There was an error finding metric trigger elements for kubernetes connection %s because %s", kubeCrawler.dataSource.DataSourceID, errMetricTriggerElems.Error())
+	} else if len(metricTriggerElems) > 0 {
+		kubeCrawler.outputChannel <- &agent.CloudCrawlData{
+			Timestamp:  crawlTime,
+			DataSource: kubeCrawler.dataSource,
+			CrawledData: agent.CrawledData{
+				Data: metricTriggerElems,
+			},
 		}
 	}
 

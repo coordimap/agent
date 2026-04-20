@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	configuration "github.com/coordimap/agent/internal/config"
+	"github.com/coordimap/agent/internal/metrics"
+	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
 func TestNewYamlFileConfig(t *testing.T) {
@@ -150,4 +152,160 @@ func TestNewYamlStringConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetAllDataSourcesDatasourceLocalMetricRules(t *testing.T) {
+	runtimeConfig, errRuntimeConfig := configuration.NewYamlFileConfig(createTempConfigFile(t, `coordimap:
+  api_key: 123
+  data_sources:
+    - type: kubernetes
+      id: kube-1
+      config: []
+      metric_rules:
+        - id: k8s-errors
+          provider: prometheus
+          mode: custom
+          custom:
+            query: up
+          threshold:
+            operator: ">"
+            value: 1
+          target:
+            resolver: kubernetes_service
+    - type: gcp
+      id: gcp-1
+      config: []
+      metric_rules:
+        - id: gcp-cpu
+          provider: gcp_monitoring
+          mode: predefined
+          predefined:
+            name: cloudsql_high_cpu
+            params:
+              lookback: 6m
+              threshold: 0.9
+`))
+	if errRuntimeConfig != nil {
+		t.Fatalf("NewYamlFileConfig() unexpected error: %v", errRuntimeConfig)
+	}
+
+	allDataSources := runtimeConfig.GetAllDataSources()
+	kubeDS := allDataSources["kubernetes"][0]
+	gcpDS := allDataSources["gcp"][0]
+
+	kubeRules := readMetricRulesFromDataSourceConfig(t, kubeDS)
+	if len(kubeRules) != 1 {
+		t.Fatalf("kubernetes metric rules len = %d, want 1", len(kubeRules))
+	}
+
+	if kubeRules[0].Provider != metrics.ProviderPrometheus {
+		t.Fatalf("kubernetes provider = %q, want %q", kubeRules[0].Provider, metrics.ProviderPrometheus)
+	}
+
+	gcpRules := readMetricRulesFromDataSourceConfig(t, gcpDS)
+	if len(gcpRules) != 1 {
+		t.Fatalf("gcp metric rules len = %d, want 1", len(gcpRules))
+	}
+
+	if gcpRules[0].Provider != metrics.ProviderGCPMonitoring {
+		t.Fatalf("gcp provider = %q, want %q", gcpRules[0].Provider, metrics.ProviderGCPMonitoring)
+	}
+
+	if gcpRules[0].MetricType != "cloudsql.googleapis.com/database/cpu/utilization" {
+		t.Fatalf("gcp metric type = %q", gcpRules[0].MetricType)
+	}
+
+	if gcpRules[0].Lookback != "6m" {
+		t.Fatalf("gcp lookback = %q, want 6m", gcpRules[0].Lookback)
+	}
+}
+
+func TestNewYamlStringConfigMetricRulesUnsupportedDataSource(t *testing.T) {
+	_, errConfig := configuration.NewYamlStringConfig(`coordimap:
+  api_key: 123
+  data_sources:
+    - type: postgres
+      id: pg-1
+      config: []
+      metric_rules:
+        - id: invalid-rule
+          provider: prometheus
+          mode: custom
+          custom:
+            query: up
+          threshold:
+            operator: ">"
+            value: 1
+          target:
+            resolver: kubernetes_service
+`)
+	if errConfig == nil {
+		t.Fatalf("NewYamlStringConfig() expected unsupported data source metric rule error")
+	}
+}
+
+func TestNewYamlStringConfigMetricRulesModeValidation(t *testing.T) {
+	_, errConfig := configuration.NewYamlStringConfig(`coordimap:
+  api_key: 123
+  data_sources:
+    - type: kubernetes
+      id: kube-1
+      config: []
+      metric_rules:
+        - id: invalid-mode-rule
+          provider: prometheus
+          mode: unknown
+          custom:
+            query: up
+          threshold:
+            operator: ">"
+            value: 1
+          target:
+            resolver: kubernetes_service
+`)
+	if errConfig == nil {
+		t.Fatalf("NewYamlStringConfig() expected metric rule mode validation error")
+	}
+}
+
+func readMetricRulesFromDataSourceConfig(t *testing.T, ds *agent.DataSource) []metrics.RuleConfig {
+	t.Helper()
+
+	for _, kv := range ds.Config.ValuePairs {
+		if kv.Key != metrics.ConfigMetricRules {
+			continue
+		}
+
+		rules, errRules := metrics.ParseRules(kv.Value)
+		if errRules != nil {
+			t.Fatalf("metrics.ParseRules() unexpected error: %v", errRules)
+		}
+
+		return rules
+	}
+
+	return []metrics.RuleConfig{}
+}
+
+func createTempConfigFile(t *testing.T, content string) string {
+	t.Helper()
+
+	tmpFile, errTempFile := os.CreateTemp("", "config_metric_rules_*.yaml")
+	if errTempFile != nil {
+		t.Fatalf("CreateTemp() error = %v", errTempFile)
+	}
+
+	if _, errWrite := tmpFile.WriteString(content); errWrite != nil {
+		t.Fatalf("WriteString() error = %v", errWrite)
+	}
+
+	if errClose := tmpFile.Close(); errClose != nil {
+		t.Fatalf("Close() error = %v", errClose)
+	}
+
+	t.Cleanup(func() {
+		_ = os.Remove(tmpFile.Name())
+	})
+
+	return tmpFile.Name()
 }

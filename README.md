@@ -234,6 +234,8 @@ Here are the supported data sources and their sample configurations:
       value: "/path/to/your/kube/config"
     - name: crawl_interval
       value: 30s
+    - name: metrics_prometheus_host
+      value: "http://prometheus.monitoring.svc.cluster.local:9090"
     - name: external_mappings
       value: "node-1@aws_data_source_id us-central1-a-node-2@gcp_data_source_id *my-project-id.iam.gserviceaccount.com@123456789012"
 ```
@@ -436,6 +438,153 @@ Notes:
 
 - OTel should emit the same scope used by the infrastructure crawler.
 - This allows the backend to generate matching internal IDs and create relationships reliably.
+
+## Metric Trigger Rules
+
+The agent can evaluate metric rules and send metric-trigger elements to the backend. These are sent as regular elements with type `coordimap.metric_trigger` and include all matching internal IDs in the element payload.
+
+Metric rules are configured inside each datasource block (`data_sources[*].metric_rules`).
+Currently metric rules are supported only for datasource types:
+
+- `kubernetes`
+- `gcp`
+
+### Supported Providers
+
+- `prometheus` (for Kubernetes data sources)
+- `gcp_monitoring` (for GCP data sources)
+
+### Config Format
+
+Metric rules are configured in YAML under `data_sources[*].metric_rules`.
+
+Each rule must set `mode` to either:
+
+- `custom` for user-defined provider queries
+- `predefined` for built-in templates
+
+Example:
+
+```yaml
+coordimap:
+  data_sources:
+    - type: kubernetes
+      id: kube-prod
+      config:
+        - name: scope_id
+          value: your-cluster-uid
+        - name: config_file
+          value: /path/to/your/kube/config
+      metric_rules:
+        - id: k8s-high-5xx
+          name: Kubernetes Service High 5xx
+          provider: prometheus
+          mode: custom
+          custom:
+            query: sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_workload_namespace, destination_canonical_service)
+          lookback: 5m
+          threshold:
+            operator: ">"
+            value: 1
+          target:
+            resolver: kubernetes_service
+            namespace_label: destination_workload_namespace
+            name_label: destination_canonical_service
+
+    - type: gcp
+      id: gcp-prod
+      config:
+        - name: scope_id
+          value: "123456789012"
+        - name: project_id
+          value: your-project-id
+      metric_rules:
+        - id: cloudsql-high-cpu
+          name: CloudSQL High CPU
+          provider: gcp_monitoring
+          mode: predefined
+          predefined:
+            name: cloudsql_high_cpu
+            params:
+              lookback: 5m
+              threshold: 0.8
+```
+
+Common fields:
+
+- `id`
+- `name`
+- `provider`
+- `lookback`
+- `threshold.operator` and `threshold.value`
+- `target.resolver`
+
+Prometheus-specific:
+
+- `custom.query`
+
+GCP Monitoring-specific:
+
+- `custom.filter` or `custom.metric_type`
+- optional `alignment_period`, `per_series_aligner`, `cross_series_reducer`, `group_by_fields`
+
+### Predefined Rules
+
+Current predefined templates:
+
+- provider `prometheus`
+  - `kubernetes_service_high_5xx`
+  - `kubernetes_deployment_high_5xx`
+  - `kubernetes_service_high_latency`
+  - `kubernetes_pod_high_restart_rate`
+  - `kubernetes_pod_crashloop_or_imagepull_error`
+  - `kubernetes_pod_not_ready`
+  - `kubernetes_deployment_unavailable_replicas`
+  - `kubernetes_deployment_availability_gap`
+  - `kubernetes_pod_high_cpu_usage`
+  - `kubernetes_pod_high_memory_workingset`
+  - `kubernetes_pod_cpu_throttling_high`
+  - `kubernetes_pod_oom_events`
+  - `kubernetes_pod_unschedulable`
+  - `kubernetes_pvc_low_free_space`
+  - `kubernetes_pvc_free_space_burn_rate`
+  - `kubernetes_inode_low_free`
+  - `kubernetes_statefulset_pvc_low_free_space`
+- provider `gcp_monitoring`
+  - `cloudsql_high_cpu`
+  - `cloudsql_high_connections`
+  - `vm_high_cpu`
+
+Predefined params are template-specific. For example:
+
+- `kubernetes_service_high_5xx`: `window`, `threshold`
+- `kubernetes_deployment_high_5xx`: `window`, `threshold`
+- `kubernetes_service_high_latency`: `window`, `quantile`, `threshold`
+- `kubernetes_pod_high_restart_rate`: `window`, `threshold`
+- `kubernetes_pod_crashloop_or_imagepull_error`: `lookback`, `reason_regex`
+- `kubernetes_pod_not_ready`: `lookback`
+- `kubernetes_deployment_unavailable_replicas`: `threshold`
+- `kubernetes_deployment_availability_gap`: `threshold`
+- `kubernetes_pod_high_cpu_usage`: `window`, `threshold`
+- `kubernetes_pod_high_memory_workingset`: `threshold`
+- `kubernetes_pod_cpu_throttling_high`: `window`, `threshold`
+- `kubernetes_pod_oom_events`: `window`
+- `kubernetes_pod_unschedulable`: `lookback`
+- `kubernetes_pvc_low_free_space`: `threshold`, `namespace`, `pvc_regex`
+- `kubernetes_pvc_free_space_burn_rate`: `threshold`, `window`, `horizon_seconds`, `namespace`, `pvc_regex`
+- `kubernetes_inode_low_free`: `threshold`, `namespace`, `pvc_regex`
+- `kubernetes_statefulset_pvc_low_free_space`: `threshold`, `namespace`, `statefulset`, `volume_claim_prefix`
+- `cloudsql_high_cpu`: `lookback`, `threshold`
+- `cloudsql_high_connections`: `lookback`, `threshold`, `metric_type`, `alignment_period`, `per_series_aligner`
+- `vm_high_cpu`: `lookback`, `threshold`, `alignment_period`, `per_series_aligner`
+
+### Target Resolvers
+
+- Kubernetes: `kubernetes_service`, `kubernetes_deployment`, `kubernetes_pod`, `kubernetes_pvc`, `kubernetes_statefulset`
+- GCP: `gcp_cloudsql`, `gcp_vm_instance`
+- Cross data source: `external_mapping`
+
+For `external_mapping`, if no `external_mappings` entry matches, the target is ignored and nothing is sent for that series.
 
 
 ## Contribute

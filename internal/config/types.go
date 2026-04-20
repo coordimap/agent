@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"github.com/coordimap/agent/internal/metrics"
 	"github.com/coordimap/agent/pkg/domain/agent"
 )
 
@@ -20,9 +21,10 @@ type CoordimapConfigNameValueConfig struct {
 
 // CoordimapConfigDataSource represents a data source configuration.
 type CoordimapConfigDataSource struct {
-	Type   string
-	ID     string
-	Config []CoordimapConfigNameValueConfig
+	Type        string
+	ID          string
+	Config      []CoordimapConfigNameValueConfig
+	MetricRules []metrics.RuleDeclaration `yaml:"metric_rules"`
 }
 
 // Coordimap holds the configuration specific to the Coordimap integration.

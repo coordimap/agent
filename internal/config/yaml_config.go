@@ -1,9 +1,13 @@
 package configuration
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/coordimap/agent/internal/metrics"
+	_ "github.com/coordimap/agent/internal/metrics/gcp"
+	_ "github.com/coordimap/agent/internal/metrics/prometheus"
 	"github.com/coordimap/agent/pkg/utils"
 
 	"github.com/coordimap/agent/pkg/domain/agent"
@@ -57,6 +61,27 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*agent.DataS
 			})
 		}
 
+		resolvedRules := []metrics.RuleConfig{}
+		for _, ruleDeclaration := range dataSource.MetricRules {
+			if ruleDeclaration.ID == "" {
+				continue
+			}
+
+			resolvedRule, errResolve := metrics.ResolveRuleDeclaration(ruleDeclaration)
+			if errResolve != nil {
+				continue
+			}
+
+			resolvedRules = append(resolvedRules, resolvedRule)
+		}
+
+		if len(resolvedRules) > 0 {
+			serializedRules, errSerialize := json.Marshal(resolvedRules)
+			if errSerialize == nil {
+				dsValuePairs = append(dsValuePairs, agent.KeyValue{Key: metrics.ConfigMetricRules, Value: string(serializedRules)})
+			}
+		}
+
 		currentDS := &agent.DataSource{
 			Info:         info,
 			DataSourceID: dataSource.ID,
@@ -103,6 +128,30 @@ func NewYamlStringConfig(yamlContent string) (*CoordimapConfig, error) {
 		// Actually, even if it is a placeholder, it should be present in the struct.
 		// If the string is empty, it means the key is missing from YAML.
 		return nil, fmt.Errorf("missing required field: coordimap.api_key")
+	}
+
+	for _, configuredDataSource := range config.Coordimap.DataSources {
+		if len(configuredDataSource.MetricRules) == 0 {
+			continue
+		}
+
+		if configuredDataSource.Type != "kubernetes" && configuredDataSource.Type != "gcp" {
+			return nil, fmt.Errorf("metric_rules are currently supported only for kubernetes and gcp data sources, found type %q for datasource %q", configuredDataSource.Type, configuredDataSource.ID)
+		}
+
+		rules := make([]metrics.RuleConfig, 0, len(configuredDataSource.MetricRules))
+		for _, configuredRule := range configuredDataSource.MetricRules {
+			resolvedRule, errResolve := metrics.ResolveRuleDeclaration(configuredRule)
+			if errResolve != nil {
+				return nil, fmt.Errorf("invalid metric rule %q for datasource %q: %w", configuredRule.ID, configuredDataSource.ID, errResolve)
+			}
+
+			rules = append(rules, resolvedRule)
+		}
+
+		if _, errMetricRules := metrics.NormalizeAndValidateRules(rules); errMetricRules != nil {
+			return nil, fmt.Errorf("invalid metric rules for datasource %q: %w", configuredDataSource.ID, errMetricRules)
+		}
 	}
 
 	return &config, nil
