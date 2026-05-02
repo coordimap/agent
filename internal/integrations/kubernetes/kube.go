@@ -314,7 +314,6 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 				marshalDeployment, errMarshal := deployment.Marshal()
 				if errMarshal != nil {
 				}
-				fmt.Println(string(marshalDeployment), deployment.String())
 				deploymentStatus := getDeploymentStatus(deployment.Status.Conditions)
 				deploymentInternalID := kubeCrawler.kubeInternalName(namespace.Name, kube_model.TypeDeployment, deployment.Name)
 				version, _ := GetAppVersionFromLabels(deployment.Labels)

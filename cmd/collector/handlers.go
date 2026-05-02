@@ -21,7 +21,6 @@ func handleInfraAWS(c *AppContext, w http.ResponseWriter, r *http.Request) (int,
 		return 500, err
 	}
 
-	fmt.Println("Total lenght: ", len(crawledAWSData.Data.Data))
 	errUnmarshal := json.Unmarshal(crawledAWSData.Data.Data, &allCrawledElements)
 	if errUnmarshal != nil {
 		fmt.Println(errUnmarshal.Error())
@@ -31,8 +30,6 @@ func handleInfraAWS(c *AppContext, w http.ResponseWriter, r *http.Request) (int,
 		// TODO: implement a function where for elem.Type I get the elem.Data and convert it to the corresponding JSON
 
 		go func(elem *clouds.Element) {
-			fmt.Println(elem.ID, " - ", elem.Name)
-
 			if c.RedisClient.Exists(context.Background(), elem.Hash).Err() != nil {
 				c.RedisClient.Set(context.Background(), elem.Hash, "", 10*time.Hour)
 			}
