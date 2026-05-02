@@ -485,6 +485,8 @@ func (gcp *gcpCrawler) getSqlInstances(crawlTime time.Time) ([]*agent.Element, e
 
 	for _, sqlInstance := range sqlInstancesList.Items {
 		sqlInternalName := cloudutils.CreateGCPInternalName(gcp.scopeID, sqlInstance.GceZone, gcpModel.TypeCloudSQL, sqlInstance.Name)
+		gcp.rememberCloudSQLZone(sqlInstance.Name, sqlInstance.GceZone)
+		gcp.rememberCloudSQLZone(fmt.Sprintf("%s:%s", gcp.ConfiguredProjectID, sqlInstance.Name), sqlInstance.GceZone)
 		status := getComputeStatus(sqlInstance.State)
 
 		if status == agent.StatusGreen && status != getComputeStatus(sqlInstance.Settings.ActivationPolicy) {

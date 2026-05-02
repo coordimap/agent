@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
@@ -130,18 +131,22 @@ func (gcpCrawler *gcpCrawler) resolveMetricInternalID(target metrics.TargetConfi
 		if nameLabel == "" {
 			nameLabel = "database_id"
 		}
-		regionLabel := target.RegionLabel
-		if regionLabel == "" {
-			regionLabel = "region"
-		}
 
-		name := getValue(nameLabel)
-		if name == "" {
+		databaseID := getValue(nameLabel)
+		if databaseID == "" {
 			return "", false
 		}
 
-		region := getValue(regionLabel)
-		return cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, region, gcpModel.TypeCloudSQL, name), true
+		name := normalizeCloudSQLDatabaseID(databaseID)
+		zone, hasZone := gcpCrawler.cloudSQLZones[databaseID]
+		if !hasZone {
+			zone, hasZone = gcpCrawler.cloudSQLZones[name]
+		}
+		if !hasZone || zone == "" {
+			return "", false
+		}
+
+		return cloudutils.CreateGCPInternalName(gcpCrawler.scopeID, zone, gcpModel.TypeCloudSQL, name), true
 
 	case metrics.ResolverGCPVMInstance:
 		nameLabel := target.NameLabel
@@ -177,4 +182,23 @@ func (gcpCrawler *gcpCrawler) resolveMetricInternalID(target metrics.TargetConfi
 	default:
 		return "", false
 	}
+}
+
+func (gcpCrawler *gcpCrawler) rememberCloudSQLZone(databaseID, zone string) {
+	if databaseID == "" || zone == "" {
+		return
+	}
+	if gcpCrawler.cloudSQLZones == nil {
+		gcpCrawler.cloudSQLZones = map[string]string{}
+	}
+
+	gcpCrawler.cloudSQLZones[databaseID] = zone
+}
+
+func normalizeCloudSQLDatabaseID(databaseID string) string {
+	if before, after, found := strings.Cut(databaseID, ":"); found && before != "" && after != "" {
+		return after
+	}
+
+	return databaseID
 }

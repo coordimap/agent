@@ -48,6 +48,7 @@ type gcpCrawler struct {
 	externalMappings    map[string]string
 	metricRules         []metrics.RuleConfig
 	internalIDMapper    map[string]string
+	cloudSQLZones       map[string]string
 	ConfiguredProjectID string
 	credentialsFile     string
 	includedRegions     []string

@@ -35,6 +35,7 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 		monitoringClient:    nil,
 		includedRegions:     []string{},
 		internalIDMapper:    map[string]string{},
+		cloudSQLZones:       map[string]string{},
 		externalMappings:    map[string]string{},
 		metricRules:         []metrics.RuleConfig{},
 		scopeID:             "",

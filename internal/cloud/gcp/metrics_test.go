@@ -12,6 +12,10 @@ func TestResolveMetricInternalID(t *testing.T) {
 	crawler := &gcpCrawler{
 		scopeID:          "123456789012",
 		externalMappings: map[string]string{"cloudsql:my-project:europe-west1:orders": "postgres/orders-public@"},
+		cloudSQLZones: map[string]string{
+			"orders":          "europe-west1-b",
+			"ermal-test:prod": "europe-west3-b",
+		},
 	}
 
 	tests := []struct {
@@ -30,8 +34,30 @@ func TestResolveMetricInternalID(t *testing.T) {
 				RegionLabel: "region",
 			},
 			resourceLabels: map[string]string{"database_id": "orders", "region": "europe-west1"},
-			wantID:         cloudutils.CreateGCPInternalName("123456789012", "europe-west1", gcpModel.TypeCloudSQL, "orders"),
+			wantID:         cloudutils.CreateGCPInternalName("123456789012", "europe-west1-b", gcpModel.TypeCloudSQL, "orders"),
 			wantFound:      true,
+		},
+		{
+			name: "gcp cloudsql resolver normalizes project database id",
+			target: metrics.TargetConfig{
+				Resolver:    metrics.ResolverGCPCloudSQL,
+				NameLabel:   "database_id",
+				RegionLabel: "region",
+			},
+			resourceLabels: map[string]string{"database_id": "ermal-test:prod", "region": "europe-west3", "project_id": "ermal-test"},
+			wantID:         cloudutils.CreateGCPInternalName("123456789012", "europe-west3-b", gcpModel.TypeCloudSQL, "prod"),
+			wantFound:      true,
+		},
+		{
+			name: "gcp cloudsql resolver missing zone mapping",
+			target: metrics.TargetConfig{
+				Resolver:    metrics.ResolverGCPCloudSQL,
+				NameLabel:   "database_id",
+				RegionLabel: "region",
+			},
+			resourceLabels: map[string]string{"database_id": "missing", "region": "europe-west1"},
+			wantID:         "",
+			wantFound:      false,
 		},
 		{
 			name: "gcp vm instance resolver",
