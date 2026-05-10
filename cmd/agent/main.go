@@ -7,6 +7,7 @@ import (
 
 	cloudutils "github.com/coordimap/agent/internal/cloud/utils"
 	configuration "github.com/coordimap/agent/internal/config"
+	"github.com/coordimap/agent/internal/graph/dedup"
 	"github.com/coordimap/agent/internal/integrations"
 	"github.com/coordimap/agent/pkg/utils"
 
@@ -168,6 +169,19 @@ func main() {
 		if crawledData.DataSource.DataSourceID == "" {
 			log.Error().Msgf("Cannot push data to the cloud because no data source id was found for the data source of type: %s", crawledData.DataSource.DataSourceID)
 			continue
+		}
+
+		dedupResult := dedup.CloudCrawlData(crawledData)
+		crawledData = dedupResult.CloudCrawlData
+		if dedupResult.DroppedAssetDuplicates > 0 || dedupResult.DroppedRelDuplicates > 0 || dedupResult.ConflictCount > 0 {
+			log.Info().
+				Str("DataSourceID", crawledData.DataSource.DataSourceID).
+				Int("InputCount", dedupResult.InputCount).
+				Int("OutputCount", dedupResult.OutputCount).
+				Int("DroppedAssetDuplicates", dedupResult.DroppedAssetDuplicates).
+				Int("DroppedRelationshipDuplicates", dedupResult.DroppedRelDuplicates).
+				Int("ConflictCount", dedupResult.ConflictCount).
+				Msg("Deduplicated crawled data before sending to collector")
 		}
 
 		requestStruct := collector.AddCrawledInfraFromAgentRequest{
