@@ -14,7 +14,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"github.com/coordimap/agent/pkg/domain/agent"
-	pkgutils "github.com/coordimap/agent/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2"
@@ -42,7 +41,8 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 	}
 
 	flowConfigured := false
-	metricRulesConfigured := false
+	metricRulesConfigured := len(dataSource.Config.MetricRules) > 0
+	gcpCrawler.metricRules = append(gcpCrawler.metricRules, dataSource.Config.MetricRules...)
 
 	for _, config := range dataSource.Config.ValuePairs {
 		switch config.Key {
@@ -114,19 +114,6 @@ func NewGCPCrawler(dataSource *agent.DataSource, outChannel chan *agent.CloudCra
 
 			}
 
-		case gcpConfigMetricRules:
-			ruleConfigValue, errRuleConfigValue := pkgutils.LoadValueFromEnvConfig(config.Value)
-			if errRuleConfigValue != nil {
-				return nil, fmt.Errorf("could not load gcp metric_rules config value: %w", errRuleConfigValue)
-			}
-
-			parsedRules, errRules := metrics.ParseRules(ruleConfigValue)
-			if errRules != nil {
-				return nil, fmt.Errorf("could not parse gcp metric rules: %w", errRules)
-			}
-
-			gcpCrawler.metricRules = append(gcpCrawler.metricRules, parsedRules...)
-			metricRulesConfigured = len(gcpCrawler.metricRules) > 0
 		}
 	}
 

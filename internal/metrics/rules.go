@@ -31,42 +31,11 @@ const (
 
 var placeholderRegex = regexp.MustCompile(`\$\{([^}]+)\}`)
 
-// ThresholdConfig is the threshold expression for a rule.
-type ThresholdConfig struct {
-	Operator string  `json:"operator" yaml:"operator"`
-	Value    float64 `json:"value" yaml:"value"`
-}
+type ThresholdConfig = agent.MetricRuleThreshold
+type TargetConfig = agent.MetricRuleTarget
+type RuleConfig = agent.MetricRule
 
-// TargetConfig defines how to resolve metric labels to internal IDs.
-type TargetConfig struct {
-	Resolver           string `json:"resolver" yaml:"resolver"`
-	NamespaceLabel     string `json:"namespace_label,omitempty" yaml:"namespace_label,omitempty"`
-	NameLabel          string `json:"name_label,omitempty" yaml:"name_label,omitempty"`
-	ZoneLabel          string `json:"zone_label,omitempty" yaml:"zone_label,omitempty"`
-	RegionLabel        string `json:"region_label,omitempty" yaml:"region_label,omitempty"`
-	MappingKeyTemplate string `json:"mapping_key_template,omitempty" yaml:"mapping_key_template,omitempty"`
-	MappingValueType   string `json:"mapping_value_type,omitempty" yaml:"mapping_value_type,omitempty"`
-}
-
-// RuleConfig is the datasource-level metric rule definition.
-type RuleConfig struct {
-	ID                 string          `json:"id" yaml:"id"`
-	Name               string          `json:"name" yaml:"name"`
-	Provider           string          `json:"provider" yaml:"provider"`
-	Query              string          `json:"query,omitempty" yaml:"query,omitempty"`
-	Filter             string          `json:"filter,omitempty" yaml:"filter,omitempty"`
-	MetricType         string          `json:"metric_type,omitempty" yaml:"metric_type,omitempty"`
-	Lookback           string          `json:"lookback,omitempty" yaml:"lookback,omitempty"`
-	AlignmentPeriod    string          `json:"alignment_period,omitempty" yaml:"alignment_period,omitempty"`
-	PerSeriesAligner   string          `json:"per_series_aligner,omitempty" yaml:"per_series_aligner,omitempty"`
-	CrossSeriesReducer string          `json:"cross_series_reducer,omitempty" yaml:"cross_series_reducer,omitempty"`
-	GroupByFields      []string        `json:"group_by_fields,omitempty" yaml:"group_by_fields,omitempty"`
-	Threshold          ThresholdConfig `json:"threshold" yaml:"threshold"`
-	Target             TargetConfig    `json:"target" yaml:"target"`
-	Enabled            *bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-}
-
-func (rule RuleConfig) isEnabled() bool {
+func isEnabled(rule RuleConfig) bool {
 	if rule.Enabled == nil {
 		return true
 	}
@@ -74,7 +43,7 @@ func (rule RuleConfig) isEnabled() bool {
 	return *rule.Enabled
 }
 
-func (rule RuleConfig) normalized() RuleConfig {
+func normalizedRule(rule RuleConfig) RuleConfig {
 	normalized := rule
 	if normalized.Name == "" {
 		normalized.Name = normalized.ID
@@ -97,8 +66,8 @@ func (rule RuleConfig) normalized() RuleConfig {
 
 // NormalizeAndValidateRule applies defaults and validates one rule.
 func NormalizeAndValidateRule(rule RuleConfig) (RuleConfig, error) {
-	normalized := rule.normalized()
-	if errValidate := normalized.validate(); errValidate != nil {
+	normalized := normalizedRule(rule)
+	if errValidate := validateRule(normalized); errValidate != nil {
 		return RuleConfig{}, errValidate
 	}
 
@@ -126,8 +95,8 @@ func NormalizeAndValidateRules(rules []RuleConfig) ([]RuleConfig, error) {
 	return normalizedRules, nil
 }
 
-func (rule RuleConfig) validate() error {
-	if !rule.isEnabled() {
+func validateRule(rule RuleConfig) error {
+	if !isEnabled(rule) {
 		return nil
 	}
 
@@ -165,7 +134,7 @@ func (rule RuleConfig) validate() error {
 
 // ParseRulesFromDataSource parses and validates metric rules from datasource config.
 func ParseRulesFromDataSource(dataSource agent.DataSource) ([]RuleConfig, error) {
-	rules := []RuleConfig{}
+	rules := append([]RuleConfig{}, dataSource.Config.MetricRules...)
 
 	for _, config := range dataSource.Config.ValuePairs {
 		if config.Key != ConfigMetricRules {

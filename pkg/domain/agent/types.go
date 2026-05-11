@@ -78,7 +78,41 @@ type DataSourceInfo struct {
 // DataSourceConfig Structure that holds information about the configuration of data source that to be crawled.
 // Any keys that contain "password" or "secret" will not be transferred.
 type DataSourceConfig struct {
-	ValuePairs []KeyValue `json:"value_pairs"`
+	ValuePairs  []KeyValue   `json:"value_pairs"`
+	MetricRules []MetricRule `json:"metric_rules,omitempty"`
+}
+
+// MetricRule is the datasource-level metric rule definition sent to the backend.
+type MetricRule struct {
+	ID                 string              `json:"id" yaml:"id"`
+	Name               string              `json:"name" yaml:"name"`
+	Provider           string              `json:"provider" yaml:"provider"`
+	Query              string              `json:"query,omitempty" yaml:"query,omitempty"`
+	Filter             string              `json:"filter,omitempty" yaml:"filter,omitempty"`
+	MetricType         string              `json:"metric_type,omitempty" yaml:"metric_type,omitempty"`
+	Lookback           string              `json:"lookback,omitempty" yaml:"lookback,omitempty"`
+	AlignmentPeriod    string              `json:"alignment_period,omitempty" yaml:"alignment_period,omitempty"`
+	PerSeriesAligner   string              `json:"per_series_aligner,omitempty" yaml:"per_series_aligner,omitempty"`
+	CrossSeriesReducer string              `json:"cross_series_reducer,omitempty" yaml:"cross_series_reducer,omitempty"`
+	GroupByFields      []string            `json:"group_by_fields,omitempty" yaml:"group_by_fields,omitempty"`
+	Threshold          MetricRuleThreshold `json:"threshold" yaml:"threshold"`
+	Target             MetricRuleTarget    `json:"target" yaml:"target"`
+	Enabled            *bool               `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
+
+type MetricRuleThreshold struct {
+	Operator string  `json:"operator" yaml:"operator"`
+	Value    float64 `json:"value" yaml:"value"`
+}
+
+type MetricRuleTarget struct {
+	Resolver           string `json:"resolver" yaml:"resolver"`
+	NamespaceLabel     string `json:"namespace_label,omitempty" yaml:"namespace_label,omitempty"`
+	NameLabel          string `json:"name_label,omitempty" yaml:"name_label,omitempty"`
+	ZoneLabel          string `json:"zone_label,omitempty" yaml:"zone_label,omitempty"`
+	RegionLabel        string `json:"region_label,omitempty" yaml:"region_label,omitempty"`
+	MappingKeyTemplate string `json:"mapping_key_template,omitempty" yaml:"mapping_key_template,omitempty"`
+	MappingValueType   string `json:"mapping_value_type,omitempty" yaml:"mapping_value_type,omitempty"`
 }
 
 // CloudData contains all the crawled resources of the cloud Type

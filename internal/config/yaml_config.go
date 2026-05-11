@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -75,18 +74,12 @@ func (coordimapConfig *yamlConfig) GetAllDataSources() map[string][]*agent.DataS
 			resolvedRules = append(resolvedRules, resolvedRule)
 		}
 
-		if len(resolvedRules) > 0 {
-			serializedRules, errSerialize := json.Marshal(resolvedRules)
-			if errSerialize == nil {
-				dsValuePairs = append(dsValuePairs, agent.KeyValue{Key: metrics.ConfigMetricRules, Value: string(serializedRules)})
-			}
-		}
-
 		currentDS := &agent.DataSource{
 			Info:         info,
 			DataSourceID: dataSource.ID,
 			Config: agent.DataSourceConfig{
-				ValuePairs: dsValuePairs,
+				ValuePairs:  dsValuePairs,
+				MetricRules: resolvedRules,
 			},
 		}
 

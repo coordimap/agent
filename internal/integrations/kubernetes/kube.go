@@ -106,14 +106,6 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 
 			crawler.metricPromCrawler = &metricCrawler
 
-		case kubeConfigMetricRules:
-			parsedRules, errRules := metrics.ParseRules(value)
-			if errRules != nil {
-				return crawler, fmt.Errorf("could not parse kubernetes metric rules: %w", errRules)
-			}
-
-			crawler.metricRules = append(crawler.metricRules, parsedRules...)
-
 		case kubeConfigExternalMappings:
 			mappings, errMappings := cloudutils.SplitConfiguredMappings(dsConfig.Value)
 			if errMappings != nil {
@@ -155,6 +147,8 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 			}
 		}
 	}
+	crawler.metricRules = append(crawler.metricRules, dataSource.Config.MetricRules...)
+
 	if crawler.clusterUID == "" {
 		return nil, fmt.Errorf("Kubernetes crawler config error: scope_id must be provided for data source %s", crawler.dataSource.DataSourceID)
 	}

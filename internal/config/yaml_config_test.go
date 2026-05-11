@@ -193,7 +193,7 @@ func TestGetAllDataSourcesDatasourceLocalMetricRules(t *testing.T) {
 	kubeDS := allDataSources["kubernetes"][0]
 	gcpDS := allDataSources["gcp"][0]
 
-	kubeRules := readMetricRulesFromDataSourceConfig(t, kubeDS)
+	kubeRules := kubeDS.Config.MetricRules
 	if len(kubeRules) != 1 {
 		t.Fatalf("kubernetes metric rules len = %d, want 1", len(kubeRules))
 	}
@@ -202,7 +202,7 @@ func TestGetAllDataSourcesDatasourceLocalMetricRules(t *testing.T) {
 		t.Fatalf("kubernetes provider = %q, want %q", kubeRules[0].Provider, metrics.ProviderPrometheus)
 	}
 
-	gcpRules := readMetricRulesFromDataSourceConfig(t, gcpDS)
+	gcpRules := gcpDS.Config.MetricRules
 	if len(gcpRules) != 1 {
 		t.Fatalf("gcp metric rules len = %d, want 1", len(gcpRules))
 	}
@@ -217,6 +217,14 @@ func TestGetAllDataSourcesDatasourceLocalMetricRules(t *testing.T) {
 
 	if gcpRules[0].Lookback != "6m" {
 		t.Fatalf("gcp lookback = %q, want 6m", gcpRules[0].Lookback)
+	}
+
+	for _, ds := range []*agent.DataSource{kubeDS, gcpDS} {
+		for _, kv := range ds.Config.ValuePairs {
+			if kv.Key == metrics.ConfigMetricRules {
+				t.Fatalf("datasource %s has metric_rules in value_pairs; want typed data_source_config.metric_rules only", ds.DataSourceID)
+			}
+		}
 	}
 }
 
@@ -266,25 +274,6 @@ func TestNewYamlStringConfigMetricRulesModeValidation(t *testing.T) {
 	if errConfig == nil {
 		t.Fatalf("NewYamlStringConfig() expected metric rule mode validation error")
 	}
-}
-
-func readMetricRulesFromDataSourceConfig(t *testing.T, ds *agent.DataSource) []metrics.RuleConfig {
-	t.Helper()
-
-	for _, kv := range ds.Config.ValuePairs {
-		if kv.Key != metrics.ConfigMetricRules {
-			continue
-		}
-
-		rules, errRules := metrics.ParseRules(kv.Value)
-		if errRules != nil {
-			t.Fatalf("metrics.ParseRules() unexpected error: %v", errRules)
-		}
-
-		return rules
-	}
-
-	return []metrics.RuleConfig{}
 }
 
 func createTempConfigFile(t *testing.T, content string) string {
