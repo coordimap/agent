@@ -155,6 +155,10 @@ func CleanUpDataSource(inputDS *agent.DataSource, skipFields []string) *agent.Da
 		})
 	}
 
+	if len(inputDS.Config.MetricRules) > 0 {
+		cleanedDataSource.Config.MetricRules = append(cleanedDataSource.Config.MetricRules, inputDS.Config.MetricRules...)
+	}
+
 	return &cleanedDataSource
 }
 
