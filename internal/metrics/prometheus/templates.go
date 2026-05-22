@@ -161,7 +161,7 @@ func buildKubernetesPodCrashloopOrImagePullError(params map[string]any) (metrics
 func buildKubernetesPodNotReady(params map[string]any) (metrics.RuleConfig, error) {
 	lookback := metricsGetStringParam(params, "lookback", "5m")
 
-	query := fmt.Sprintf(`max by (namespace, pod) (max_over_time((1 - kube_pod_status_ready{condition="true"})[%s]))`, lookback)
+	query := fmt.Sprintf(`max by (namespace, pod) (1 - max_over_time(kube_pod_status_ready{condition="true"}[%s]))`, lookback)
 
 	return metrics.RuleConfig{
 		Provider: metrics.ProviderPrometheus,

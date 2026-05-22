@@ -128,9 +128,10 @@ func TestResolveRuleDeclarationPredefinedPrometheusKubernetesCoreTemplates(t *te
 		template         string
 		expectedQuerySub string
 		expectedResolver string
+		invalidQuerySub  string
 	}{
 		{name: "crashloop imagepull", template: "kubernetes_pod_crashloop_or_imagepull_error", expectedQuerySub: "kube_pod_container_status_waiting_reason", expectedResolver: metrics.ResolverKubernetesPod},
-		{name: "pod not ready", template: "kubernetes_pod_not_ready", expectedQuerySub: "kube_pod_status_ready", expectedResolver: metrics.ResolverKubernetesPod},
+		{name: "pod not ready", template: "kubernetes_pod_not_ready", expectedQuerySub: `max_over_time(kube_pod_status_ready{condition="true"}[5m])`, expectedResolver: metrics.ResolverKubernetesPod, invalidQuerySub: "max_over_time((1 -"},
 		{name: "deployment unavailable replicas", template: "kubernetes_deployment_unavailable_replicas", expectedQuerySub: "kube_deployment_status_replicas_unavailable", expectedResolver: metrics.ResolverKubernetesDeployment},
 		{name: "deployment availability gap", template: "kubernetes_deployment_availability_gap", expectedQuerySub: "kube_deployment_spec_replicas", expectedResolver: metrics.ResolverKubernetesDeployment},
 		{name: "pod high cpu", template: "kubernetes_pod_high_cpu_usage", expectedQuerySub: "container_cpu_usage_seconds_total", expectedResolver: metrics.ResolverKubernetesPod},
@@ -163,6 +164,10 @@ func TestResolveRuleDeclarationPredefinedPrometheusKubernetesCoreTemplates(t *te
 
 			if !strings.Contains(rule.Query, tt.expectedQuerySub) {
 				t.Fatalf("ResolveRuleDeclaration() query = %q does not contain %q", rule.Query, tt.expectedQuerySub)
+			}
+
+			if tt.invalidQuerySub != "" && strings.Contains(rule.Query, tt.invalidQuerySub) {
+				t.Fatalf("ResolveRuleDeclaration() query = %q contains invalid PromQL pattern %q", rule.Query, tt.invalidQuerySub)
 			}
 
 			if rule.Target.Resolver != tt.expectedResolver {
