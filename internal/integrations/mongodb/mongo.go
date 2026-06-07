@@ -54,6 +54,9 @@ func NewMongoDBCrawler(dataSource *agent.DataSource, outChannel chan *agent.Clou
 		case "db_host":
 			crawler.Host = dsConfig.Value
 
+		case "scope_id":
+			crawler.scopeID = dsConfig.Value
+
 		case "crawl_interval":
 			const DEFAULT_CRAWL_TIME = 30 * time.Second
 			amountStr := string(dsConfig.Value[:len(dsConfig.Value)-1])

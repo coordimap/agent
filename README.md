@@ -92,19 +92,44 @@ To enable the eBPF flow crawler, you will need to add the following configuratio
 
 ## Configuration
 
-`coordimap-agent` is configured using a YAML file. By default, the application looks for a `config.yaml` file in the same directory as the executable. You can specify a different configuration file using the `--config` flag.
+`coordimap-agent` is configured using a YAML file. By default, the application looks for a `config.yaml` file in the same directory as the executable. You can specify a different configuration file using the `--config` flag or the `COORDIMAP_CONFIG_PATH` environment variable.
+
+The complete configuration shape is shown in `configs/config.yaml.template`. A fully commented version is available in `configs/agent.example.yaml`.
 
 The configuration file specifies the data sources to be crawled. Here is an example configuration:
 
 ```yaml
-datasources:
-  - name: "aws"
-    type: "aws"
-    # Add your AWS specific configuration here
-  - name: "gcp"
-    type: "gcp"
-    # Add your GCP specific configuration here
+coordimap:
+  api_key: ${COORDIMAP_API_KEY}
+  data_sources:
+    - type: aws
+      id: aws-production
+      config:
+        - name: scope_id
+          value: "your-aws-account-id"
+        - name: access_key_id
+          value: ${AWS_ACCESS_KEY_ID}
+        - name: secret_access_key
+          value: ${AWS_SECRET_ACCESS_KEY}
+        - name: crawl_interval
+          value: 30s
+
+    - type: gcp
+      id: gcp-production
+      config:
+        - name: scope_id
+          value: "your-gcp-project-number"
+        - name: project_id
+          value: "your-gcp-project-id"
+        - name: credentials_file
+          value: /etc/coordimap-agent/gcp-service-account.json
+        - name: crawl_interval
+          value: 30s
 ```
+
+Supported data source types are `aws`, `gcp`, `kubernetes`, `postgres`, `mysql`, `mariadb`, `mongodb`, `aws_flow_logs`.
+
+Most crawlers support `crawl_interval` values using seconds or minutes, for example `30s` or `5m`.
 
 ## Supported Data Sources
 
@@ -113,44 +138,31 @@ Here are the supported data sources and their sample configurations:
 ### GCP
 
 ```yaml
-- type: gcp
-  id: gcp_id_123
-  config:
-    - name: scope_id
-      value: \"your-gcp-project-number\"
-    - name: in_cloud
-      value: "false"
-    - name: credentials_file
-      value: "/path/to/your/credentials.json"
-    - name: project_id
-      value: "your-gcp-project-id"
-    - name: crawl_interval
-      value: 30s
-    - name: gcp_flows
-      value: "true"
-    - name: external_mappings
-      value: "europe-west3-your-gke-cluster@your_k8s_cluster_uid"
-    - name: include_regions
-      value: "your-gcp-region"
+coordimap:
+  api_key: ${COORDIMAP_API_KEY}
+  data_sources:
+    - type: gcp
+      id: gcp_id_123
+      config:
+        - name: scope_id
+          value: "your-gcp-project-number"
+        - name: in_cloud
+          value: "false"
+        - name: credentials_file
+          value: "/path/to/your/credentials.json"
+        - name: project_id
+          value: "your-gcp-project-id"
+        - name: crawl_interval
+          value: 30s
+        - name: gcp_flows
+          value: "true"
+        - name: external_mappings
+          value: "europe-west3-your-gke-cluster@your_k8s_cluster_uid"
+        - name: include_regions
+          value: "your-gcp-region"
 ```
 
-### GCP Flow Logs
-
-```yaml
-- type: gcp_flow_logs
-  id: gcp_id_123
-  config:
-    - name: scope_id
-      value: \"your-gcp-project-number\"
-    - name: in_cloud
-      value: "false"
-    - name: credentials_file
-      value: "/path/to/your/credentials.json"
-    - name: project_id
-      value: "your-gcp-project-id"
-    - name: crawl_interval
-      value: 30s
-```
+GCP VPC flow logs are collected by enabling `gcp_flows` on a `gcp` data source.
 
 ### AWS
 
@@ -159,7 +171,7 @@ Here are the supported data sources and their sample configurations:
   id: awstestid
   config:
     - name: scope_id
-      value: \"your-aws-account-id\"
+      value: "your-aws-account-id"
     - name: policy_config
       value: "true"
     - name: access_key_id
@@ -179,7 +191,7 @@ Here are the supported data sources and their sample configurations:
   desc: "Description of the database."
   config:
     - name: scope_id
-      value: \"your-postgres-system-identifier\"
+      value: "your-postgres-system-identifier"
     - name: db_name
       value: "your_db_name"
     - name: db_host
@@ -189,7 +201,7 @@ Here are the supported data sources and their sample configurations:
     - name: db_pass
       value: "your_db_password"
     - name: ssl_mode
-      value: "require" # or disable, allow, prefer, verify-ca, verify-full
+      value: "require" # or disable
     - name: crawl_interval
       value: 30s
     - name: mapping_internal_id
@@ -203,7 +215,7 @@ Here are the supported data sources and their sample configurations:
   id: "data_source_123"
   config:
     - name: scope_id
-      value: \"your-mariadb-server-uuid\"
+      value: "your-mariadb-server-uuid"
     - name: db_name
       value: "your_db_name"
     - name: db_host
@@ -212,6 +224,28 @@ Here are the supported data sources and their sample configurations:
       value: "your_db_user"
     - name: db_pass
       value: "your_db_password"
+    - name: crawl_interval
+      value: 30s
+```
+
+### MySQL
+
+```yaml
+- type: mysql
+  id: "mysql-primary"
+  config:
+    - name: scope_id
+      value: "your-mysql-server-uuid"
+    - name: db_name
+      value: "your_db_name"
+    - name: db_host
+      value: "your_db_host"
+    - name: db_user
+      value: "your_db_user"
+    - name: db_pass
+      value: "your_db_password"
+    - name: ssl_mode
+      value: "disable" # or require
     - name: crawl_interval
       value: 30s
 ```
@@ -261,7 +295,7 @@ Use this UID as the `scope_id` in:
   desc: "Description of the flow logs."
   config:
     - name: scope_id
-      value: \"your-aws-account-id\"
+      value: "your-aws-account-id"
     - name: log_format
       value: "all"
     - name: log_type
@@ -288,7 +322,7 @@ Use this UID as the `scope_id` in:
   desc: "Description of the mongo instance."
   config:
     - name: scope_id
-      value: \"your-replica-set-id\"
+      value: "your-replica-set-id"
     - name: db_name
       value: "*" # or a specific database name
     - name: db_host
@@ -305,15 +339,15 @@ Use this UID as the `scope_id` in:
 
 `coordimap-agent` uses an internal asset identity model that should be scoped by the upstream system identity, not by the connector `data_source_id`. The `data_source_id` identifies the crawl configuration, while the `scope_id` identifies the real ownership boundary the assets belong to.
 
-| Data source | Recommended `scope_id` | Where it comes from | Typical asset path |
-| --- | --- | --- | --- |
-| Kubernetes | `cluster_uid` | Kubernetes API cluster identity | `namespace/type/name`, `type/name` for cluster-wide assets |
-| GCP | `project_number` | GCP project metadata / API | `zone/vm_instance/name`, `region/bucket/name`, `region/sql/name` |
-| AWS | `account_id` | AWS STS caller identity | `region/ec2/instance-id`, `region/rds/db-arn`, `global/s3/bucket-name` |
-| PostgreSQL | `system_identifier` | PostgreSQL server or cluster identity | `database/schema/table`, `database/schema/index` |
-| MySQL / MariaDB | `server_uuid` | MySQL or MariaDB server identity | `database/schema/table`, `database/schema/index` |
-| MongoDB | replica set or cluster ID | replica set or cluster identity | `database/collection`, `database/collection/index` |
-| OTel | reuse upstream `scope_id` | OTel resource attributes from the source system | `coordimap.scope_id`, `k8s.cluster.uid`, `cloud.account.id`, `cloud.project.number`, `db.postgresql.system_identifier` |
+| Data source     | Recommended `scope_id`    | Where it comes from                             | Typical asset path                                                                                                     |
+| --------------- | ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Kubernetes      | `cluster_uid`             | Kubernetes API cluster identity                 | `namespace/type/name`, `type/name` for cluster-wide assets                                                             |
+| GCP             | `project_number`          | GCP project metadata / API                      | `zone/vm_instance/name`, `region/bucket/name`, `region/sql/name`                                                       |
+| AWS             | `account_id`              | AWS STS caller identity                         | `region/ec2/instance-id`, `region/rds/db-arn`, `global/s3/bucket-name`                                                 |
+| PostgreSQL      | `system_identifier`       | PostgreSQL server or cluster identity           | `database/schema/table`, `database/schema/index`                                                                       |
+| MySQL / MariaDB | `server_uuid`             | MySQL or MariaDB server identity                | `database/schema/table`, `database/schema/index`                                                                       |
+| MongoDB         | replica set or cluster ID | replica set or cluster identity                 | `database/collection`, `database/collection/index`                                                                     |
+| OTel            | reuse upstream `scope_id` | OTel resource attributes from the source system | `coordimap.scope_id`, `k8s.cluster.uid`, `cloud.account.id`, `cloud.project.number`, `db.postgresql.system_identifier` |
 
 ## How To Find Your `scope_id`
 
@@ -410,8 +444,8 @@ Use a replica set or cluster identity when available.
 Useful commands:
 
 ```javascript
-rs.conf()
-rs.status()
+rs.conf();
+rs.status();
 ```
 
 Recommended `scope_id`: replica set / cluster ID
@@ -467,6 +501,7 @@ Example:
 
 ```yaml
 coordimap:
+  api_key: ${COORDIMAP_API_KEY}
   data_sources:
     - type: kubernetes
       id: kube-prod
@@ -475,6 +510,8 @@ coordimap:
           value: your-cluster-uid
         - name: config_file
           value: /path/to/your/kube/config
+        - name: metrics_prometheus_host
+          value: http://prometheus.monitoring.svc.cluster.local:9090
       metric_rules:
         - id: k8s-high-5xx
           name: Kubernetes Service High 5xx
@@ -509,6 +546,8 @@ coordimap:
               lookback: 5m
               threshold: 0.8
 ```
+
+Kubernetes metric rules require either `metrics_prometheus_host` or `prometheus_host` in the same Kubernetes data source configuration.
 
 Common fields:
 
@@ -585,7 +624,6 @@ Predefined params are template-specific. For example:
 - Cross data source: `external_mapping`
 
 For `external_mapping`, if no `external_mappings` entry matches, the target is ignored and nothing is sent for that series.
-
 
 ## Contribute
 
