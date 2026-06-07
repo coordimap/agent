@@ -68,6 +68,26 @@ func clearManagedFields(item *metav1.ObjectMeta) {
 	item.ManagedFields = []metav1.ManagedFieldsEntry{}
 }
 
+func (kubeCrawler *kubernetesCrawler) sanitizeSecret(secret v1.Secret) v1.Secret {
+	if kubeCrawler.sendSecretData {
+		return secret
+	}
+
+	secret.Data = nil
+	secret.StringData = nil
+	return secret
+}
+
+func (kubeCrawler *kubernetesCrawler) sanitizeConfigMap(configMap v1.ConfigMap) v1.ConfigMap {
+	if kubeCrawler.sendConfigMapData {
+		return configMap
+	}
+
+	configMap.Data = nil
+	configMap.BinaryData = nil
+	return configMap
+}
+
 func getNodeCloud(labels map[string]string, annotations map[string]string, addresses []v1.NodeAddress) (string, error) {
 	for _, address := range addresses {
 		if strings.Contains(address.Address, "compute.internal") || strings.Contains(address.Address, "amazonaws") {

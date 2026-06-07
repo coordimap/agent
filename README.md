@@ -268,6 +268,10 @@ GCP VPC flow logs are collected by enabling `gcp_flows` on a `gcp` data source.
       value: "/path/to/your/kube/config"
     - name: crawl_interval
       value: 30s
+    - name: send_secret_data
+      value: "true" # set to "false" to omit Secret data and stringData payloads
+    - name: send_configmap_data
+      value: "true" # set to "false" to omit ConfigMap data and binaryData payloads
     - name: metrics_prometheus_host
       value: "http://prometheus.monitoring.svc.cluster.local:9090"
     - name: external_mappings

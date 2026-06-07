@@ -23,6 +23,8 @@ const (
 	kubeConfigCloudDataSourceID    = "cloud_data_source_id"
 	kubeConfigExternalMappings     = "external_mappings"
 	kubeConfigScopeID              = "scope_id"
+	kubeConfigSendSecretData       = "send_secret_data"
+	kubeConfigSendConfigMapData    = "send_configmap_data"
 )
 
 type kubernetesCrawler struct {
@@ -40,6 +42,8 @@ type kubernetesCrawler struct {
 	istioConfigured   bool
 	metricRules       []metrics.RuleConfig
 	metricPromCrawler *prometheusCrawler
+	sendSecretData    bool
+	sendConfigMapData bool
 }
 
 type prometheusCrawler struct {

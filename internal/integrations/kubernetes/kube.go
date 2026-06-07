@@ -34,6 +34,8 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 		externalMappings:  map[string]string{},
 		metricRules:       []metrics.RuleConfig{},
 		metricPromCrawler: nil,
+		sendSecretData:    true,
+		sendConfigMapData: true,
 	}
 
 	promQueryTime := ""
@@ -124,6 +126,12 @@ func MakeKubernetesCrawler(dataSource *agent.DataSource, outChannel chan *agent.
 			}
 
 			crawler.clusterUID = value
+
+		case kubeConfigSendSecretData:
+			crawler.sendSecretData = strings.Compare(value, "false") != 0
+
+		case kubeConfigSendConfigMapData:
+			crawler.sendConfigMapData = strings.Compare(value, "false") != 0
 
 		case kubeConfigCrawlInterval:
 			amountStr := string(dsConfig.Value[:len(dsConfig.Value)-1])
@@ -532,7 +540,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 			for _, secret := range secrets {
 				secretInternalID := kubeCrawler.kubeInternalName(namespace.Name, kube_model.TypeSecret, secret.Name)
 				version, _ := GetAppVersionFromLabels(secret.Labels)
-				nodeElement, errNodeElement := utils.CreateElement(secret, secret.Name, secretInternalID, kube_model.TypeSecret, agent.StatusNoStatus, version, crawlTime)
+				nodeElement, errNodeElement := utils.CreateElement(kubeCrawler.sanitizeSecret(secret), secret.Name, secretInternalID, kube_model.TypeSecret, agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}
@@ -656,7 +664,7 @@ func (kubeCrawler *kubernetesCrawler) crawl() (*agent.CloudCrawlData, error) {
 			for _, configMap := range configMaps {
 				configMapInternalID := kubeCrawler.kubeInternalName(namespace.Name, kube_model.TypeConfigMap, configMap.Name)
 				version, _ := GetAppVersionFromLabels(configMap.Labels)
-				nodeElement, errNodeElement := utils.CreateElement(configMap, configMap.Name, configMapInternalID, kube_model.TypeConfigMap, agent.StatusNoStatus, version, crawlTime)
+				nodeElement, errNodeElement := utils.CreateElement(kubeCrawler.sanitizeConfigMap(configMap), configMap.Name, configMapInternalID, kube_model.TypeConfigMap, agent.StatusNoStatus, version, crawlTime)
 				if errNodeElement != nil {
 					continue
 				}

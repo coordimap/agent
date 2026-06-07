@@ -82,6 +82,10 @@ coordimap:
           value: http://prometheus.monitoring.svc.cluster.local:9090
         - name: crawl_interval
           value: 30s
+        - name: send_secret_data
+          value: "true"
+        - name: send_configmap_data
+          value: "true"
       metric_rules:
         - id: es-pvc-low-free-space
           name: Elasticsearch PVC low free space
